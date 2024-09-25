@@ -17,7 +17,7 @@ class TestGetProvider(TstFunction):
     def test_get_provider_returns_provider_information(self):
         self._load_provider_data()
 
-        from handlers.provider_users import get_provider
+        from handlers.provider_users import get_provider_user_me
 
         with open('tests/resources/provider-user-api-event.json', 'r') as f:
             event = json.load(f)
@@ -30,7 +30,7 @@ class TestGetProvider(TstFunction):
         event['requestContext']['authorizer']['claims']['custom:providerId'] = provider_id
         event['requestContext']['authorizer']['claims']['custom:compact'] = TEST_COMPACT
 
-        resp = get_provider(event, self.mock_context)
+        resp = get_provider_user_me(event, self.mock_context)
 
         self.assertEqual(200, resp['statusCode'])
         provider_data = json.loads(resp['body'])
@@ -40,7 +40,7 @@ class TestGetProvider(TstFunction):
     def test_get_provider_returns_400_if_api_call_made_without_proper_claims(self):
         self._load_provider_data()
 
-        from handlers.provider_users import get_provider
+        from handlers.provider_users import get_provider_user_me
 
         with open('tests/resources/provider-user-api-event.json', 'r') as f:
             event = json.load(f)
@@ -49,14 +49,14 @@ class TestGetProvider(TstFunction):
         del event['requestContext']['authorizer']['claims']['custom:providerId']
         del event['requestContext']['authorizer']['claims']['custom:compact']
 
-        resp = get_provider(event, self.mock_context)
+        resp = get_provider_user_me(event, self.mock_context)
 
         self.assertEqual(400, resp['statusCode'])
 
-    def test_get_provider_returns_500_if_user_claims_do_not_match_any_provider_in_database(self):
+    def test_get_provider_raises_exception_if_user_claims_do_not_match_any_provider_in_database(self):
         self._load_provider_data()
 
-        from handlers.provider_users import get_provider
+        from handlers.provider_users import get_provider_user_me
 
         with open('tests/resources/provider-user-api-event.json', 'r') as f:
             event = json.load(f)

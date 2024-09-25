@@ -10,7 +10,7 @@ from config import logger
 from . import get_provider_information
 
 @api_handler
-def get_provider(event: dict, context: LambdaContext):  # pylint: disable=unused-argument
+def get_provider_user_me(event: dict, context: LambdaContext):  # pylint: disable=unused-argument
     """
     Endpoint for a provider user to fetch their personal provider data.
 
