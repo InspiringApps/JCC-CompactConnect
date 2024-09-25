@@ -14,10 +14,7 @@ class TestGetProvider(TstFunction):
 
         return provider_id
 
-    def test_get_provider(self):
-        """
-        Provider detail response
-        """
+    def test_get_provider_returns_provider_information(self):
         self._load_provider_data()
 
         from handlers.provider_users import get_provider
@@ -38,3 +35,33 @@ class TestGetProvider(TstFunction):
         self.assertEqual(200, resp['statusCode'])
         provider_data = json.loads(resp['body'])
         self.assertEqual(expected_provider, provider_data)
+
+
+    def test_get_provider_returns_400_if_api_call_made_without_proper_claims(self):
+        self._load_provider_data()
+
+        from handlers.provider_users import get_provider
+
+        with open('tests/resources/provider-user-api-event.json', 'r') as f:
+            event = json.load(f)
+
+        # set custom attributes in the cognito claims
+        del event['requestContext']['authorizer']['claims']['custom:providerId']
+        del event['requestContext']['authorizer']['claims']['custom:compact']
+
+        resp = get_provider(event, self.mock_context)
+
+        self.assertEqual(400, resp['statusCode'])
+
+    def test_get_provider_returns_500_if_user_claims_do_not_match_any_provider_in_database(self):
+        self._load_provider_data()
+
+        from handlers.provider_users import get_provider
+
+        with open('tests/resources/provider-user-api-event.json', 'r') as f:
+            event = json.load(f)
+
+        # calling get_provider without creating a provider first
+        resp = get_provider(event, self.mock_context)
+
+        self.assertEqual(500, resp['statusCode'])

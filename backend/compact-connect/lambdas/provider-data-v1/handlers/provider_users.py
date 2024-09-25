@@ -4,7 +4,7 @@
 
 from aws_lambda_powertools.utilities.typing import LambdaContext
 
-from exceptions import CCInvalidRequestException
+from exceptions import CCInvalidRequestException, CCNotFoundException, CCInternalException
 from handlers.utils import api_handler, authorize_compact
 from config import logger
 from . import get_provider_information
@@ -12,7 +12,8 @@ from . import get_provider_information
 @api_handler
 def get_provider(event: dict, context: LambdaContext):  # pylint: disable=unused-argument
     """
-    Return one provider's data
+    Endpoint for a provider user to fetch their personal provider data.
+
     :param event: Standard API Gateway event, API schema documented in the CDK ApiStack
     :param LambdaContext context:
     """
@@ -27,4 +28,10 @@ def get_provider(event: dict, context: LambdaContext):  # pylint: disable=unused
         logger.error(f'Missing custom provider attribute: {e}')
         raise CCInvalidRequestException('Missing required user profile attribute') from e
 
-    return get_provider_information(compact=compact, provider_id=provider_id)
+    try:
+        return get_provider_information(compact=compact, provider_id=provider_id)
+    except CCNotFoundException as e:
+        message = 'Failed to find provider using provided claims'
+        logger.error(message, compact=compact, provider_id=provider_id)
+        raise CCInternalException(message) from e
+
