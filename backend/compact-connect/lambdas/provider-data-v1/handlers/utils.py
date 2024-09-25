@@ -98,15 +98,6 @@ def api_handler(fn: Callable):
                 'statusCode': 404,
                 'body': json.dumps({'message': 'Resource not found'})
             }
-        except CCInternalException as e:
-            logger.info('Internal Error', exc_info=e)
-            return {
-                'headers': {
-                    'Access-Control-Allow-Origin': '*'
-                },
-                'statusCode': 500,
-                'body': json.dumps({'message': 'Internal server error'})
-            }
         except CCInvalidRequestException as e:
             logger.info('Invalid request', exc_info=e)
             return {

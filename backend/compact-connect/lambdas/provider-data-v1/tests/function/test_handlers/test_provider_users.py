@@ -2,6 +2,7 @@ import json
 
 from moto import mock_aws
 from tests.function import TstFunction
+from exceptions import CCInternalException
 
 TEST_COMPACT = "aslp"
 MOCK_SSN = "123-12-1234"
@@ -62,6 +63,5 @@ class TestGetProvider(TstFunction):
             event = json.load(f)
 
         # calling get_provider without creating a provider first
-        resp = get_provider(event, self.mock_context)
-
-        self.assertEqual(500, resp['statusCode'])
+        with self.assertRaises(CCInternalException):
+            get_provider_user_me(event, self.mock_context)
