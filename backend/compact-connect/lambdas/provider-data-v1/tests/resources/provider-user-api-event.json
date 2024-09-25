@@ -98,7 +98,7 @@
                 "token_use": "access",
                 "scope": "openid email profile",
                 "auth_time": "1717782706",
-                "custom:compact": "al",
+                "custom:compact": "aslp",
                 "custom:providerId": "some-provider-id",
                 "iss": "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_xS47lbscb",
                 "exp": "Fri Jun 07 18:51:46 UTC 2024",

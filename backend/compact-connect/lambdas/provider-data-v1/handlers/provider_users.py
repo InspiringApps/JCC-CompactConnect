@@ -20,7 +20,7 @@ def get_provider(event: dict, context: LambdaContext):  # pylint: disable=unused
         # the two values for compact and providerId are stored as custom attributes in the user's cognito claims
         # so we can access them directly from the event object
         compact = event['requestContext']['authorizer']['claims']['custom:compact']
-        provider_id = event['requestContext']['authorizer']['claims']['custom:compact']
+        provider_id = event['requestContext']['authorizer']['claims']['custom:providerId']
     except (KeyError, TypeError) as e:
         # This shouldn't happen unless a provider user was created without these custom attributes,
         # but we'll handle it, anyway
