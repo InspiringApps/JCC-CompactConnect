@@ -44,8 +44,8 @@ class TestApp(TestCase):
         """""
         try:
             return resources[logical_id]['Properties']
-        except KeyError:
-            raise RuntimeError(f'{logical_id} not found in resources!')
+        except KeyError as exc:
+            raise RuntimeError(f'{logical_id} not found in resources!') from exc
 
     def test_no_compact_jurisdiction_name_clash(self):
         """
