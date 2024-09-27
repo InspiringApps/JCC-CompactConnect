@@ -75,7 +75,7 @@ class ApiModel:
                     'providers': JsonSchema(
                         type=JsonSchemaType.ARRAY,
                         max_length=100,
-                        items=self.providers_response_schema
+                        items=self._providers_response_schema
                     ),
                     'pagination': self._pagination_response_schema,
                     'sorting': self._sorting_schema
@@ -94,36 +94,10 @@ class ApiModel:
         self.api._v1_get_provider_response_model = self.api.add_model(
             'V1GetProviderResponseModel',
             description='Get provider response model',
-            schema=self._v1_provider_detail_response_schema
+            schema=self._provider_detail_response_schema
         )
         return self.api._v1_get_provider_response_model
 
-    @property
-    def providers_response_schema(self):
-        return JsonSchema(
-            type=JsonSchemaType.OBJECT,
-            required=[
-                'type',
-                'providerId',
-                'ssn',
-                'givenName',
-                'familyName',
-                'licenseType',
-                'status',
-                'compact',
-                'licenseJurisdiction',
-                'privilegeJurisdictions',
-                'homeAddressStreet1',
-                'homeAddressCity',
-                'homeAddressState',
-                'homeAddressPostalCode',
-                'dateOfBirth',
-                'dateOfUpdate',
-                'dateOfExpiration',
-                'birthMonthDay'
-            ],
-            properties=self._v1_common_provider_properties
-        )
 
     @property
     def post_license_model(self) -> Model:
@@ -157,14 +131,69 @@ class ApiModel:
                         'status'
                     ],
                     additional_properties=False,
-                    properties=self._v1_common_license_properties
+                    properties=self._common_license_properties
                 )
             )
         )
         return self.api._v1_post_license_model
 
     @property
-    def _v1_provider_detail_response_schema(self):
+    def bulk_upload_response_model(self) -> Model:
+        """
+        Return the Bulk Upload Response Model, which should only be created once per API
+        """
+        if hasattr(self.api, 'bulk_upload_response_model'):
+            return self.api.bulk_upload_response_model
+
+        self.api.bulk_upload_response_model = self.api.add_model(
+            'BulkUploadResponseModel',
+            description='Bulk upload url response model',
+            schema=JsonSchema(
+                type=JsonSchemaType.OBJECT,
+                required=[
+                    'upload',
+                    'fields'
+                ],
+                properties={
+                    'url': JsonSchema(type=JsonSchemaType.STRING),
+                    'fields': JsonSchema(
+                        type=JsonSchemaType.OBJECT,
+                        additional_properties=JsonSchema(type=JsonSchemaType.STRING)
+                    )
+                }
+            )
+        )
+        return self.api.bulk_upload_response_model
+
+    @property
+    def _providers_response_schema(self):
+        return JsonSchema(
+            type=JsonSchemaType.OBJECT,
+            required=[
+                'type',
+                'providerId',
+                'ssn',
+                'givenName',
+                'familyName',
+                'licenseType',
+                'status',
+                'compact',
+                'licenseJurisdiction',
+                'privilegeJurisdictions',
+                'homeAddressStreet1',
+                'homeAddressCity',
+                'homeAddressState',
+                'homeAddressPostalCode',
+                'dateOfBirth',
+                'dateOfUpdate',
+                'dateOfExpiration',
+                'birthMonthDay'
+            ],
+            properties=self._common_provider_properties
+        )
+
+    @property
+    def _provider_detail_response_schema(self):
         stack: AppStack = AppStack.of(self.api)
         return JsonSchema(
             type=JsonSchemaType.OBJECT,
@@ -217,7 +246,7 @@ class ApiModel:
                                 format='date',
                                 pattern=cc_api.YMD_FORMAT
                             ),
-                            **self._v1_common_license_properties
+                            **self._common_license_properties
                         }
                     )
                 ),
@@ -225,15 +254,15 @@ class ApiModel:
                     type=JsonSchemaType.ARRAY,
                     items=JsonSchema(
                         type=JsonSchemaType.OBJECT,
-                        properties=self._v1_common_privilege_properties
+                        properties=self._common_privilege_properties
                     )
                 ),
-                **self._v1_common_provider_properties
+                **self._common_provider_properties
             }
         )
 
     @property
-    def _v1_common_license_properties(self) -> dict:
+    def _common_license_properties(self) -> dict:
         stack: AppStack = AppStack.of(self.api)
 
         return {
@@ -290,7 +319,7 @@ class ApiModel:
         }
 
     @property
-    def _v1_common_provider_properties(self) -> dict:
+    def _common_provider_properties(self) -> dict:
         stack: AppStack = AppStack.of(self.api)
 
         return {
@@ -370,7 +399,7 @@ class ApiModel:
         }
 
     @property
-    def _v1_common_privilege_properties(self) -> dict:
+    def _common_privilege_properties(self) -> dict:
         stack: AppStack = AppStack.of(self.api)
 
         return {
@@ -463,31 +492,3 @@ class ApiModel:
                 'pageSize': JsonSchema(type=JsonSchemaType.INTEGER, minimum=5, maximum=100)
             }
         )
-
-    @property
-    def bulk_upload_response_model(self) -> Model:
-        """
-        Return the Bulk Upload Response Model, which should only be created once per API
-        """
-        if hasattr(self.api, 'bulk_upload_response_model'):
-            return self.api.bulk_upload_response_model
-
-        self.api.bulk_upload_response_model = self.api.add_model(
-            'BulkUploadResponseModel',
-            description='Bulk upload url response model',
-            schema=JsonSchema(
-                type=JsonSchemaType.OBJECT,
-                required=[
-                    'upload',
-                    'fields'
-                ],
-                properties={
-                    'url': JsonSchema(type=JsonSchemaType.STRING),
-                    'fields': JsonSchema(
-                        type=JsonSchemaType.OBJECT,
-                        additional_properties=JsonSchema(type=JsonSchemaType.STRING)
-                    )
-                }
-            )
-        )
-        return self.api.bulk_upload_response_model
