@@ -1,3 +1,6 @@
+# pylint --disable=protected-access
+# This class initializes the api models for the root api, which we then want to set as protected
+# so other classes won't modify it. This is a valid use case for protected access to work with cdk.
 from aws_cdk.aws_apigateway import JsonSchema, JsonSchemaType, Model
 from common_constructs.stack import AppStack
 # Importing module level to allow lazy loading for typing
@@ -7,7 +10,7 @@ class ApiModel:
     """
     This class is responsible for defining the model definitions used in the API endpoints.
     """
-    def __init__(self, api: cc_api, **kwargs):
+    def __init__(self, api: cc_api):
         self.api = api
 
     @property
@@ -15,9 +18,9 @@ class ApiModel:
         """
         Return the query providers request model, which should only be created once per API
         """
-        if hasattr(self.api, 'v1_query_providers_request_model'):
-            return self.api.v1_query_providers_request_model
-        self.api.v1_query_providers_request_model = self.api.add_model(
+        if hasattr(self.api, '_v1_query_providers_request_model'):
+            return self.api._v1_query_providers_request_model
+        self.api._v1_query_providers_request_model = self.api.add_model(
             'V1QueryProvidersRequestModel',
             description='Query providers request model',
             schema=JsonSchema(
@@ -53,16 +56,16 @@ class ApiModel:
                 }
             )
         )
-        return self.api.v1_query_providers_request_model
+        return self.api._v1_query_providers_request_model
 
     @property
     def query_providers_response_model(self) -> Model:
         """
         Return the query providers response model, which should only be created once per API
         """
-        if hasattr(self.api, 'v1_query_providers_response_model'):
-            return self.api.v1_query_providers_response_model
-        self.api.v1_query_providers_response_model = self.api.add_model(
+        if hasattr(self.api, '_v1_query_providers_response_model'):
+            return self.api._v1_query_providers_response_model
+        self.api._v1_query_providers_response_model = self.api.add_model(
             'V1QueryProvidersResponseModel',
             description='Query providers response model',
             schema=JsonSchema(
@@ -79,7 +82,7 @@ class ApiModel:
                 }
             )
         )
-        return self.api.v1_query_providers_response_model
+        return self.api._v1_query_providers_response_model
 
     @property
     def provider_response_model(self) -> Model:
@@ -127,10 +130,10 @@ class ApiModel:
         """
         Return the Post License Model, which should only be created once per API
         """
-        if hasattr(self.api, 'v1_post_license_model'):
-            return self.api.v1_post_license_model
+        if hasattr(self.api, '_v1_post_license_model'):
+            return self.api._v1_post_license_model
 
-        self.api.v1_post_license_model = self.api.add_model(
+        self.api._v1_post_license_model = self.api.add_model(
             'V1PostLicenseModel',
             description='POST licenses request model',
             schema=JsonSchema(
@@ -158,7 +161,7 @@ class ApiModel:
                 )
             )
         )
-        return self.api.v1_post_license_model
+        return self.api._v1_post_license_model
 
     @property
     def _v1_provider_detail_response_schema(self):
