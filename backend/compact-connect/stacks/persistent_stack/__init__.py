@@ -90,6 +90,7 @@ class PersistentStack(AppStack):
             environment_name=environment_name,
             environment_context=environment_context,
             encryption_key=self.shared_encryption_key,
+            # user_invitation=UserInvitationConfig(...),
             user_pool_email=user_pool_email_settings,
             removal_policy=removal_policy
         )
