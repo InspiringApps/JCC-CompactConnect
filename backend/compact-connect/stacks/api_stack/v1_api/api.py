@@ -9,6 +9,7 @@ from stacks.api_stack.v1_api.query_providers import QueryProviders
 from stacks.api_stack.v1_api.provider_users import ProviderUsers
 
 from .post_licenses import PostLicenses
+from .api_model import ApiModel
 from .staff_users import StaffUsers
 from .api_model import ApiModel
 
