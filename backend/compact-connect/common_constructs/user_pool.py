@@ -29,7 +29,6 @@ class UserPool(CdkUserPool):
             removal_policy=removal_policy,
             deletion_protection=removal_policy != RemovalPolicy.DESTROY,
             email=email,
-            # user_invitation=UserInvitationConfig(...),
             account_recovery=AccountRecovery.EMAIL_ONLY,
             auto_verify=AutoVerifiedAttrs(email=True),
             advanced_security_mode=AdvancedSecurityMode.ENFORCED,

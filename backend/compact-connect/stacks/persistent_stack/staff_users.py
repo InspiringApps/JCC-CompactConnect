@@ -3,7 +3,7 @@ import json
 import os
 
 from aws_cdk.aws_cognito import ResourceServerScope, UserPoolOperation, LambdaVersion, ClientAttributes, \
-    StandardAttributes, SignInAliases, UserPoolEmail, StandardAttribute
+    StandardAttributes, SignInAliases, UserPoolEmail, StandardAttribute, UserInvitationConfig
 from aws_cdk.aws_kms import IKey
 from cdk_nag import NagSuppressions
 from constructs import Construct
@@ -21,7 +21,7 @@ class StaffUsers(UserPool):
 
     def __init__(
             self, scope: Construct, construct_id: str, *,
-            cognito_domain_prefix: str | None,
+            cognito_domain_prefix: str,
             environment_name: str,
             environment_context: dict,
             encryption_key: IKey,
@@ -29,11 +29,19 @@ class StaffUsers(UserPool):
             removal_policy,
             **kwargs
     ):
+        with open(os.path.join('resources', 'staff-user-invite.html'), 'r') as f:
+            invite_email_body = f.read()
         super().__init__(
             scope, construct_id,
             cognito_domain_prefix=cognito_domain_prefix,
             environment_name=environment_name,
             encryption_key=encryption_key,
+            email=user_pool_email,
+            user_invitation=UserInvitationConfig(
+                email_subject='Invitation to CompactConnect' \
+                              + f' ({cognito_domain_prefix})' if environment_name != 'prod' else '',
+                email_body=invite_email_body
+            ),
             sign_in_aliases=SignInAliases(email=True, username=False),
             standard_attributes=StandardAttributes(
                 email=StandardAttribute(
@@ -42,7 +50,6 @@ class StaffUsers(UserPool):
                 )
             ),
             removal_policy=removal_policy,
-            email=user_pool_email,
             **kwargs
         )
         stack: ps.PersistentStack = ps.PersistentStack.of(self)
