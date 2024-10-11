@@ -1,0 +1,14 @@
+# FOR TESTING PURPOSES ONLY, NOT ACTUAL CONFIGURATION
+jurisdictionName: "ohio"
+postalAbbreviation: "oh"
+jurisdictionFee: 100
+militaryDiscount:
+    active: true
+    discountType: "FLAT_RATE"
+    discountAmount: 10
+jurisdictionOperationsTeamEmails: []
+jurisdictionAdverseActionsNotificationEmails: []
+jurisdictionSummaryReportNotificationEmails: []
+jurisprudenceRequirements:
+    required: true
+activeEnvironments: []

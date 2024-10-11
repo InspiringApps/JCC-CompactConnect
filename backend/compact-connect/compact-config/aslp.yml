@@ -1,0 +1,9 @@
+# FOR TESTING PURPOSES ONLY, NOT ACTUAL CONFIGURATION
+compactName: "aslp"
+compactCommissionFee:
+    feeType: "FLAT_RATE"
+    feeAmount: 3.50
+compactOperationsTeamEmails: []
+compactAdverseActionsNotificationEmails: []
+compactSummaryReportNotificationEmails: []
+activeEnvironments: ["test"]
