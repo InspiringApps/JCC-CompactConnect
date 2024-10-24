@@ -5,9 +5,12 @@
 //  Created by InspiringApps on 6/12/24.
 //
 
-import { authStorage, tokens } from '@/app.config';
+import { authStorage, tokens, FeeTypes } from '@/app.config';
 import chaiMatchPattern from 'chai-match-pattern';
 import chai from 'chai';
+import { Compact } from '@models/Compact/Compact.model';
+import { PrivilegePurchaseOption } from '@models/PrivilegePurchaseOption/PrivilegePurchaseOption.model';
+import { State } from '@models/State/State.model';
 import mutations, { MutationTypes } from './user.mutations';
 import actions from './user.actions';
 import getters from './user.getters';
@@ -394,5 +397,54 @@ describe('User Store Actions', async () => {
         const authTypeReturned = getters.highestPermissionAuthType()();
 
         expect(authTypeReturned).to.equal('staff');
+    });
+
+    it('should successfully start get privilege purchase information request', () => {
+        const commit = sinon.spy();
+        const dispatch = sinon.spy();
+
+        actions.getPrivilegePurchaseInformationRequest({ commit, dispatch });
+
+        expect(commit.calledOnce).to.equal(true);
+        expect(commit.firstCall.args).to.matchPattern([MutationTypes.GET_PRIVILEGE_PURCHASE_INFORMATION_REQUEST]);
+    });
+    it('should successfully start get privilege purchase information success', async () => {
+        const commit = sinon.spy();
+        const dispatch = sinon.spy();
+        const state = { currentCompact: new Compact({ type: 'aslp' }) };
+
+        const data = {
+            jurisdiction: new State({ abbrev: 'ca' }),
+            compact: 'aslp',
+            fee: 5,
+            isMilitaryDiscountActive: true,
+            militaryDiscountType: FeeTypes.FLAT_RATE,
+            militaryDiscountAmount: 10,
+            isJurisprudenceRequired: true,
+        };
+        const privilegePurchaseOption = new PrivilegePurchaseOption(data);
+
+        const privilegePurchaseData = {
+            privilegePurchaseOptions: [ privilegePurchaseOption ],
+            compactCommissionFee: { compact: 'aslp', feeType: 'FLAT_RATE', feeAmount: 3.5 }
+        };
+
+        await actions.getPrivilegePurchaseInformationSuccess({ commit, dispatch, state }, privilegePurchaseData);
+
+        expect(commit.calledOnce).to.equal(true);
+        expect(commit.firstCall.args).to.matchPattern([MutationTypes.GET_PRIVILEGE_PURCHASE_INFORMATION_SUCCESS]);
+        expect(dispatch.calledOnce).to.equal(true);
+        expect([dispatch.firstCall.args[0]]).to.matchPattern(['setCurrentCompact']);
+    });
+    it('should successfully start login failure', () => {
+        const commit = sinon.spy();
+        const error = new Error();
+
+        actions.getPrivilegePurchaseInformationFailure({ commit }, error);
+
+        expect(commit.calledOnce).to.equal(true);
+        expect(commit.firstCall.args).to.matchPattern(
+            [MutationTypes.GET_PRIVILEGE_PURCHASE_INFORMATION_FAILURE, error]
+        );
     });
 });
