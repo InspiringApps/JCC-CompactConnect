@@ -72,6 +72,11 @@ jobs:
         run: yarn test:unit:all
         working-directory: ./webroot
 
+      # Run Unit Test Coverage Checks
+      - name: Run test coverage
+        run: yarn test:unit:coverage
+        working-directory: ./webroot
+
       # Build app
       - name: Build Vue app
         env:

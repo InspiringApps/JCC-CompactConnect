@@ -7,10 +7,11 @@
     "build": "yarn audit:dependencies && vue-cli-service build",
     "test:unit:all": "export NODE_OPTIONS=--openssl-legacy-provider && yarn lint --no-fix && vue-cli-service test:unit 'src/**/*.spec.ts'",
     "test:unit": "export NODE_OPTIONS=--openssl-legacy-provider && yarn lint --no-fix && vue-cli-service test:unit",
-    "test:unit:coverage": "export NODE_OPTIONS=--openssl-legacy-provider && nyc vue-cli-service test:unit 'src/**/*.spec.ts' --reporter progress",
+    "test:unit:coverage": "export NODE_OPTIONS=--openssl-legacy-provider && nyc vue-cli-service test:unit 'src/**/*.spec.ts' --reporter progress && yarn run make:badges",
     "test:e2e": "TZ=America/Denver vue-cli-service test:e2e",
     "lint": "vue-cli-service lint",
-    "audit:dependencies": "/bin/bash -c 'yarn audit --groups dependencies --level moderate; [[ $? -ge 4 ]] && exit 1 || exit 0'"
+    "audit:dependencies": "/bin/bash -c 'yarn audit --groups dependencies --level moderate; [[ $? -ge 4 ]] && exit 1 || exit 0'",
+    "make:badges": "istanbul-badges-readme"
   },
   "dependencies": {
     "@vue/compat": "3.4.21",
@@ -83,6 +84,7 @@
     "flush-promises": "^1.0.2",
     "happy-dom": "^15.10.2",
     "inquirer": "7.1.0",
+    "istanbul-badges-readme": "^1.9.0",
     "less": "^3.0.4",
     "less-loader": "^5.0.0",
     "lint-staged": "^15.0.0",

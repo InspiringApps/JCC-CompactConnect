@@ -25,6 +25,12 @@ module.exports = {
     reporter: [
         // 'text',
         'text-summary',
+        'json-summary',
     ],
     cache: false,
+    branches: 90,
+    lines: 90,
+    functions: 90,
+    statements: 90,
+    'check-coverage': true,
 };

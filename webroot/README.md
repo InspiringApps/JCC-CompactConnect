@@ -2,12 +2,18 @@
 # CompactConnect Frontend
 
 ## Table of Contents
+- **[Status](#status)**
 - **[Key](#key)**
 - **[Prerequisites](#prerequisites)**
 - **[Environment Configuration](#environment-configuration)**
 - **[Local Development](#local-development)**
 - **[Tests](#tests)**
 - **[Build](#build)**
+
+---
+## Status
+### Test Coverage
+![Statements](https://img.shields.io/badge/statements-98.07%25-brightgreen.svg?style=flat) ![Branches](https://img.shields.io/badge/branches-90.48%25-brightgreen.svg?style=flat) ![Functions](https://img.shields.io/badge/functions-94.18%25-brightgreen.svg?style=flat) ![Lines](https://img.shields.io/badge/lines-98.34%25-brightgreen.svg?style=flat)
 
 ---
 ## Key
@@ -197,6 +203,8 @@ Unit tests run non-interactively and can be included in automations.
 ### Coverage
 1. In a terminal, navigate to  `webroot/`
 1. `yarn test:unit:coverage`
+1. `yarn run make:badges`
+    - This generates the test coverage badges that are displayed near the top of this README file
 
 ### E2E
 Currently, E2E tests run interactively and should not be included in automations.
