@@ -2,7 +2,7 @@
   "openapi": "3.0.1",
   "info": {
     "title": "LicenseApi",
-    "version": "2025-02-07T23:29:44Z"
+    "version": "2025-02-11T05:33:01Z"
   },
   "servers": [
     {
@@ -1663,10 +1663,10 @@
                           "readPrivate": {
                             "type": "boolean"
                           },
-                          "read": {
+                          "admin": {
                             "type": "boolean"
                           },
-                          "admin": {
+                          "readSSN": {
                             "type": "boolean"
                           }
                         }
@@ -1686,6 +1686,9 @@
                                   "type": "boolean"
                                 },
                                 "write": {
+                                  "type": "boolean"
+                                },
+                                "readSSN": {
                                   "type": "boolean"
                                 }
                               },
@@ -1953,10 +1956,10 @@
                     "readPrivate": {
                       "type": "boolean"
                     },
-                    "read": {
+                    "admin": {
                       "type": "boolean"
                     },
-                    "admin": {
+                    "readSSN": {
                       "type": "boolean"
                     }
                   }
@@ -1976,6 +1979,9 @@
                             "type": "boolean"
                           },
                           "write": {
+                            "type": "boolean"
+                          },
+                          "readSSN": {
                             "type": "boolean"
                           }
                         },
@@ -2197,10 +2203,10 @@
                     "readPrivate": {
                       "type": "boolean"
                     },
-                    "read": {
+                    "admin": {
                       "type": "boolean"
                     },
-                    "admin": {
+                    "readSSN": {
                       "type": "boolean"
                     }
                   }
@@ -2220,6 +2226,9 @@
                             "type": "boolean"
                           },
                           "write": {
+                            "type": "boolean"
+                          },
+                          "readSSN": {
                             "type": "boolean"
                           }
                         },
@@ -2253,10 +2262,10 @@
                     "readPrivate": {
                       "type": "boolean"
                     },
-                    "read": {
+                    "admin": {
                       "type": "boolean"
                     },
-                    "admin": {
+                    "readSSN": {
                       "type": "boolean"
                     }
                   }
@@ -2276,6 +2285,9 @@
                             "type": "boolean"
                           },
                           "write": {
+                            "type": "boolean"
+                          },
+                          "readSSN": {
                             "type": "boolean"
                           }
                         },
