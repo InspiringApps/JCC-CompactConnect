@@ -444,7 +444,7 @@ def _generate_compact_transaction_report(transactions: list[dict], providers: di
             'Collected Transaction Fee',
             'Transaction Id',
             'Privilege Id',
-            'Transaction Status'
+            'Transaction Status',
         ]
     )
 
@@ -520,7 +520,7 @@ def _generate_jurisdiction_reports(
                 'Compact Fee',
                 'Transaction Id',
                 'Privilege Id',
-                'Transaction Status'
+                'Transaction Status',
             ]
         )
 
