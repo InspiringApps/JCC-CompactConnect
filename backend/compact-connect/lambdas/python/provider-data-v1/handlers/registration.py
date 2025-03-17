@@ -133,6 +133,50 @@ def register_provider(event: dict, context: LambdaContext):  # noqa: ARG001 unus
         metrics.add_metric(name=REGISTRATION_ATTEMPT_METRIC_NAME, unit=MetricUnit.NoUnit, value=0)
         raise CCRateLimitingException('Rate limit exceeded. Please try again later.')
 
+
+    # Get configuration for compact and jurisdiction
+    compact_config = config.compact_configuration_client.get_compact_configuration(body['compact'])
+    jurisdiction_config = config.compact_configuration_client.get_jurisdiction_configuration(
+        body['compact'], 
+        body['jurisdiction']
+    )
+    
+    # Check if registration is enabled for both compact and jurisdiction in the current environment
+    current_env = config.environment_name
+    
+    compact_registration_enabled = (
+        current_env in compact_config.licensee_registration_enabled_for_environments
+        if compact_config and hasattr(compact_config, 'licensee_registration_enabled_for_environments')
+        else False
+    )
+    
+    jurisdiction_registration_enabled = (
+        current_env in jurisdiction_config.licensee_registration_enabled_for_environments
+        if jurisdiction_config and hasattr(jurisdiction_config, 'licensee_registration_enabled_for_environments')
+        else False
+    )
+    
+    # If registration is not enabled for either compact or jurisdiction, return an error
+    if not compact_registration_enabled:
+        logger.info(
+            'Registration is not enabled for this compact',
+            compact=body['compact'],
+            environment=current_env
+        )
+        metrics.add_metric(name=REGISTRATION_ATTEMPT_METRIC_NAME, unit=MetricUnit.NoUnit, value=0)
+        raise CCInvalidRequestException(f'Registration is not currently available for the {body["compact"]} compact.')
+    
+    if not jurisdiction_registration_enabled:
+        logger.info(
+            'Registration is not enabled for this jurisdiction',
+            compact=body['compact'],
+            jurisdiction=body['jurisdiction'],
+            environment=current_env
+        )
+        metrics.add_metric(name=REGISTRATION_ATTEMPT_METRIC_NAME, unit=MetricUnit.NoUnit, value=0)
+        raise CCInvalidRequestException(f'Registration is not currently available for {body["jurisdiction"]}.')
+
+
     # Verify reCAPTCHA token
     if not verify_recaptcha(body['token']):
         logger.info(
