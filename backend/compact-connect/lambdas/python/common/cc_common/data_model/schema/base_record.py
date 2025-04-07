@@ -114,7 +114,7 @@ class CalculatedStatusRecordSchema(BaseRecordSchema):
             if (
                 in_data.get('jurisdictionStatus', 'active') == 'active'
                 and date.fromisoformat(in_data['dateOfExpiration'])
-                > datetime.now(tz=config.expiration_date_resolution_timezone).date()
+                >= datetime.now(tz=config.expiration_date_resolution_timezone).date()
             )
             else 'inactive'
         )
