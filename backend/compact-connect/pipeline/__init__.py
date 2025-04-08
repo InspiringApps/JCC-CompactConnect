@@ -141,14 +141,14 @@ class TestPipelineStack(BasePipelineStack):
             ),
         )
 
+
 class BetaPipelineStack(BasePipelineStack):
     """Pipeline stack for the beta environment, triggered by the main branch."""
 
     def __init__(self, scope: Construct, construct_id: str, *, cdk_path: str, **kwargs):
-        super().__init__(scope, construct_id,
-                         environment_name=BETA_ENVIRONMENT_NAME,
-                         removal_policy=RemovalPolicy.DESTROY,
-                         **kwargs)
+        super().__init__(
+            scope, construct_id, environment_name=BETA_ENVIRONMENT_NAME, removal_policy=RemovalPolicy.RETAIN, **kwargs
+        )
 
         self.beta_pipeline = BackendPipeline(
             self,
@@ -199,11 +199,9 @@ class ProdPipelineStack(BasePipelineStack):
     """Pipeline stack for the production environment, triggered by the main branch."""
 
     def __init__(self, scope: Construct, construct_id: str, *, cdk_path: str, **kwargs):
-        super().__init__(scope, construct_id,
-            environment_name=PROD_ENVIRONMENT_NAME,
-            removal_policy=RemovalPolicy.DESTROY,
-            **kwargs
-            )
+        super().__init__(
+            scope, construct_id, environment_name=PROD_ENVIRONMENT_NAME, removal_policy=RemovalPolicy.RETAIN, **kwargs
+        )
 
         self.prod_pipeline = BackendPipeline(
             self,
