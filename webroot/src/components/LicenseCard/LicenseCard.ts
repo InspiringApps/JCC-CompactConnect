@@ -10,15 +10,20 @@ import {
     toNative,
     Prop
 } from 'vue-facing-decorator';
+import LicenseIcon from '@components/Icons/LicenseIcon/LicenseIcon.vue';
 import { License, LicenseStatus } from '@/models/License/License.model';
 import { State } from '@/models/State/State.model';
 import moment from 'moment';
 
 @Component({
     name: 'LicenseCard',
+    components: {
+        LicenseIcon
+    }
 })
 class LicenseCard extends Vue {
     @Prop({ required: true }) license?: License;
+    @Prop({ default: false }) shouldIncludeLogo?: boolean;
 
     //
     // Computed
@@ -34,11 +39,7 @@ class LicenseCard extends Vue {
     }
 
     get isActive(): boolean {
-        return Boolean(this.license && this.license.statusState === LicenseStatus.ACTIVE);
-    }
-
-    get stateTitle(): string {
-        return this.$t('licensing.state');
+        return Boolean(this.license && this.license.status === LicenseStatus.ACTIVE);
     }
 
     get state(): State | null {
@@ -73,8 +74,12 @@ class LicenseCard extends Vue {
         return this.$t('licensing.noDiscipline');
     }
 
-    get licenseTitle(): string {
-        return this.$t('licensing.license');
+    get licenseTitleDisplay(): string {
+        return this.$t('licensing.license').toUpperCase();
+    }
+
+    get licenseNumber(): string {
+        return this.license?.licenseNumber || '';
     }
 
     get isPastExiprationDate(): boolean {
@@ -92,6 +97,10 @@ class LicenseCard extends Vue {
         }
 
         return isPastDate;
+    }
+
+    get licenseTypeDisplay(): string {
+        return this.license?.licenseTypeAbbreviation() || '';
     }
 }
 

@@ -1,17 +1,14 @@
 import json
-import os
 from datetime import date
 
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from cc_common.config import config, logger
+from cc_common.data_model.provider_record_util import ProviderRecordType, ProviderRecordUtility
+from cc_common.data_model.schema.common import ProviderEligibilityStatus
 from cc_common.data_model.schema.compact import COMPACT_TYPE, Compact
 from cc_common.data_model.schema.compact.api import CompactOptionsResponseSchema
-from cc_common.data_model.schema.jurisdiction import (
-    JURISDICTION_TYPE,
-    Jurisdiction,
-)
+from cc_common.data_model.schema.jurisdiction import JURISDICTION_TYPE, Jurisdiction
 from cc_common.data_model.schema.jurisdiction.api import JurisdictionOptionsResponseSchema
-from cc_common.data_model.schema.military_affiliation import MilitaryAffiliationStatus
 from cc_common.exceptions import (
     CCAwsServiceException,
     CCFailedTransactionException,
@@ -71,7 +68,7 @@ def get_purchase_privilege_options(event: dict, context: LambdaContext):  # noqa
     """
     compact = _get_caller_compact_custom_attribute(event)
 
-    options_response = config.data_client.get_privilege_purchase_options(
+    options_response = config.compact_configuration_client.get_privilege_purchase_options(
         compact=compact,
         pagination=event.get('queryStringParameters', {}),
     )
@@ -89,48 +86,6 @@ def get_purchase_privilege_options(event: dict, context: LambdaContext):  # noqa
     return options_response
 
 
-def _find_latest_active_license(all_licenses: list[dict]) -> dict | None:
-    """
-    In this scenario, we are looking for the most recent active license record for the user.
-    """
-    if len(all_licenses) == 0:
-        return None
-
-    # Last issued active license, if there are any active licenses
-    latest_active_licenses = sorted(
-        [license_data for license_data in all_licenses if license_data['status'] == 'active'],
-        key=lambda x: x['dateOfIssuance'],
-        reverse=True,
-    )
-    if latest_active_licenses:
-        return latest_active_licenses[0]
-
-    return None
-
-
-def _determine_military_affiliation_status(provider_records: list[dict]) -> bool:
-    """
-    Determine if the provider has an active military affiliation.
-    """
-    military_affiliation_records = [record for record in provider_records if record['type'] == 'militaryAffiliation']
-    if not military_affiliation_records:
-        return False
-
-    # we only need to check the most recent military affiliation record
-    latest_military_affiliation = sorted(military_affiliation_records, key=lambda x: x['dateOfUpload'], reverse=True)[0]
-
-    if latest_military_affiliation['status'] == MilitaryAffiliationStatus.INITIALIZING.value:
-        # this only occurs if the user's military document was not processed by S3 as expected. We need
-        # to return a message to the user letting them know they need to re-upload their document
-        raise CCInvalidRequestException(
-            'Your proof of military affiliation documentation was not successfully processed. '
-            'Please return to the Military Status page and re-upload your military affiliation '
-            'documentation or end your military affiliation.'
-        )
-
-    return latest_military_affiliation['status'] == MilitaryAffiliationStatus.ACTIVE.value
-
-
 def _validate_attestations(compact: str, attestations: list[dict], has_active_military_affiliation: bool = False):
     """
     Validate that all required attestations are present and are the latest version.
@@ -144,35 +99,30 @@ def _validate_attestations(compact: str, attestations: list[dict], has_active_mi
     # Get all latest attestations for this compact
     latest_attestations = config.compact_configuration_client.get_attestations_by_locale(compact=compact)
 
-    # TODO: We were asked not to enforce attestations until the frontend is updated # noqa: FIX002
-    #       to pass them in the request body. For now, we will simply check whatever
-    #       attestation is passed in to make sure it is the latest version. This conditional
-    #       should be removed once the frontend is updated to pass in all required attestations.
-    if os.environ.get('ENFORCE_ATTESTATIONS') == 'true':
-        # Build list of required attestations
-        required_ids = REQUIRED_ATTESTATION_IDS.copy()
-        if has_active_military_affiliation:
-            required_ids.append(MILITARY_ATTESTATION_ID)
+    # Build list of required attestations
+    required_ids = REQUIRED_ATTESTATION_IDS.copy()
+    if has_active_military_affiliation:
+        required_ids.append(MILITARY_ATTESTATION_ID)
 
-        # Validate investigation attestations - exactly one must be provided
-        investigation_attestations = [a for a in attestations if a['attestationId'] in INVESTIGATION_ATTESTATION_IDS]
-        if len(investigation_attestations) != 1:
-            raise CCInvalidRequestException(
-                'Exactly one investigation attestation must be provided '
-                f'(either {INVESTIGATION_ATTESTATION_IDS[0]} or {INVESTIGATION_ATTESTATION_IDS[1]})'
-            )
-        required_ids.append(investigation_attestations[0]['attestationId'])
+    # Validate investigation attestations - exactly one must be provided
+    investigation_attestations = [a for a in attestations if a['attestationId'] in INVESTIGATION_ATTESTATION_IDS]
+    if len(investigation_attestations) != 1:
+        raise CCInvalidRequestException(
+            'Exactly one investigation attestation must be provided '
+            f'(either {INVESTIGATION_ATTESTATION_IDS[0]} or {INVESTIGATION_ATTESTATION_IDS[1]})'
+        )
+    required_ids.append(investigation_attestations[0]['attestationId'])
 
-        # Check that all required attestations are present
-        provided_ids = {a['attestationId'] for a in attestations}
-        missing_ids = set(required_ids) - provided_ids
-        if missing_ids:
-            raise CCInvalidRequestException(f'Missing required attestations: {", ".join(missing_ids)}')
+    # Check that all required attestations are present
+    provided_ids = {a['attestationId'] for a in attestations}
+    missing_ids = set(required_ids) - provided_ids
+    if missing_ids:
+        raise CCInvalidRequestException(f'Missing required attestations: {", ".join(missing_ids)}')
 
-        # Check for any invalid attestation IDs
-        invalid_ids = provided_ids - set(required_ids)
-        if invalid_ids:
-            raise CCInvalidRequestException(f'Invalid attestations provided: {", ".join(invalid_ids)}')
+    # Check for any invalid attestation IDs
+    invalid_ids = provided_ids - set(required_ids)
+    if invalid_ids:
+        raise CCInvalidRequestException(f'Invalid attestations provided: {", ".join(invalid_ids)}')
 
     # Verify all provided attestations are the latest version
     for attestation in attestations:
@@ -192,9 +142,10 @@ def post_purchase_privileges(event: dict, context: LambdaContext):  # noqa: ARG0
     """
     This endpoint allows a provider to purchase privileges.
 
-    The request body should include the selected jurisdiction privileges to purchase, billing information,
+    The request body should include the license type, selected jurisdiction privileges to purchase, billing information,
     and attestations in the following format:
     {
+        "licenseType": "<license type>", # must match one of the license types from the provider's home state licenses
         "selectedJurisdictions": ["<jurisdiction postal abbreviations>"],
         "orderInformation": {
             "card": {
@@ -220,18 +171,20 @@ def post_purchase_privileges(event: dict, context: LambdaContext):  # noqa: ARG0
     :param event: Standard API Gateway event, API schema documented in the CDK ApiStack
     :param LambdaContext context:
     """
-    compact_name = _get_caller_compact_custom_attribute(event)
+    compact_abbr = _get_caller_compact_custom_attribute(event)
     body = json.loads(event['body'])
     selected_jurisdictions_postal_abbreviations = [
         postal_abbreviation.lower() for postal_abbreviation in body['selectedJurisdictions']
     ]
 
     # load the compact information
-    privilege_purchase_options = config.data_client.get_privilege_purchase_options(compact=compact_name)
+    privilege_purchase_options = config.compact_configuration_client.get_privilege_purchase_options(
+        compact=compact_abbr
+    )
 
     compact_configuration = [item for item in privilege_purchase_options['items'] if item['type'] == COMPACT_TYPE]
     if not compact_configuration:
-        message = f"Compact configuration not found for this caller's compact: {compact_name}"
+        message = f"Compact configuration not found for this caller's compact: {compact_abbr}"
         logger.error(message)
         raise CCInternalException(message)
     compact = Compact(compact_configuration[0])
@@ -255,69 +208,98 @@ def post_purchase_privileges(event: dict, context: LambdaContext):  # noqa: ARG0
         )
         raise CCInvalidRequestException('Invalid jurisdiction postal abbreviation')
 
-    # get the user's profile information to determine if they are active military
+    # get the user's profile information
     provider_id = _get_caller_provider_id_custom_attribute(event)
-    user_provider_data = config.data_client.get_provider(compact=compact_name, provider_id=provider_id)
-    provider_record = next((record for record in user_provider_data['items'] if record['type'] == 'provider'), None)
-    license_record = _find_latest_active_license(
-        [record for record in user_provider_data['items'] if record['type'] == 'license']
+    user_provider_data = config.data_client.get_provider(compact=compact_abbr, provider_id=provider_id)
+
+    home_state_selection = ProviderRecordUtility.get_provider_home_state_selection(user_provider_data['items'])
+    if home_state_selection is None:
+        raise CCInternalException('No home state selection found for this user')
+
+    # we now validate that the license type matches one of the license types from the home state license records
+    matching_license_records = ProviderRecordUtility.get_records_of_type(
+        user_provider_data['items'],
+        ProviderRecordType.LICENSE,
+        _filter=lambda record: record['licenseType'] == body['licenseType']
+        and record['jurisdiction'] == home_state_selection,
     )
 
-    # this should never happen, but we check just in case
-    if provider_record is None:
-        raise CCNotFoundException('Provider not found')
-    if license_record is None:
-        raise CCInvalidRequestException('No active license found for this user')
+    if not matching_license_records:
+        raise CCInvalidRequestException('Specified license type does not match any home state license type.')
 
-    license_jurisdiction = license_record['jurisdiction']
+    matching_license_record = matching_license_records[0]
+
+    if matching_license_record['status'] == ProviderEligibilityStatus.INACTIVE:
+        raise CCInvalidRequestException('No active license found in selected home state for this user')
+
+    provider_records = ProviderRecordUtility.get_records_of_type(
+        user_provider_data['items'],
+        ProviderRecordType.PROVIDER,
+    )
+    # this should never happen, but we check just in case
+    if not provider_records:
+        raise CCNotFoundException('Provider not found')
+    provider_record = provider_records[0]
+
+    license_jurisdiction = matching_license_record['jurisdiction']
     if license_jurisdiction.lower() in selected_jurisdictions_postal_abbreviations:
         raise CCInvalidRequestException(
-            f"Selected privilege jurisdiction '{license_jurisdiction}'" f' matches license jurisdiction'
+            f"Selected privilege jurisdiction '{license_jurisdiction}' matches license jurisdiction"
         )
 
-    existing_privileges = [record for record in user_provider_data['items'] if record['type'] == 'privilege']
+    all_privilege_records = ProviderRecordUtility.get_records_of_type(
+        user_provider_data['items'], ProviderRecordType.PRIVILEGE
+    )
+
+    existing_privileges_for_license = [
+        record for record in all_privilege_records if record['licenseType'] == matching_license_record['licenseType']
+    ]
     # a licensee can only purchase an existing privilege for a jurisdiction
     # if their existing privilege expiration date does not match their license expiration date
     # this is because the only reason a user should renew an existing privilege is if they have renewed
     # their license and want to extend the expiration date of their privilege to match the new license expiration date.
-    for privilege in existing_privileges:
+    for privilege in existing_privileges_for_license:
         if (
             privilege['jurisdiction'].lower() in selected_jurisdictions_postal_abbreviations
             # if their latest privilege expiration date matches the license expiration date they will not
             # receive any benefit from purchasing the same privilege, since the expiration date will not change
-            and privilege['dateOfExpiration'] == license_record['dateOfExpiration']
+            and privilege['dateOfExpiration'] == matching_license_record['dateOfExpiration']
+            and privilege['persistedStatus'] == 'active'
         ):
             raise CCInvalidRequestException(
                 f"Selected privilege jurisdiction '{privilege['jurisdiction'].lower()}'"
-                f' matches existing privilege jurisdiction'
+                f' matches existing privilege jurisdiction for license type'
             )
 
-    license_expiration_date: date = license_record['dateOfExpiration']
-    user_active_military = _determine_military_affiliation_status(user_provider_data['items'])
+    license_expiration_date: date = matching_license_record['dateOfExpiration']
+    user_active_military = ProviderRecordUtility.determine_military_affiliation_status(user_provider_data['items'])
 
     # Validate attestations are the latest versions before proceeding with the purchase
-    _validate_attestations(compact_name, body['attestations'], user_active_military)
+    _validate_attestations(compact_abbr, body.get('attestations', []), user_active_military)
 
     purchase_client = PurchaseClient()
     transaction_response = None
     try:
+        license_type_abbr = config.license_type_abbreviations[compact_abbr][matching_license_record['licenseType']]
         transaction_response = purchase_client.process_charge_for_licensee_privileges(
             licensee_id=provider_id,
             order_information=body['orderInformation'],
             compact_configuration=compact,
             selected_jurisdictions=selected_jurisdictions,
+            license_type_abbreviation=license_type_abbr,
             user_active_military=user_active_military,
         )
 
         # transaction was successful, now we create privilege records for the selected jurisdictions
         config.data_client.create_provider_privileges(
-            compact=compact_name,
+            compact=compact_abbr,
             provider_id=provider_id,
             jurisdiction_postal_abbreviations=selected_jurisdictions_postal_abbreviations,
             license_expiration_date=license_expiration_date,
             compact_transaction_id=transaction_response['transactionId'],
             provider_record=provider_record,
-            existing_privileges=existing_privileges,
+            existing_privileges_for_license=existing_privileges_for_license,
+            license_type=matching_license_record['licenseType'],
             attestations=body['attestations'],
         )
 
@@ -331,6 +313,6 @@ def post_purchase_privileges(event: dict, context: LambdaContext):  # noqa: ARG0
         if transaction_response:
             # void the transaction if it was successful
             purchase_client.void_privilege_purchase_transaction(
-                compact_name=compact_name, order_information=transaction_response
+                compact_abbr=compact_abbr, order_information=transaction_response
             )
             raise CCInternalException('Internal Server Error') from e

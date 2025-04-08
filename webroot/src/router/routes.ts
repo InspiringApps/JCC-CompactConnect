@@ -12,13 +12,31 @@ import guards from '@router/_guards';
 const routes: Array<RouteConfig> = [
     {
         path: '/',
-        redirect: '/Login',
+        redirect: '/Dashboard',
         beforeEnter: guards.noAuthGuard,
     },
     {
-        path: '/Login',
-        name: 'Login',
-        component: () => import(/* webpackChunkName: "home" */ '@pages/Login/Login.vue'),
+        path: '/Dashboard',
+        name: 'DashboardPublic',
+        component: () => import(/* webpackChunkName: "dashboard" */ '@pages/PublicDashboard/PublicDashboard.vue'),
+        beforeEnter: guards.noAuthGuard,
+    },
+    {
+        path: '/Search',
+        name: 'LicneseeSearchPublic',
+        component: () => import(/* webpackChunkName: "search" */ '@pages/PublicLicensingList/PublicLicensingList.vue'),
+        beforeEnter: guards.noAuthGuard,
+    },
+    {
+        path: '/Search/:compact/:licenseeId',
+        name: 'LicenseeDetailPublic',
+        component: () => import(/* webpackChunkName: "search" */ '@pages/PublicLicensingDetail/PublicLicensingDetail.vue'),
+        beforeEnter: guards.noAuthGuard,
+    },
+    {
+        path: '/Register',
+        name: 'RegisterLicensee',
+        component: () => import(/* webpackChunkName: "register" */ '@pages/RegisterLicensee/RegisterLicensee.vue'),
         beforeEnter: guards.noAuthGuard,
     },
     {
@@ -93,28 +111,49 @@ const routes: Array<RouteConfig> = [
         meta: { requiresAuth: true, licenseeAccess: true, },
     },
     {
-        path: '/:compact/Privileges/SelectPrivileges',
-        name: 'SelectPrivileges',
-        component: () => import(/* webpackChunkName: "privilegePurchase" */ '@pages/SelectPrivileges/SelectPrivileges.vue'),
-        meta: { requiresAuth: true, licenseeAccess: true, },
-    },
-    {
-        path: '/:compact/Privileges/FinalizePurchase',
-        name: 'FinalizePrivilegePurchase',
-        component: () => import(/* webpackChunkName: "privilegePurchase" */ '@pages/FinalizePrivilegePurchase/FinalizePrivilegePurchase.vue'),
-        meta: { requiresAuth: true, licenseeAccess: true, },
-    },
-    {
-        path: '/:compact/Privileges/PurchaseSuccessful',
-        name: 'PurchaseSuccessful',
-        component: () => import(/* webpackChunkName: "privilegePurchase" */ '@pages/PurchaseSuccessful/PurchaseSuccessful.vue'),
-        meta: { requiresAuth: true, licenseeAccess: true, },
-    },
-    {
-        path: '/:compact/Privileges/Attestation',
-        name: 'PrivilegePurchaseAttestation',
-        component: () => import(/* webpackChunkName: "privilegePurchase" */ '@pages/PrivilegePurchaseAttestation/PrivilegePurchaseAttestation.vue'),
-        meta: { requiresAuth: true, licenseeAccess: true, },
+        path: '/:compact/Privileges',
+        name: 'PrivilegePurchase',
+        component: () => import(/* webpackChunkName: "privilegePurchase" */ '@pages/PrivilegePurchase/PrivilegePurchase.vue'),
+        beforeEnter: guards.authGuard,
+        meta: { requiresAuth: true, licenseeAccess: true },
+        children: [
+            {
+                path: 'SelectLicense',
+                name: 'PrivilegePurchaseSelectLicense',
+                component: () => import(/* webpackChunkName: "privilegePurchase" */ '@components/PrivilegePurchaseLicense/PrivilegePurchaseLicense.vue'),
+                meta: { requiresAuth: true, licenseeAccess: true, },
+            },
+            {
+                path: 'ConfirmInfo',
+                name: 'PrivilegePurchaseInformationConfirmation',
+                component: () => import(/* webpackChunkName: "privilegePurchase" */ '@components/PrivilegePurchaseInformationConfirmation/PrivilegePurchaseInformationConfirmation.vue'),
+                meta: { requiresAuth: true, licenseeAccess: true, },
+            },
+            {
+                path: 'SelectPrivileges',
+                name: 'PrivilegePurchaseSelect',
+                component: () => import(/* webpackChunkName: "privilegePurchase" */ '@components/PrivilegePurchaseSelect/PrivilegePurchaseSelect.vue'),
+                meta: { requiresAuth: true, licenseeAccess: true, },
+            },
+            {
+                path: 'Attestation',
+                name: 'PrivilegePurchaseAttestation',
+                component: () => import(/* webpackChunkName: "privilegePurchase" */ '@components/PrivilegePurchaseAttestation/PrivilegePurchaseAttestation.vue'),
+                meta: { requiresAuth: true, licenseeAccess: true, },
+            },
+            {
+                path: 'FinalizePurchase',
+                name: 'PrivilegePurchaseFinalize',
+                component: () => import(/* webpackChunkName: "privilegePurchase" */ '@components/PrivilegePurchaseFinalize/PrivilegePurchaseFinalize.vue'),
+                meta: { requiresAuth: true, licenseeAccess: true, },
+            },
+            {
+                path: 'PurchaseSuccessful',
+                name: 'PrivilegePurchaseSuccessful',
+                component: () => import(/* webpackChunkName: "privilegePurchase" */ '@components/PrivilegePurchaseSuccessful/PrivilegePurchaseSuccessful.vue'),
+                meta: { requiresAuth: true, licenseeAccess: true, },
+            }
+        ]
     },
     {
         path: '/styleguide',

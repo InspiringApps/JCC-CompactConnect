@@ -8,6 +8,8 @@ Look here for continued documentation of the back-end design, as it progresses.
 - **[User Architecture](#user-architecture)**
 - **[Data Model](#data-model)**
 - **[Attestations](#attestations)**
+- **[Transaction History Reporting](#transaction-history-reporting)**
+- **[Audit Logging](#audit-logging)**
 
 ## Compacts and Jurisdictions
 
@@ -40,26 +42,53 @@ of the ingest chain architecture. Board admins and/or information systems have t
 - A bulk-upload mechanism that allows submitting of a CSV file with a much larger number of licenses for asynchronous
   validation and ingest.
 
-Internally, the ingest chain is an event-driven architecture, with a single ingest process that receives events from a
-single EventBridge event bus. Both the HTTP POST and the bulk-upload file publish events for each individual license
-to be validated.
+### SSN Access Controls
+The system implements strict controls for SSN access:
 
-### Bulk-Upload
-To upload a bulk license file, clients use an authenticated GET endpoint to receive a
+1. **Dedicated SSN Table**: All SSN data is stored in a dedicated DynamoDB table with strict access controls and customer-managed KMS encryption.
+2. **Limited API Access**: Only specific API endpoints can query SSN data for staff users with the proper `readSSN` scope.
+3. **Comprehensive Audit Logging**:
+   - All SSN data access through the application is logged with user identity, timestamp, and access context
+   - Direct database access is independently tracked through our secure audit logging system (see [Audit Logging](#audit-logging))
+4. **Restricted Operations**: The SSN table policy explicitly denies batch operations to prevent mass data extraction.
+
+#### SSN Role-Based Access
+Three specialized IAM roles control access to SSN data:
+   - `license_upload_role`: Used by upload handlers to encrypt SSN data for the preprocessing queue.
+   - `ingest_role`: Used by the license preprocessor to create and update SSN records in the SSN table.
+   - `api_query_role`: Used by the Get SSN API endpoint to allow staff users to read the SSN for an individual provider per request (staff user must have the readSSN permission).
+
+### Ingest Flow
+
+The ingest process begins when license data enters the system through one of the following two methods:
+
+#### HTTP POST
+   Clients can directly post an array of up to 100 licenses to the license data API. If they do this, the API will
+validate each license synchronously and return any validation errors to the client. If the licenses are valid,
+the API will send the validated licenses to the preprocessing queue.
+
+#### Bulk Upload
+   To upload a bulk license file, clients use an authenticated GET endpoint to receive a
 [presigned url](https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-presigned-url.html) that will allow the
 client to directly upload their file to s3. Once the file is uploaded to s3, an s3 event triggers a lambda to read and
 validate each license in the data file, then fire either a success or failure event to the license data event bus.
 
-### HTTP POST
-Clients can directly post an array of up to 100 licenses to the license data API. If they do this, the API will
-validate each license synchronously and return any validation errors to the client. If the licenses are valid,
-the API will publish an ingest event for each license.
+Both of these upload methods will place license records containing full SSNs in an SQS queue which is encrypted with the same KMS key as the SSN table to invoke the license preprocessor Lambda function.
 
-### Ingest processing
-Ingest events published to the event bus will be passed to an SQS queue, where ingest jobs will be batched for
-efficient processing. A lambda receives messages from the SQS queue. Each message corresponds to one license to be
-ingested. The lambda receives the data and creates or updates a corresponding license record in the DynamoDB license
-data table.
+#### **License Preprocessing**:
+   - A Lambda function processes messages from the encrypted queue
+   - For each license, it:
+     - Extracts the full SSN from the license data and creates/updates a record in the SSN table, which becomes associated with a provider ID. This provider id is unique to the CompactConnect system and is used to generate provider records within the system.
+     - After creating the SSN record, the lambda Publishes an event to the data event bus with the license data (minus the full SSN)
+
+   The event bus then triggers the license data processing Lambda function.
+
+#### **License Data Processing**:
+   - The data event bus receives the sanitized license events
+   - Downstream processors create provider and license records in the provider table, using only the last four digits of the SSN
+
+
+This architecture ensures that SSN data is protected throughout the ingest process while still allowing the system to associate licenses with the correct providers across jurisdictions.
 
 ### Asynchronous validation feedback
 Asynchronous validation feedback for boards to review is not yet implemented.
@@ -74,12 +103,12 @@ the accompanying [architecture diagram](./users-arch-diagram.pdf) for an illustr
 
 ### Staff Users
 
-Staff users will be granted a variety of different permissions, depending on their role. Read permissions are granted 
-to a user for an entire compact or not at all. Data writing and user administration permissions can each be granted to 
+Staff users will be granted a variety of different permissions, depending on their role. Read permissions are granted
+to a user for an entire compact or not at all. Data writing and user administration permissions can each be granted to
 a user per compact/jurisdiction combination. All of a compact user's permissions are stored in a DynamoDB record that is
 associated with their own Cognito user id. That record will be used to generate scopes in the Oauth2 token issued to them
 on login. See [Implementation of scopes](#implementation-of-scopes) for a detailed explanation of the design for exactly
-how permissions will be represented by scopes in an access token. See 
+how permissions will be represented by scopes in an access token. See
 [Implementation of permissions](#implementation-of-permissions) for a detailed explanation of the design for exactly
 how permissions are stored and translated into scopes.
 
@@ -98,7 +127,7 @@ Compact ED level staff will typically be granted the following permissions at th
 - `readPrivate` - grants access to view all data for any licensee within the compact.
 
 With the `admin` permission, they can grant other users the ability to write data for a particular
-jurisdiction and to create more users associated with a particular jurisdiction. They can also delete any user within 
+jurisdiction and to create more users associated with a particular jurisdiction. They can also delete any user within
 their compact, so long as that user does not have permissions associated with a different compact, in which case the
 permissions from the other compact would have to be removed first.
 
@@ -109,55 +138,64 @@ which allows them to read any licensee data within that compact that is not cons
 
 Board ED level staff may be granted the following permissions at a jurisdiction level:
 
-- `admin` - grants access to administrative functions for the jurisdiction, such as creating and managing users and 
+- `admin` - grants access to administrative functions for the jurisdiction, such as creating and managing users and
 their permissions.
 - `write` - grants access to write data for their particular jurisdiction (ie uploading license information).
-- `readPrivate` - grants access to view all information for any licensee that has either a license or privilege
-within their jurisdiction. 
-
-Users granted any of these permissions will also be implicitly granted the `readGeneral` scope for the associated compact,
-which allows them to read any licensee data that is not considered private.
+- `readPrivate` - grants access to view all information for any licensee that has either a license or privilege within their jurisdiction (except the full SSN, see `readSSN` permission below. This permission allows viewing the last 4 digits of the SSN).
+- `readSSN` - grants access to view the full SSN for any licensee that has either a license or privilege within their jurisdiction.
 
 #### Implementation of Scopes
 
-AWS Cognito integrates with API Gateway to provide
-[authorizers](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-integrate-with-cognito.html) on an
-API that can verify the tokens issued by a given User Pool and to protect access based on scopes belonging to
+AWS Cognito integrates with API Gateway to provide [authorizers](https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-integrate-with-cognito.html)
+on an API that can verify the tokens issued by a given User Pool and to protect access based on scopes belonging to
 [Resource Servers](https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pools-define-resource-servers.html)
-associated with that User Pool. In the Staff Users user pool, we represent each compact as its own Resource Server, with
-associated scopes. Unfortunately, because resource servers support only up to 100 scopes each, and we would like to
-control permission to write to or administrate each of more than 50 jurisdictions independently, the combinations would
-require more than 100 scopes per resource server.
+associated with that User Pool.
 
-To design around the 100 scope limit, we will have to split authorization into two layers: coarse- and fine-grained.
-We can rely on the Cognito authorizers to protect our API endpoints based on fewer coarse-grained scopes, then
-protect the more fine-grained access within the API endpoint logic. The Staff User pool resource servers are
-configured with `readGeneral`, `write`, and `admin` scopes. The `readGeneral` scope is implicitly granted to all users in
-the system, and is used to indicate that the user is allowed to read any compact's licensee data that is not considered
-private. The `write` and `admin` scopes, however, indicate only that the user is allowed to write or administrate 
-_something_ in the compact respectively, thus giving them access to the write or administrative API endpoints. We will 
-then rely on the API endpoint logic to refine their access based on the more fine-grained access scopes.
+The Staff Users pool implements authorization using resource servers configured for each jurisdiction and compact. This design allows for efficient management of permissions while staying within AWS Cognito's limits (100 scopes per resource server, 300 resource servers per user pool).
 
-In addition to the `readGeneral` scope, there is a `readPrivate` scope, which can be granted at both compact and 
-jurisdiction levels. This permission indicates the user can read all of a compact's provider data (licenses and privileges),
-so long as the provider has at least one license or privilege within their jurisdiction or the user has compact-wide 
-permissions.
+Each jurisdiction has its own resource server with scopes that control access to that jurisdiction's data across different compacts. For example, the Kentucky (KY) resource server would have scopes like:
 
-To compliment each of the `write` and `admin` scopes, there will be at least one, more specific, scope, 
-to indicate _what_ within the compact they are allowed to write or administrate, respectively. In the case of `write` 
-scopes, a jurisdiction-specific scope will control what jurisdiction they are able to write data for (i.e. `al.write` 
-grants permission to write data for the Alabama jurisdiction). Similarly, `admin` scopes can have a jurisdiction-specific
-scope like `al.admin` and can also have a compact-wide scope like `aslp.admin`, which grants permission for a compact
-executive director to perform the administrative functions for the Audiology and Speech Language Pathology compact.
+```
+ky/aslp.admin
+ky/aslp.write
+ky/aslp.readPrivate
+ky/aslp.readSSN
+ky/octp.admin
+ky/octp.write
+ky/octp.readPrivate
+ky/octp.readSSN
+```
+
+If a user has the `ky/aslp.admin` scope, for example, they will be able to perform any admin action within the Kentucky jurisdiction within the ASLP compact.
+
+Each compact also has its own resource server with compact-wide scopes, which are used to control access to data across all jurisdictions within a compact:
+
+```
+aslp/admin
+aslp/readGeneral
+aslp/readPrivate
+aslp/readSSN
+```
+
+If a user has the `aslp/admin` scope, for example, they will be able to perform any admin action for any jurisdiction within the compact.
+
+Staff users in a compact will also be implicitly granted the `readGeneral` scope for the associated compact,
+which allows them to read any licensee data that is not considered private.
+
+In addition to the `readGeneral` scope, there is a `readPrivate` scope, which can be granted at both compact and jurisdiction levels. This permission indicates the user can read all of a compact's provider data (licenses and privileges),so long as the provider has at least one license or privilege within their jurisdiction or the user has compact-wide permissions.
 
 #### Implementation of Permissions
 
-Staff user permissions will be stored in a dedicated DynamoDB table, which will have a single record for each user
-and include a data structure that details that user's particular permissions. Cognito allows for a lambda to be [invoked
+Staff user permissions are stored in a dedicated DynamoDB table, which has a single record for each user
+and includes a data structure that details that user's particular permissions. Cognito allows for a lambda to be [invoked
 just before it issues a token](https://docs.aws.amazon.com/cognito/latest/developerguide/user-pool-lambda-pre-token-generation.html).
-We will use that feature to retrieve the database record for each user, parse the permissions data and translate those
-into scopes, which will be added to the Cognito token. The lambda will generate both the coarse- and fine-grained
-scopes to be added to the token, thus being the single control point for access control on the token-issuing side.
+We use that feature to retrieve the database record for each user, parse the permissions data and translate those
+into scopes, which will be added to the Cognito token. The lambda generates scopes based on both compact-level and
+jurisdiction-level permissions, ensuring consistent access control at token issuance.
+
+#### Machine-to-machine app clients
+
+See README under the [app_clients](../../app_clients/README.md) directory for more information about how machine-to-machine app clients are configured and used in the system.
 
 ### Licensee Users
 
@@ -262,3 +300,151 @@ When purchasing privileges, providers must accept all required attestations. The
 4. Returns a 400 error if any attestation is invalid or outdated
 
 This ensures that providers always see and accept the most current version of required attestations, and we maintain an audit trail of which attestation versions were accepted for each privilege purchase.
+
+## Transaction History Reporting
+[Back to top](#backend-design)
+
+![Transaction History Reporting Diagram](/backend/compact-connect/docs/design/transaction-history-reporting-diagram.pdf)
+
+When a provider purchases privileges in a compact, the purchase is recorded in the compact's payment processor (currently we only support Authorize.net). There is at least a 24 hour delay before the transaction is settled. The transaction history reporting system is designed to track and report on all settled transactions in the system.
+
+### Transaction Processing Overview
+
+The system processes transactions through multiple stages:
+
+1. **Initial Purchase**
+   - Provider initiates a purchase for one or more privileges
+   - System creates an `authCaptureTransaction` in Authorize.net with line items for:
+     - Each jurisdiction privilege
+     - Compact administrative fees
+     - Transaction fees (if configured)
+   - Transaction details include provider ID in the order description for tracking
+
+2. **Settlement Process**
+   - By default, Authorize.net batches settlements daily at 4:00 PM Pacific Time (this can be changed by the Authorize.net account owners)
+   - Each batch contains transactions since the last batch was settled
+   - Batches can be in one of several states:
+     - Settled: Successfully processed
+     - Settlement Error: Failed to settle (triggers email notification to compact support contacts) see [Batch Settlement Failure Handling](#batch-settlement-failure-handling)
+
+3. **Transaction Collection**
+   - A Step Function workflow runs daily at 5:00 PM Pacific Time (1:00 AM UTC)
+   - The workflow:
+     - Queries Authorize.net for all batches in the last 24 hours
+     - Processes transactions in groups of up to 500 (to avoid lambda timeouts)
+     - Retrieves the associated privilege id from CompactConnect's provider data DynamoDB Table for the privilege that was purchased for each transaction and injects it into the data that is stored in the Transaction History DynamoDB Table.
+     - Handles pagination across multiple batches
+     - Sends email alerts if settlement errors are detected
+
+4. **Reporting**
+
+   The System generates two types of reports:
+     - **Compact Reports**:
+       - Financial summary showing total amount of fees collected
+       - Detailed transaction listing
+     - **Jurisdiction Reports**:
+       - Transaction details for privileges purchased in their jurisdiction
+
+
+All of these reports are sent out weekly (Fridays at 10:00 PM UTC) and monthly (1st day of each month at 8:00 AM UTC).
+
+### Data Storage
+#### Transaction History
+Transactions are stored in DynamoDB with the following key structure:
+```
+PK: COMPACT#{compact}#TRANSACTIONS#MONTH#{YYYY-MM}
+SK: COMPACT#{compact}#TIME#{batch settled time epoch_timestamp}#BATCH#{batch_id}#TX#{transaction_id}
+```
+
+This structure enables:
+- Efficient querying of transactions by compact and time period
+- Monthly partitioning for performance
+
+#### Report Files
+Reports are stored in the Transaction Reports S3 bucket as compressed ZIP files under the following path:
+```
+compact/{compact}/reports/{compact-transactions|jurisdiction-transactions}/reporting-cycle/{monthly|weekly}/{YYYY}/{MM}/{DD}/{file-name}.zip
+```
+The date in the path corresponds to the date that the report was generated.
+
+
+### Monitoring and Alerts
+
+The system includes several monitoring mechanisms:
+- CloudWatch alarms for workflow failures
+- Alerts for batch settlement errors
+- Duration monitoring for long-running processes
+- Error tracking for transaction processing issues
+
+This design ensures reliable transaction processing and reporting while maintaining a complete audit trail of all successfully settled financial transactions within the system.
+
+### Batch Settlement Failure Handling
+If a batch fails to settle for whatever reason, Authorize.net will return the batch with a status of `Settlement Error`. From their [documentation about possible transaction statuses](https://support.authorize.net/knowledgebase/Knowledgearticle/?code=000001360), a settlement error can result from one of the following:
+ > - Entire Batch with Settlement Error: If all transactions in the batch show a "Settlement Error" status, it may indicate that the batch initially failed. If the batch was not reset or made viewable within 30 days of the failure, further action cannot be taken. If funding is missing for this batch, please contact your Merchant Service Provider (MSP) to explore possible solutions or reprocess the transactions from that batch.
+ > - Partial Batch with Settlement Error: If one or more (but not all) transactions in the batch show a "Settlement Error" status, there might be a configuration issue (likely related to accepted card types) where the processor authorized the transactions but rejected them at settlement. In this case, please ask your MSP to investigate the issue with the processor.
+
+When a batch fails to settle, we send an email to the compact's support contacts alerting them to reach out to their MSP to investigate the issue. After the issue is resolved, Authorize.net can be instructed to reprocess the batch. Per Authorize.net [support documentation](https://community.developer.cybersource.com/t5/Integration-and-Testing/What-happens-to-a-batch-having-a-settlementState-of/td-p/58993):
+
+> A failed batch needs to be reset and this means that the merchant will need to contact Authorize.Net to request for a batch reset. It is important to note that batches over 30 days old cannot be reset. When resetting a batch, merchant needs to confirm first with their MSP (Merchant Service Provider) that the batch was not funded, and the error that failed the batch has been fixed, before submitting a ticket for the batch to be reset.
+
+> Resetting a batch doesn't really modify the batch, what it does, is it takes the transactions from the batch and puts them back into unsetttled so they settle with the next batch. Those transactions that were in the failed batch will still have the original submit date.
+
+For this reason, we use the batch settlement time as the timestamp for the transaction records we store in the transaction history table. This ensures that any transactions that are in a batch which fails to settle will eventually be processed and stored in the transaction history table.
+
+## Audit Logging
+[Back to top](#backend-design)
+
+### Overview
+
+CompactConnect implements a comprehensive audit logging system using AWS CloudTrail to track access to sensitive data, particularly DynamoDB tables containing SSNs. This system provides accountability, supports audit requirements, and enables incident investigation when needed.
+
+### Multi-Account Architecture
+
+The audit logging infrastructure is deployed across two AWS accounts for enhanced security:
+
+1. **Logs Account**: Contains secured S3 buckets for storing:
+   - CloudTrail logs from sensitive table operations
+   - Access logs from all buckets for comprehensive tracking
+
+2. **Management Account**: Hosts the CloudTrail organization trail and the KMS encryption key
+
+This separation follows security best practices and ensures that those who can access sensitive data can't modify the logs of their actions, and vice versa.
+
+### Understanding CloudTrail Organization Trail
+
+AWS CloudTrail is a service that records API calls made within an AWS account. Our implementation uses an organization trail, which provides several important capabilities:
+
+- **Cross-Account Visibility**: A single trail that captures activities across all AWS accounts in our organization
+- **Centralized Logging**: All logs are automatically sent to a central, secured location in the logs account
+- **Data Event Focus**: The trail is configured to capture specific "data events" - detailed records of when someone reads data from sensitive tables
+- **Consistent Policy**: The same logging standards are automatically applied to all accounts in the organization
+
+This approach ensures that all interactions with sensitive data are captured, regardless of which account the user is operating from.
+
+### Logging Strategy
+
+The system balances comprehensive coverage with cost efficiency:
+
+- **Selective Logging**: We focus on tables containing the most sensitive data, particularly SSNs
+- **Read Operations**: We track primarily read operations as these represent potential data exposure
+- **Opt-In Design**: Tables are explicitly marked for logging with a special suffix (-DataEventsLog)
+
+### Key Security Features
+
+Several important controls protect the integrity of the audit logs:
+
+- **Immutable Storage**: S3 buckets with versioning and support for object locks, to prevent log deletion or modification
+- **Encryption**: KMS encryption with restricted access protects log content
+- **Break-Glass Access**: A security model where even administrators need special authorization to access logs
+- **Organization-wide Visibility**: The CloudTrail is configured as an organization trail, capturing events across all accounts
+
+### Business Benefits
+
+This audit logging architecture delivers several advantages:
+
+- **Security Governance**: Supports audit requirements and security best practices
+- **Forensic Capability**: Enables detailed investigation of any potential data misuse
+- **Accountability**: Creates clear audit trails of who accessed what data and when
+- **Cost Optimization**: Intelligent storage tiering and selective logging minimize expenses
+
+The system operates automatically in the background, requiring minimal day-to-day management while providing essential security and governance capabilities.

@@ -20,80 +20,101 @@ export const staffAccount = {
         email: 'test@example.com',
     },
     permissions: {
-        aslp: {
+        octp: {
             actions: {
-                read: true,
                 admin: true,
+                readPrivate: true,
+                readSsn: true,
             },
             jurisdictions: {
                 al: {
                     actions: {
                         admin: true,
                         write: true,
+                        readPrivate: true,
+                        readSsn: true,
                     },
                 },
                 co: {
                     actions: {
                         admin: true,
                         write: true,
+                        readPrivate: true,
+                        readSsn: true,
                     },
                 },
                 ky: {
                     actions: {
                         admin: true,
                         write: true,
+                        readPrivate: true,
+                        readSsn: true,
                     },
                 },
             },
         },
-        octp: {
+        aslp: {
             actions: {
-                read: true,
                 admin: true,
+                readPrivate: true,
+                readSsn: true,
             },
             jurisdictions: {
                 ak: {
                     actions: {
                         admin: true,
                         write: true,
+                        readPrivate: true,
+                        readSsn: true,
                     },
                 },
                 ar: {
                     actions: {
                         admin: true,
                         write: true,
+                        readPrivate: true,
+                        readSsn: true,
                     },
                 },
                 co: {
                     actions: {
                         admin: true,
                         write: true,
+                        readPrivate: true,
+                        readSsn: true,
                     },
                 },
             },
         },
         coun: {
             actions: {
-                read: true,
                 admin: true,
+                readPrivate: true,
+                readSsn: true,
             },
             jurisdictions: {
                 al: {
                     actions: {
                         admin: true,
                         write: true,
+                        readPrivate: true,
+                        readSsn: true,
                     },
                 },
                 co: {
                     actions: {
                         admin: true,
                         write: true,
+                        readPrivate: true,
+                        readSsn: true,
                     },
                 },
                 ky: {
                     actions: {
                         admin: true,
                         write: true,
+                        readPrivate: true,
+                        readSsn: true,
                     },
                 },
             },
@@ -115,17 +136,24 @@ export const uploadRequestData = {
 export const privilegePurchaseOptionsResponse = {
     items: [
         {
-            compactName: 'aslp',
+            compactAbbr: 'octp',
             compactCommissionFee: {
                 feeType: 'FLAT_RATE',
                 feeAmount: 3.5
+            },
+            transactionFeeConfiguration: {
+                licenseeCharges: {
+                    active: true,
+                    chargeType: 'FLAT_FEE_PER_PRIVILEGE',
+                    chargeAmount: 2
+                }
             },
             type: 'compact'
         },
         {
             jurisdictionName: 'kentucky',
             postalAbbreviation: 'ky',
-            compact: 'aslp',
+            compact: 'octp',
             jurisdictionFee: 100,
             militaryDiscount: {
                 active: true,
@@ -140,7 +168,7 @@ export const privilegePurchaseOptionsResponse = {
         {
             jurisdictionName: 'nebraska',
             postalAbbreviation: 'ne',
-            compact: 'aslp',
+            compact: 'octp',
             jurisdictionFee: 100,
             militaryDiscount: {
                 active: true,
@@ -155,7 +183,7 @@ export const privilegePurchaseOptionsResponse = {
         {
             jurisdictionName: 'ohio',
             postalAbbreviation: 'oh',
-            compact: 'aslp',
+            compact: 'octp',
             jurisdictionFee: 100,
             militaryDiscount: {
                 active: true,
@@ -170,7 +198,7 @@ export const privilegePurchaseOptionsResponse = {
         {
             jurisdictionName: 'massachusetts',
             postalAbbreviation: 'ma',
-            compact: 'aslp',
+            compact: 'octp',
             jurisdictionFee: 100,
             militaryDiscount: {
                 active: false,
@@ -185,7 +213,7 @@ export const privilegePurchaseOptionsResponse = {
         {
             jurisdictionName: 'vermont',
             postalAbbreviation: 'vt',
-            compact: 'aslp',
+            compact: 'octp',
             jurisdictionFee: 100,
             militaryDiscount: {
                 active: false,
@@ -200,7 +228,7 @@ export const privilegePurchaseOptionsResponse = {
         {
             jurisdictionName: 'virginia',
             postalAbbreviation: 'va',
-            compact: 'aslp',
+            compact: 'octp',
             jurisdictionFee: 100,
             militaryDiscount: {
                 active: false,
@@ -215,7 +243,7 @@ export const privilegePurchaseOptionsResponse = {
         {
             jurisdictionName: 'colorado',
             postalAbbreviation: 'co',
-            compact: 'aslp',
+            compact: 'octp',
             jurisdictionFee: 100,
             militaryDiscount: {
                 active: false,
@@ -230,7 +258,7 @@ export const privilegePurchaseOptionsResponse = {
         {
             jurisdictionName: 'maine',
             postalAbbreviation: 'me',
-            compact: 'aslp',
+            compact: 'octp',
             jurisdictionFee: 100,
             militaryDiscount: {
                 active: false,
@@ -245,7 +273,7 @@ export const privilegePurchaseOptionsResponse = {
         {
             jurisdictionName: 'connecticut',
             postalAbbreviation: 'ct',
-            compact: 'aslp',
+            compact: 'octp',
             jurisdictionFee: 100,
             militaryDiscount: {
                 active: false,
@@ -260,7 +288,7 @@ export const privilegePurchaseOptionsResponse = {
         {
             jurisdictionName: 'rhode island',
             postalAbbreviation: 'ri',
-            compact: 'aslp',
+            compact: 'octp',
             jurisdictionFee: 100,
             militaryDiscount: {
                 active: false,
@@ -275,7 +303,7 @@ export const privilegePurchaseOptionsResponse = {
         {
             jurisdictionName: 'nevada',
             postalAbbreviation: 'nv',
-            compact: 'aslp',
+            compact: 'octp',
             jurisdictionFee: 100,
             militaryDiscount: {
                 active: false,
@@ -290,7 +318,7 @@ export const privilegePurchaseOptionsResponse = {
         {
             jurisdictionName: 'kansas',
             postalAbbreviation: 'ks',
-            compact: 'aslp',
+            compact: 'octp',
             jurisdictionFee: 100,
             militaryDiscount: {
                 active: false,
@@ -305,7 +333,7 @@ export const privilegePurchaseOptionsResponse = {
         {
             jurisdictionName: 'alaska',
             postalAbbreviation: 'ak',
-            compact: 'aslp',
+            compact: 'octp',
             jurisdictionFee: 100,
             militaryDiscount: {
                 active: false,
@@ -320,7 +348,7 @@ export const privilegePurchaseOptionsResponse = {
         {
             jurisdictionName: 'arkansas',
             postalAbbreviation: 'ar',
-            compact: 'aslp',
+            compact: 'octp',
             jurisdictionFee: 100,
             militaryDiscount: {
                 active: false,
@@ -343,40 +371,39 @@ export const privilegePurchaseOptionsResponse = {
 export const licensees = {
     prevLastKey: 'xyz',
     lastKey: 'abc',
-    items: [
+    providers: [
         {
+            homeJurisdictionSelection: {
+                dateOfSelection: '2025-02-19',
+                compact: 'octp',
+                providerId: '1',
+                jurisdiction: 'co',
+                type: 'homeJurisdictionSelection',
+                dateOfUpdate: '2025-02-19'
+            },
             privileges: [
                 {
                     licenseJurisdiction: 'al',
                     dateOfExpiration: '2025-08-29',
-                    compact: 'aslp',
+                    compact: 'octp',
                     providerId: '1',
                     type: 'privilege',
                     dateOfIssuance: '2022-08-29',
                     dateOfRenewal: '2024-08-29',
                     dateOfUpdate: '2024-08-29',
-                    status: 'inactive'
-                },
-                {
-                    licenseJurisdiction: 'al',
-                    dateOfExpiration: '2024-08-29',
-                    compact: 'aslp',
-                    providerId: '1',
-                    type: 'privilege',
-                    dateOfIssuance: '2022-08-29',
-                    dateOfRenewal: '2023-08-29',
-                    dateOfUpdate: '2023-08-29',
+                    licenseType: 'occupational therapy assistant',
                     status: 'inactive'
                 },
                 {
                     licenseJurisdiction: 'ak',
                     dateOfExpiration: '2025-08-29',
-                    compact: 'aslp',
+                    compact: 'octp',
                     providerId: '1',
                     type: 'privilege',
                     dateOfIssuance: '2023-08-29',
                     dateOfRenewal: '2024-08-29',
                     dateOfUpdate: '2024-08-29',
+                    licenseType: 'occupational therapy assistant',
                     status: 'active',
                     history: [{
                         type: 'privilegeUpdate',
@@ -397,10 +424,11 @@ export const licensees = {
                 {
                     licenseJurisdiction: 'ar',
                     dateOfExpiration: '2026-08-29',
-                    compact: 'aslp',
+                    compact: 'octp',
                     providerId: '1',
                     type: 'privilege',
                     dateOfIssuance: '2023-08-29',
+                    licenseType: 'occupational therapy assistant',
                     dateOfRenewal: '2024-08-29',
                     dateOfUpdate: '2024-08-29',
                     status: 'active'
@@ -408,43 +436,34 @@ export const licensees = {
                 {
                     licenseJurisdiction: 'ma',
                     dateOfExpiration: '2026-08-29',
-                    compact: 'aslp',
+                    compact: 'octp',
                     providerId: '1',
                     type: 'privilege',
                     dateOfIssuance: '2023-08-29',
+                    licenseType: 'occupational therapy assistant',
                     dateOfRenewal: '2024-08-29',
                     dateOfUpdate: '2024-08-29',
                     status: 'active'
                 },
                 {
-                    licenseJurisdiction: 'ma',
-                    dateOfExpiration: '2024-08-29',
-                    compact: 'aslp',
-                    providerId: '1',
-                    type: 'privilege',
-                    dateOfIssuance: '2023-08-29',
-                    dateOfRenewal: '2023-08-29',
-                    dateOfUpdate: '2023-08-29',
-                    status: 'inactive'
-                },
-                {
                     licenseJurisdiction: 'me',
                     dateOfExpiration: '2020-08-29',
-                    compact: 'aslp',
+                    compact: 'octp',
                     providerId: '1',
                     type: 'privilege',
                     dateOfIssuance: '2019-08-29',
+                    licenseType: 'occupational therapy assistant',
                     dateOfRenewal: '2024-08-29',
                     dateOfUpdate: '2024-08-29',
                     status: 'inactive'
                 }
             ],
             licenseJurisdiction: 'co',
-            compact: 'aslp',
+            compact: 'octp',
             homeAddressStreet2: '',
             militaryAffiliations: [{
                 affiliationType: 'militaryMember',
-                compact: 'aslp',
+                compact: 'octp',
                 dateOfUpdate: '2024-08-29',
                 dateOfUpload: '2024-08-29',
                 documentKeys: 'key',
@@ -452,33 +471,33 @@ export const licensees = {
                 status: 'active'
             }],
             npi: '6944447281',
+            licenseNumber: 'A-944447281',
             homeAddressPostalCode: '',
             givenName: 'Janet',
             homeAddressStreet1: '1640 Riverside Drive',
-            militaryWaiver: true,
             emailAddress: 'test@test.com',
             dateOfBirth: '1990-08-29',
             privilegeJurisdictions: [
                 'al'
             ],
             type: 'provider',
-            ssn: '085-32-1496',
-            licenseType: 'audiologist',
+            ssnLastFour: '1111',
+            licenseType: 'occupational therapy assistant',
             licenses: [
                 {
-                    compact: 'aslp',
+                    compact: 'octp',
                     homeAddressStreet2: '',
                     npi: '6944447281',
+                    licenseNumber: 'A-944447281',
                     homeAddressPostalCode: '',
                     jurisdiction: 'co',
                     givenName: 'Jane',
                     homeAddressStreet1: '1640 Riverside Drive',
-                    militaryWaiver: true,
                     dateOfBirth: '1990-08-29',
                     type: 'license-home',
                     dateOfIssuance: '2023-08-29',
-                    ssn: '085-32-1496',
-                    licenseType: 'audiologist',
+                    ssnLastFour: '1111',
+                    licenseType: 'occupational therapy assistant',
                     dateOfExpiration: '2025-08-29',
                     homeAddressState: 'co',
                     providerId: '1',
@@ -490,20 +509,20 @@ export const licensees = {
                     status: 'active'
                 },
                 {
-                    compact: 'aslp',
+                    compact: 'octp',
                     homeAddressStreet2: '',
                     npi: '6944447281',
+                    licenseNumber: 'A-944447281',
                     homeAddressPostalCode: '',
                     jurisdiction: 'co',
                     givenName: 'Jane',
                     homeAddressStreet1: '1640 Riverside Drive',
-                    militaryWaiver: true,
                     dateOfBirth: '1990-08-29',
                     type: 'license-home',
                     dateOfIssuance: '2023-08-29',
-                    ssn: '085-32-1496',
-                    licenseType: 'audiologist',
-                    dateOfExpiration: '2024-08-29',
+                    ssnLastFour: '1111',
+                    licenseType: 'occupational therapist',
+                    dateOfExpiration: '2026-08-29',
                     homeAddressState: 'co',
                     providerId: '1',
                     dateOfRenewal: '2023-08-29',
@@ -511,46 +530,22 @@ export const licensees = {
                     homeAddressCity: 'Riverside',
                     middleName: '',
                     dateOfUpdate: '2023-08-29',
-                    status: 'inactive'
+                    status: 'active'
                 },
                 {
-                    compact: 'aslp',
+                    compact: 'octp',
                     homeAddressStreet2: '',
+                    licenseNumber: 'A-944447281',
                     npi: '6944447281',
                     homeAddressPostalCode: '',
                     jurisdiction: 'ca',
                     givenName: 'Jane',
                     homeAddressStreet1: '1640 Riverside Drive',
-                    militaryWaiver: true,
                     dateOfBirth: '1990-08-29',
                     type: 'license-home',
                     dateOfIssuance: '2024-08-29',
-                    ssn: '085-32-1496',
-                    licenseType: 'audiologist',
-                    dateOfExpiration: '2024-08-29',
-                    homeAddressState: 'co',
-                    providerId: '1',
-                    dateOfRenewal: '2024-08-29',
-                    familyName: 'Doe',
-                    homeAddressCity: 'Riverside',
-                    middleName: '',
-                    dateOfUpdate: '2024-08-29',
-                    status: 'active'
-                },
-                {
-                    compact: 'aslp',
-                    homeAddressStreet2: '',
-                    npi: '6944447281',
-                    homeAddressPostalCode: '',
-                    jurisdiction: 'nv',
-                    givenName: 'Jane',
-                    homeAddressStreet1: '1640 Riverside Drive',
-                    militaryWaiver: true,
-                    dateOfBirth: '1990-08-29',
-                    type: 'license-home',
-                    dateOfIssuance: '2023-08-29',
-                    ssn: '085-32-1496',
-                    licenseType: 'audiologist',
+                    ssnLastFour: '1111',
+                    licenseType: 'occupational therapy assistant',
                     dateOfExpiration: '2024-08-29',
                     homeAddressState: 'co',
                     providerId: '1',
@@ -562,19 +557,43 @@ export const licensees = {
                     status: 'inactive'
                 },
                 {
-                    compact: 'aslp',
+                    compact: 'octp',
                     homeAddressStreet2: '',
+                    licenseNumber: 'A-944447281',
                     npi: '6944447281',
                     homeAddressPostalCode: '',
                     jurisdiction: 'nv',
                     givenName: 'Jane',
                     homeAddressStreet1: '1640 Riverside Drive',
-                    militaryWaiver: true,
+                    dateOfBirth: '1990-08-29',
+                    type: 'license-home',
+                    dateOfIssuance: '2023-08-29',
+                    ssnLastFour: '1111',
+                    licenseType: 'occupational therapy assistant',
+                    dateOfExpiration: '2024-08-29',
+                    homeAddressState: 'co',
+                    providerId: '1',
+                    dateOfRenewal: '2024-08-29',
+                    familyName: 'Doe',
+                    homeAddressCity: 'Riverside',
+                    middleName: '',
+                    dateOfUpdate: '2024-08-29',
+                    status: 'inactive'
+                },
+                {
+                    compact: 'octp',
+                    homeAddressStreet2: '',
+                    licenseNumber: 'A-944447281',
+                    npi: '6944447281',
+                    homeAddressPostalCode: '',
+                    jurisdiction: 'nv',
+                    givenName: 'Jane',
+                    homeAddressStreet1: '1640 Riverside Drive',
                     dateOfBirth: '1990-08-29',
                     type: 'license-home',
                     dateOfIssuance: '2024-08-29',
-                    ssn: '085-32-1496',
-                    licenseType: 'audiologist',
+                    ssnLastFour: '1111',
+                    licenseType: 'occupational therapy assistant',
                     dateOfExpiration: '2023-08-29',
                     homeAddressState: 'co',
                     providerId: '1',
@@ -597,95 +616,19 @@ export const licensees = {
             status: 'active'
         },
         {
+            homeJurisdictionSelection: {
+                dateOfSelection: '2025-02-19',
+                compact: 'octp',
+                providerId: '2',
+                jurisdiction: 'co',
+                type: 'homeJurisdictionSelection',
+                dateOfUpdate: '2025-02-19'
+            },
             privileges: [
                 {
                     licenseJurisdiction: 'al',
                     dateOfExpiration: '2024-08-29',
-                    compact: 'aslp',
-                    providerId: '1',
-                    type: 'privilege',
-                    dateOfIssuance: '2023-08-29',
-                    dateOfUpdate: '2024-08-29',
-                    status: 'active'
-                },
-                {
-                    licenseJurisdiction: 'ak',
-                    dateOfExpiration: '2024-08-29',
-                    compact: 'aslp',
-                    providerId: '1',
-                    type: 'privilege',
-                    dateOfIssuance: '2023-08-29',
-                    dateOfUpdate: '2024-08-29',
-                    status: 'active'
-                },
-                {
-                    licenseJurisdiction: 'ar',
-                    dateOfExpiration: '2023-08-29',
-                    compact: 'aslp',
-                    providerId: '1',
-                    type: 'privilege',
-                    dateOfIssuance: '2023-08-29',
-                    dateOfUpdate: '2024-08-29',
-                    status: 'active'
-                }
-            ],
-            licenseJurisdiction: 'co',
-            compact: 'aslp',
-            homeAddressStreet2: '',
-            npi: '6944447281',
-            homeAddressPostalCode: '',
-            givenName: 'Jane',
-            homeAddressStreet1: '1640 Riverside Drive',
-            militaryWaiver: true,
-            dateOfBirth: '1990-08-29',
-            privilegeJurisdictions: [
-                'al'
-            ],
-            type: 'provider',
-            ssn: '085-32-1496',
-            licenseType: 'audiologist',
-            licenses: [
-                {
-                    compact: 'aslp',
-                    homeAddressStreet2: '',
-                    npi: '6944447281',
-                    homeAddressPostalCode: '',
-                    jurisdiction: 'co',
-                    givenName: 'Jane',
-                    homeAddressStreet1: '1640 Riverside Drive',
-                    militaryWaiver: true,
-                    dateOfBirth: '1990-08-29',
-                    type: 'license-home',
-                    dateOfIssuance: '2024-08-29',
-                    ssn: '085-32-1496',
-                    licenseType: 'audiologist',
-                    dateOfExpiration: '2024-08-29',
-                    homeAddressState: 'co',
-                    providerId: '1',
-                    dateOfRenewal: '2024-08-29',
-                    familyName: 'Doe',
-                    homeAddressCity: 'Riverside',
-                    middleName: '',
-                    dateOfUpdate: '2024-08-29',
-                    status: 'active'
-                }
-            ],
-            dateOfExpiration: '2024-08-29',
-            homeAddressState: 'co',
-            providerId: '1',
-            familyName: 'Doe',
-            homeAddressCity: 'Riverside',
-            middleName: '',
-            birthMonthDay: '1990-08-29',
-            dateOfUpdate: '2024-08-29',
-            status: 'active'
-        },
-        {
-            privileges: [
-                {
-                    licenseJurisdiction: 'al',
-                    dateOfExpiration: '2024-08-29',
-                    compact: 'aslp',
+                    compact: 'octp',
                     providerId: '2',
                     type: 'privilege',
                     dateOfIssuance: '2024-08-29',
@@ -694,35 +637,34 @@ export const licensees = {
                 }
             ],
             licenseJurisdiction: 'co',
-            compact: 'aslp',
+            compact: 'octp',
             homeAddressStreet2: '',
             npi: '2522457223',
             homeAddressPostalCode: '80302',
             givenName: 'Tyler',
             homeAddressStreet1: '1045 Pearl St',
-            militaryWaiver: true,
+            emailAddress: 'test@test.com',
             dateOfBirth: '1975-01-01',
             privilegeJurisdictions: [
                 'al'
             ],
             type: 'provider',
-            ssn: '748-19-5032',
-            licenseType: 'audiologist',
+            ssnLastFour: '2222',
+            licenseType: 'occupational therapy assistant',
             licenses: [
                 {
-                    compact: 'aslp',
+                    compact: 'octp',
                     homeAddressStreet2: '',
                     npi: '2522457223',
                     homeAddressPostalCode: '80302',
                     jurisdiction: 'co',
                     givenName: 'Tyler',
                     homeAddressStreet1: '1045 Pearl St',
-                    militaryWaiver: true,
                     dateOfBirth: '1975-01-01',
                     type: 'license-home',
                     dateOfIssuance: '2024-08-29',
-                    ssn: '748-19-5032',
-                    licenseType: 'audiologist',
+                    ssnLastFour: '2222',
+                    licenseType: 'occupational therapy assistant',
                     dateOfExpiration: '2024-08-29',
                     homeAddressState: 'co',
                     providerId: '2',
@@ -745,11 +687,19 @@ export const licensees = {
             status: 'inactive'
         },
         {
+            homeJurisdictionSelection: {
+                dateOfSelection: '2025-02-19',
+                compact: 'octp',
+                providerId: '3',
+                jurisdiction: 'co',
+                type: 'homeJurisdictionSelection',
+                dateOfUpdate: '2025-02-19'
+            },
             privileges: [
                 {
                     licenseJurisdiction: 'al',
                     dateOfExpiration: '2024-08-29',
-                    compact: 'aslp',
+                    compact: 'octp',
                     providerId: '3',
                     type: 'privilege',
                     dateOfIssuance: '2024-08-29',
@@ -758,35 +708,36 @@ export const licensees = {
                 }
             ],
             licenseJurisdiction: 'co',
-            compact: 'aslp',
+            compact: 'octp',
             homeAddressStreet2: '',
             npi: '6944447283',
             homeAddressPostalCode: '80301',
             givenName: 'Marla',
             homeAddressStreet1: '1495 Canyon Blvd',
-            militaryWaiver: true,
+            emailAddress: 'test@test.com',
             dateOfBirth: '1965-01-01',
             privilegeJurisdictions: [
-                'al'
+                'al',
+                'ak',
+                'ar'
             ],
             type: 'provider',
-            ssn: '748-19-5033',
-            licenseType: 'audiologist',
+            ssnLastFour: '3333',
+            licenseType: 'occupational therapy assistant',
             licenses: [
                 {
-                    compact: 'aslp',
+                    compact: 'octp',
                     homeAddressStreet2: '',
                     npi: '6944447283',
                     homeAddressPostalCode: '80301',
                     jurisdiction: 'co',
                     givenName: 'Marla',
                     homeAddressStreet1: '1495 Canyon Blvd',
-                    militaryWaiver: true,
                     dateOfBirth: '1965-01-01',
                     type: 'license-home',
                     dateOfIssuance: '2024-08-29',
-                    ssn: '748-19-5033',
-                    licenseType: 'audiologist',
+                    ssnLastFour: '3333',
+                    licenseType: 'occupational therapy assistant',
                     dateOfExpiration: '2024-08-29',
                     homeAddressState: 'co',
                     providerId: '3',
@@ -808,6 +759,97 @@ export const licensees = {
             dateOfUpdate: '2024-08-29',
             status: 'active'
         },
+        {
+            homeJurisdictionSelection: {
+                dateOfSelection: '2025-02-19',
+                compact: 'octp',
+                providerId: '4',
+                jurisdiction: 'co',
+                type: 'homeJurisdictionSelection',
+                dateOfUpdate: '2025-02-19'
+            },
+            privileges: [
+                {
+                    licenseJurisdiction: 'al',
+                    dateOfExpiration: '2024-08-29',
+                    compact: 'octp',
+                    providerId: '4',
+                    type: 'privilege',
+                    dateOfIssuance: '2023-08-29',
+                    dateOfUpdate: '2024-08-29',
+                    status: 'active'
+                },
+                {
+                    licenseJurisdiction: 'ak',
+                    dateOfExpiration: '2024-08-29',
+                    compact: 'octp',
+                    providerId: '4',
+                    type: 'privilege',
+                    dateOfIssuance: '2023-08-29',
+                    dateOfUpdate: '2024-08-29',
+                    status: 'active'
+                },
+                {
+                    licenseJurisdiction: 'ar',
+                    dateOfExpiration: '2023-08-29',
+                    compact: 'octp',
+                    providerId: '4',
+                    type: 'privilege',
+                    dateOfIssuance: '2023-08-29',
+                    dateOfUpdate: '2024-08-29',
+                    status: 'active'
+                }
+            ],
+            licenseJurisdiction: 'co',
+            compact: 'octp',
+            homeAddressStreet2: '',
+            npi: '6944447281',
+            homeAddressPostalCode: '',
+            givenName: 'Jane',
+            homeAddressStreet1: '1640 Riverside Drive',
+            emailAddress: 'test@test.com',
+            dateOfBirth: '1990-08-29',
+            privilegeJurisdictions: [
+                'al'
+            ],
+            type: 'provider',
+            ssnLastFour: '4444',
+            licenseType: 'occupational therapy assistant',
+            licenses: [
+                {
+                    compact: 'octp',
+                    homeAddressStreet2: '',
+                    npi: '6944447281',
+                    homeAddressPostalCode: '',
+                    jurisdiction: 'co',
+                    givenName: 'Jane',
+                    homeAddressStreet1: '1640 Riverside Drive',
+                    dateOfBirth: '1990-08-29',
+                    type: 'license-home',
+                    dateOfIssuance: '2024-08-29',
+                    ssnLastFour: '4444',
+                    licenseType: 'occupational therapy assistant',
+                    dateOfExpiration: '2024-08-29',
+                    homeAddressState: 'co',
+                    providerId: '4',
+                    dateOfRenewal: '2024-08-29',
+                    familyName: 'Doe',
+                    homeAddressCity: 'Riverside',
+                    middleName: '',
+                    dateOfUpdate: '2024-08-29',
+                    status: 'active'
+                }
+            ],
+            dateOfExpiration: '2024-08-29',
+            homeAddressState: 'co',
+            providerId: '4',
+            familyName: 'Doe',
+            homeAddressCity: 'Riverside',
+            middleName: '',
+            birthMonthDay: '1990-08-29',
+            dateOfUpdate: '2024-08-29',
+            status: 'active'
+        },
     ],
 };
 
@@ -823,80 +865,101 @@ export const users = {
                 email: 'test@example.com',
             },
             permissions: {
-                aslp: {
+                octp: {
                     actions: {
-                        read: true,
                         admin: true,
+                        readPrivate: true,
+                        readSsn: true,
                     },
                     jurisdictions: {
                         al: {
                             actions: {
                                 admin: true,
                                 write: true,
+                                readPrivate: true,
+                                readSsn: true,
                             },
                         },
                         co: {
                             actions: {
                                 admin: true,
                                 write: true,
+                                readPrivate: true,
+                                readSsn: true,
                             },
                         },
                         ky: {
                             actions: {
                                 admin: true,
                                 write: true,
+                                readPrivate: true,
+                                readSsn: true,
                             },
                         },
                     },
                 },
-                octp: {
+                aslp: {
                     actions: {
-                        read: true,
                         admin: true,
+                        readPrivate: true,
+                        readSsn: true,
                     },
                     jurisdictions: {
                         ak: {
                             actions: {
                                 admin: true,
                                 write: true,
+                                readPrivate: true,
+                                readSsn: true,
                             },
                         },
                         ar: {
                             actions: {
                                 admin: true,
                                 write: true,
+                                readPrivate: true,
+                                readSsn: true,
                             },
                         },
                         co: {
                             actions: {
                                 admin: true,
                                 write: true,
+                                readPrivate: true,
+                                readSsn: true,
                             },
                         },
                     },
                 },
                 coun: {
                     actions: {
-                        read: true,
                         admin: true,
+                        readPrivate: true,
+                        readSsn: true,
                     },
                     jurisdictions: {
                         al: {
                             actions: {
                                 admin: true,
                                 write: true,
+                                readPrivate: true,
+                                readSsn: true,
                             },
                         },
                         co: {
                             actions: {
                                 admin: true,
                                 write: true,
+                                readPrivate: true,
+                                readSsn: true,
                             },
                         },
                         ky: {
                             actions: {
                                 admin: true,
                                 write: true,
+                                readPrivate: true,
+                                readSsn: true,
                             },
                         },
                     },
@@ -911,28 +974,35 @@ export const users = {
                 email: 'test1@example.com',
             },
             permissions: {
-                aslp: {
+                octp: {
                     actions: {
-                        read: false,
                         admin: false,
+                        readPrivate: false,
+                        readSsn: false,
                     },
                     jurisdictions: {
                         al: {
                             actions: {
                                 admin: false,
                                 write: false,
+                                readPrivate: false,
+                                readSsn: false,
                             },
                         },
                         co: {
                             actions: {
                                 admin: true,
                                 write: true,
+                                readPrivate: true,
+                                readSsn: true,
                             },
                         },
                         ky: {
                             actions: {
                                 admin: false,
                                 write: true,
+                                readPrivate: true,
+                                readSsn: true,
                             },
                         },
                     },
@@ -947,16 +1017,19 @@ export const users = {
                 email: 'test2@example.com',
             },
             permissions: {
-                aslp: {
+                octp: {
                     actions: {
-                        read: false,
                         admin: false,
+                        readPrivate: false,
+                        readSsn: false,
                     },
                     jurisdictions: {
                         ky: {
                             actions: {
                                 admin: true,
                                 write: true,
+                                readPrivate: true,
+                                readSsn: true,
                             },
                         },
                     },
@@ -964,6 +1037,19 @@ export const users = {
             },
         },
     ],
+};
+
+export const attestation = {
+    attestationId: 'test-id',
+    dateCreated: '2020-01-01',
+    dateOfUpdate: '2021-12-31',
+    compact: 'octp',
+    type: 'test-type',
+    displayName: 'Test Attestation',
+    text: 'Test Text',
+    version: '1',
+    locale: 'en',
+    required: true,
 };
 
 export const pets = [

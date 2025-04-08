@@ -140,9 +140,9 @@ describe('License Store Mutations', () => {
     it('should successfully update license search values', () => {
         const state = {};
         const search = {
+            compact: 'test',
             firstName: 'test',
             lastName: 'test',
-            ssn: 'test',
             state: 'test',
         };
 
@@ -153,9 +153,9 @@ describe('License Store Mutations', () => {
     it('should successfully reset license search values', () => {
         const state = {
             search: {
+                compact: 'test',
                 firstName: 'test',
                 lastName: 'test',
-                ssn: 'test',
                 state: 'test',
             },
         };
@@ -163,9 +163,9 @@ describe('License Store Mutations', () => {
         mutations[MutationTypes.STORE_RESET_SEARCH](state);
 
         expect(state.search).to.matchPattern({
+            compact: '',
             firstName: '',
             lastName: '',
-            ssn: '',
             state: '',
         });
     });
@@ -176,9 +176,9 @@ describe('License Store Mutations', () => {
             isLoading: true,
             error: new Error(),
             search: {
+                compact: 'test',
                 firstName: 'test',
                 lastName: 'test',
-                ssn: 'test',
                 state: 'test',
             },
         };
@@ -191,9 +191,9 @@ describe('License Store Mutations', () => {
             isLoading: false,
             error: null,
             search: {
+                compact: '',
                 firstName: '',
                 lastName: '',
-                ssn: '',
                 state: '',
             },
         });
@@ -247,6 +247,17 @@ describe('License Store Actions', async () => {
         expect(commit.firstCall.args).to.matchPattern([MutationTypes.GET_LICENSEES_REQUEST]);
         expect(dispatch.callCount).to.equal(4);
     });
+    it('should successfully start licensees request as public request', async () => {
+        const commit = sinon.spy();
+        const dispatch = sinon.spy();
+        const params = { isPublic: true };
+
+        await actions.getLicenseesRequest({ commit, getters, dispatch }, { params });
+
+        expect(commit.calledOnce).to.equal(true);
+        expect(commit.firstCall.args).to.matchPattern([MutationTypes.GET_LICENSEES_REQUEST]);
+        expect(dispatch.callCount).to.equal(4);
+    });
     it('should successfully start licensees failure', () => {
         const commit = sinon.spy();
         const error = new Error();
@@ -271,6 +282,19 @@ describe('License Store Actions', async () => {
         const licenseeId = '1';
 
         await actions.getLicenseeRequest({ commit, dispatch }, { compact, licenseeId });
+
+        expect(commit.calledOnce).to.equal(true);
+        expect(commit.firstCall.args).to.matchPattern([MutationTypes.GET_LICENSEE_REQUEST]);
+        expect(dispatch.calledOnce).to.equal(true);
+    });
+    it('should successfully start licensee request as public request', async () => {
+        const commit = sinon.spy();
+        const dispatch = sinon.spy();
+        const compact = 'aslp';
+        const licenseeId = '1';
+        const isPublic = true;
+
+        await actions.getLicenseeRequest({ commit, dispatch }, { compact, licenseeId, isPublic });
 
         expect(commit.calledOnce).to.equal(true);
         expect(commit.firstCall.args).to.matchPattern([MutationTypes.GET_LICENSEE_REQUEST]);

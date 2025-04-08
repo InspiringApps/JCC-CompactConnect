@@ -1,5 +1,5 @@
 import time
-from datetime import date, datetime
+from datetime import date
 from urllib.parse import quote
 from uuid import uuid4
 
@@ -12,13 +12,21 @@ from cc_common.config import _Config, config, logger, metrics
 from cc_common.data_model.query_paginator import paginated_query
 from cc_common.data_model.schema import PrivilegeRecordSchema
 from cc_common.data_model.schema.base_record import SSNIndexRecordSchema
+from cc_common.data_model.schema.common import ProviderEligibilityStatus
+from cc_common.data_model.schema.home_jurisdiction.record import ProviderHomeJurisdictionSelectionRecordSchema
 from cc_common.data_model.schema.military_affiliation import (
     MilitaryAffiliationStatus,
     MilitaryAffiliationType,
 )
 from cc_common.data_model.schema.military_affiliation.record import MilitaryAffiliationRecordSchema
 from cc_common.data_model.schema.privilege.record import PrivilegeUpdateRecordSchema
-from cc_common.exceptions import CCAwsServiceException, CCNotFoundException
+from cc_common.exceptions import (
+    CCAwsServiceException,
+    CCInternalException,
+    CCInvalidRequestException,
+    CCNotFoundException,
+)
+from cc_common.utils import logger_inject_kwargs
 
 
 class DataClient:
@@ -28,6 +36,7 @@ class DataClient:
         self.config = config
         self.ssn_index_record_schema = SSNIndexRecordSchema()
 
+    @logger_inject_kwargs(logger, 'compact')
     def get_provider_id(self, *, compact: str, ssn: str) -> str:
         """Get all records associated with a given SSN."""
         logger.info('Getting provider id by ssn')
@@ -38,23 +47,24 @@ class DataClient:
             )['Item']
         except KeyError as e:
             logger.info('Provider not found by SSN', exc_info=e)
-            raise CCNotFoundException('No licensee found by that identifier') from e
+            raise CCNotFoundException('No provider found by that identifier') from e
 
         return resp['providerId']
 
+    @logger_inject_kwargs(logger, 'compact')
     def get_or_create_provider_id(self, *, compact: str, ssn: str) -> str:
         provider_id = str(uuid4())
         # This is an 'ask forgiveness' approach to provider id assignment:
         # Try to create a new provider, conditional on it not already existing
         try:
             self.config.ssn_table.put_item(
-                Item={
-                    'pk': f'{compact}#SSN#{ssn}',
-                    'sk': f'{compact}#SSN#{ssn}',
-                    'compact': compact,
-                    'ssn': ssn,
-                    'providerId': provider_id,
-                },
+                Item=self.ssn_index_record_schema.dump(
+                    {
+                        'compact': compact,
+                        'ssn': ssn,
+                        'providerId': provider_id,
+                    }
+                ),
                 ConditionExpression=Attr('pk').not_exists(),
                 ReturnValuesOnConditionCheckFailure='ALL_OLD',
             )
@@ -68,7 +78,67 @@ class DataClient:
                 raise
         return provider_id
 
+    @logger_inject_kwargs(logger, 'compact', 'provider_id')
+    def get_ssn_by_provider_id(self, *, compact: str, provider_id: str) -> str:
+        logger.info('Getting ssn by provider id', compact=compact, provider_id=provider_id)
+        resp = self.config.ssn_table.query(
+            KeyConditionExpression=Key('providerIdGSIpk').eq(f'{compact}#PROVIDER#{provider_id}'),
+            IndexName=self.config.ssn_index_name,
+        )['Items']
+        if len(resp) == 0:
+            raise CCNotFoundException('Provider not found')
+        if len(resp) != 1:
+            raise CCInternalException(f'Expected 1 SSN index record, got {len(resp)}')
+        return resp[0]['ssn']
+
+    @logger_inject_kwargs(logger, 'compact', 'jurisdiction', 'family_name', 'given_name')
+    def find_matching_license_record(
+        self,
+        *,
+        compact: str,
+        jurisdiction: str,
+        family_name: str,
+        given_name: str,
+        partial_ssn: str,
+        dob: date,
+        license_type: str,
+    ) -> dict | None:
+        """Query license records using the license GSI and find a matching record.
+
+        :param compact: The compact name
+        :param jurisdiction: The jurisdiction postal code
+        :param family_name: Provider's family name
+        :param given_name: Provider's given name
+        :param partial_ssn: Last 4 digits of SSN
+        :param date dob: Date of birth
+        :param license_type: Type of license
+        :return: The matching license record if found, None otherwise
+        """
+        logger.info('Querying license records', compact=compact, state=jurisdiction)
+
+        resp = self.config.provider_table.query(
+            IndexName=self.config.license_gsi_name,
+            KeyConditionExpression=(
+                Key('licenseGSIPK').eq(f'C#{compact.lower()}#J#{jurisdiction.lower()}')
+                & Key('licenseGSISK').eq(f'FN#{quote(family_name.lower())}#GN#{quote(given_name.lower())}')
+            ),
+            FilterExpression=(
+                Attr('ssnLastFour').eq(partial_ssn)
+                & Attr('dateOfBirth').eq(dob.isoformat())
+                & Attr('licenseType').eq(license_type)
+            ),
+        )
+
+        matching_records = resp.get('Items', [])
+
+        if len(matching_records) > 1:
+            logger.error('Multiple matching license records found')
+            raise CCInternalException('Multiple matching license records found')
+
+        return matching_records[0] if matching_records else None
+
     @paginated_query
+    @logger_inject_kwargs(logger, 'compact', 'provider_id')
     def get_provider(
         self,
         *,
@@ -78,7 +148,7 @@ class DataClient:
         detail: bool = True,
         consistent_read: bool = False,
     ):
-        logger.info('Getting provider', provider_id=provider_id)
+        logger.info('Getting provider')
         if detail:
             sk_condition = Key('sk').begins_with(f'{compact}#PROVIDER')
         else:
@@ -96,24 +166,28 @@ class DataClient:
         return resp
 
     @paginated_query
+    @logger_inject_kwargs(logger, 'compact', 'provider_name', 'jurisdiction')
     def get_providers_sorted_by_family_name(
         self,
         *,
         compact: str,
         dynamo_pagination: dict,
-        provider_name: tuple[str, str] = None,  # (familyName, givenName)
-        jurisdiction: str = None,
+        provider_name: tuple[str, str] | None = None,  # (familyName, givenName)
+        jurisdiction: str | None = None,
         scan_forward: bool = True,
+        exclude_providers_without_privileges: bool = False,
     ):
         logger.info('Getting providers by family name')
 
         # Create a name value to use in key condition if name fields are provided
         name_value = None
         if provider_name is not None and provider_name[0] is not None:
-            name_value = f'{quote(provider_name[0])}#'
+            # Make the name lower case for case-insensitive search
+            name_value = f'{quote(provider_name[0].lower())}#'
             # We won't consider givenName if familyName is not provided
             if provider_name[1] is not None:
-                name_value += f'{quote(provider_name[1])}#'
+                # Make the name lower case for case-insensitive search
+                name_value += f'{quote(provider_name[1].lower())}#'
 
         # Set key condition to query by
         key_condition = Key('sk').eq(f'{compact}#PROVIDER')
@@ -128,6 +202,14 @@ class DataClient:
         else:
             filter_expression = None
 
+        # Add filter for providers with privileges if requested
+        if exclude_providers_without_privileges:
+            privilege_filter = Attr('privilegeJurisdictions').exists()
+            if filter_expression is not None:
+                filter_expression = filter_expression & privilege_filter
+            else:
+                filter_expression = privilege_filter
+
         return config.provider_table.query(
             IndexName=config.fam_giv_mid_index_name,
             Select='ALL_ATTRIBUTES',
@@ -138,13 +220,15 @@ class DataClient:
         )
 
     @paginated_query
+    @logger_inject_kwargs(logger, 'compact', 'jurisdiction')
     def get_providers_sorted_by_updated(
         self,
         *,
         compact: str,
         dynamo_pagination: dict,
-        jurisdiction: str = None,
+        jurisdiction: str | None = None,
         scan_forward: bool = True,
+        exclude_providers_without_privileges: bool = False,
     ):
         logger.info('Getting providers by date updated')
         if jurisdiction is not None:
@@ -153,22 +237,21 @@ class DataClient:
             )
         else:
             filter_expression = None
+
+        # Add filter for providers with privileges if requested
+        if exclude_providers_without_privileges:
+            privilege_filter = Attr('privilegeJurisdictions').exists()
+            if filter_expression is not None:
+                filter_expression = filter_expression & privilege_filter
+            else:
+                filter_expression = privilege_filter
+
         return config.provider_table.query(
             IndexName=config.date_of_update_index_name,
             Select='ALL_ATTRIBUTES',
             KeyConditionExpression=Key('sk').eq(f'{compact}#PROVIDER'),
             ScanIndexForward=scan_forward,
             **({'FilterExpression': filter_expression} if filter_expression is not None else {}),
-            **dynamo_pagination,
-        )
-
-    @paginated_query
-    def get_privilege_purchase_options(self, *, compact: str, dynamo_pagination: dict):
-        logger.info('Getting privilege purchase options for compact', compact=compact)
-
-        return self.config.compact_configuration_table.query(
-            Select='ALL_ATTRIBUTES',
-            KeyConditionExpression=Key('pk').eq(f'{compact}#CONFIGURATION'),
             **dynamo_pagination,
         )
 
@@ -180,20 +263,55 @@ class DataClient:
         license_expiration_date: date,
         compact_transaction_id: str,
         attestations: list[dict],
-        original_issuance_date: datetime | None = None,
+        license_type: str,
+        license_jurisdiction: str,
+        original_privilege: dict | None = None,
     ):
         current_datetime = config.current_standard_datetime
+        try:
+            license_type_abbreviation = self.config.license_type_abbreviations[compact][license_type]
+        except KeyError as e:
+            # This shouldn't happen, since license type comes from a validated record, but we'll check
+            # anyway, in case of miss-configuration.
+            logger.warning('License type abbreviation not found', exc_info=e)
+            raise CCInvalidRequestException(f'Compact or license type not supported: {e}') from e
+
+        if original_privilege:
+            # Copy over the original issuance date and privilege id
+            date_of_issuance = original_privilege['dateOfIssuance']
+            # TODO: This privilege number copy-over approach has a gap in it, in the event that a  # noqa: FIX002
+            # provider's license type changes. In that event, the privilege id will have the original
+            # license type abbreviation in it, not the new one.
+            # This gap should be closed as part of https://github.com/csg-org/CompactConnect/issues/443.
+            privilege_id = original_privilege['privilegeId']
+        else:
+            date_of_issuance = current_datetime
+            # Claim a privilege number for this jurisdiction
+            # Note that this number claim is not rolled back on failure, which can result in gaps
+            # in the privilege numbers. Having gaps in the privilege numbers was deemed acceptable
+            # for exceptional circumstances like errors in this flow.
+            privilege_number = self.claim_privilege_number(compact=compact)
+            logger.info('Claimed a new privilege number', privilege_number=privilege_number)
+            privilege_id = '-'.join(
+                (license_type_abbreviation.upper(), jurisdiction_postal_abbreviation.upper(), str(privilege_number))
+            )
+
         return {
             'providerId': provider_id,
             'compact': compact,
             'jurisdiction': jurisdiction_postal_abbreviation.lower(),
-            'dateOfIssuance': original_issuance_date if original_issuance_date else current_datetime,
+            'licenseJurisdiction': license_jurisdiction.lower(),
+            'licenseType': license_type,
+            'dateOfIssuance': date_of_issuance,
             'dateOfRenewal': current_datetime,
             'dateOfExpiration': license_expiration_date,
             'compactTransactionId': compact_transaction_id,
             'attestations': attestations,
+            'privilegeId': privilege_id,
+            'persistedStatus': 'active',
         }
 
+    @logger_inject_kwargs(logger, 'compact', 'provider_id', 'compact_transaction_id')
     def create_provider_privileges(
         self,
         compact: str,
@@ -202,8 +320,9 @@ class DataClient:
         license_expiration_date: date,
         compact_transaction_id: str,
         provider_record: dict,
-        existing_privileges: list[dict],
+        existing_privileges_for_license: list[dict],
         attestations: list[dict],
+        license_type: str,
     ):
         """
         Create privilege records for a provider in the database.
@@ -218,17 +337,17 @@ class DataClient:
         :param license_expiration_date: The license expiration date
         :param compact_transaction_id: The compact transaction id
         :param provider_record: The original provider record
-        :param existing_privileges: The list of existing privileges for this user. Used to track the original issuance
-        date of the privilege.
+        :param existing_privileges_for_license: The list of existing privileges for the specified license.
+        Used to track the original issuance date of the privilege.
         :param attestations: List of attestations that were accepted when purchasing the privileges
+        :param license_type: The type of license (e.g. audiologist, speech-language-pathologist)
         """
         logger.info(
             'Creating provider privileges',
-            provider_id=provider_id,
-            compact=compact,
-            privlige_jurisdictions=jurisdiction_postal_abbreviations,
-            compact_transaction_id=compact_transaction_id,
+            privilege_jurisdictions=jurisdiction_postal_abbreviations,
         )
+
+        license_jurisdiction = provider_record['licenseJurisdiction']
 
         try:
             # We'll collect all the record changes into a transaction to protect data consistency
@@ -241,12 +360,12 @@ class DataClient:
                 original_privilege = next(
                     (
                         record
-                        for record in existing_privileges
+                        for record in existing_privileges_for_license
                         if record['jurisdiction'].lower() == postal_abbreviation.lower()
+                        and record['licenseType'] == license_type
                     ),
                     None,
                 )
-                original_issuance_date = original_privilege['dateOfIssuance'] if original_privilege else None
 
                 privilege_record = self._generate_privilege_record(
                     compact=compact,
@@ -254,8 +373,10 @@ class DataClient:
                     jurisdiction_postal_abbreviation=postal_abbreviation,
                     license_expiration_date=license_expiration_date,
                     compact_transaction_id=compact_transaction_id,
-                    original_issuance_date=original_issuance_date,
                     attestations=attestations,
+                    license_type=license_type,
+                    license_jurisdiction=license_jurisdiction,
+                    original_privilege=original_privilege,
                 )
 
                 # Create privilege update record if this is updating an existing privilege
@@ -266,11 +387,19 @@ class DataClient:
                         'providerId': provider_id,
                         'compact': compact,
                         'jurisdiction': postal_abbreviation.lower(),
+                        'licenseType': license_type,
                         'previous': original_privilege,
                         'updatedValues': {
                             'dateOfRenewal': privilege_record['dateOfRenewal'],
                             'dateOfExpiration': privilege_record['dateOfExpiration'],
                             'compactTransactionId': compact_transaction_id,
+                            'privilegeId': privilege_record['privilegeId'],
+                            'attestations': attestations,
+                            **(
+                                {'persistedStatus': ProviderEligibilityStatus.ACTIVE}
+                                if original_privilege['persistedStatus'] == ProviderEligibilityStatus.INACTIVE
+                                else {}
+                            ),
                         },
                     }
                     privilege_update_records.append(update_record)
@@ -294,8 +423,8 @@ class DataClient:
                     }
                 )
 
-            # We save this update till last so that it is least likely to be changed in the event of a failure in one of
-            # the other transactions.
+            # We save this update till last so that it is least likely to be changed in the event of a failure in
+            # one of the other transactions.
             transactions.append(
                 {
                     'Update': {
@@ -331,9 +460,7 @@ class DataClient:
                 if transactions:
                     logger.info(
                         'Breaking privilege updates into multiple transactions',
-                        compact=compact,
-                        provider_id=provider_id,
-                        privlige_jurisdictions=jurisdiction_postal_abbreviations,
+                        privilege_jurisdictions=jurisdiction_postal_abbreviations,
                         compact_transaction_id=compact_transaction_id,
                     )
 
@@ -343,7 +470,8 @@ class DataClient:
             self._rollback_privilege_transactions(
                 processed_transactions=processed_transactions,
                 provider_record=provider_record,
-                existing_privileges=existing_privileges,
+                license_type=license_type,
+                existing_privileges_for_license_type=existing_privileges_for_license,
             )
             raise CCAwsServiceException(message) from e
 
@@ -351,17 +479,19 @@ class DataClient:
         self,
         processed_transactions: list[dict],
         provider_record: dict,
-        existing_privileges: list[dict],
+        license_type: str,
+        existing_privileges_for_license_type: list[dict],
     ):
         """Roll back successful privilege transactions after a failure."""
         rollback_transactions = []
 
-        compact = provider_record['compact']
-        provider_id = provider_record['providerId']
-
         # Create a lookup of existing privileges by jurisdiction
+        # as a safety precaution, we must ensure that every privilege in the list matches the license type that we
+        # attempted to change privilege for
         existing_privileges_by_jurisdiction = {
-            privilege['jurisdiction']: privilege for privilege in existing_privileges
+            privilege['jurisdiction']: privilege
+            for privilege in existing_privileges_for_license_type
+            if privilege['licenseType'] == license_type
         }
 
         # Delete all privilege update records and handle privilege records appropriately
@@ -386,12 +516,7 @@ class DataClient:
                     # For privilege records, check if it was an update or new creation
                     original_privilege = existing_privileges_by_jurisdiction.get(item['jurisdiction'])
                     if original_privilege:
-                        logger.info(
-                            'Restoring original privilege record',
-                            provider_id=provider_id,
-                            compact=compact,
-                            jurisdiction=item['jurisdiction'],
-                        )
+                        logger.info('Restoring original privilege record', jurisdiction=item['jurisdiction'])
                         # If it was an update, restore the original record
                         rollback_transactions.append(
                             {
@@ -405,12 +530,7 @@ class DataClient:
                         )
                     else:
                         # If it was a new creation, delete it
-                        logger.info(
-                            'Deleting new privilege record',
-                            provider_id=provider_id,
-                            compact=compact,
-                            jurisdiction=item['jurisdiction'],
-                        )
+                        logger.info('Deleting new privilege record', jurisdiction=item['jurisdiction'])
                         rollback_transactions.append(
                             {
                                 'Delete': {
@@ -437,13 +557,13 @@ class DataClient:
         batch_size = 100
         while rollback_batch := rollback_transactions[:batch_size]:
             try:
-                logger.info('Submitting rollback transaction', provider_id=provider_id, compact=compact)
+                logger.info('Submitting rollback transaction')
                 self.config.dynamodb_client.transact_write_items(TransactItems=rollback_batch)
                 rollback_transactions = rollback_transactions[batch_size:]
             except ClientError as e:
                 logger.error('Failed to roll back privilege transactions', error=str(e))
                 raise CCAwsServiceException('Failed to roll back privilege transactions') from e
-        logger.info('Privilege rollback complete', provider_id=provider_id, compact=compact)
+        logger.info('Privilege rollback complete')
 
     def _get_military_affiliation_records_by_status(
         self, compact: str, provider_id: str, status: MilitaryAffiliationStatus
@@ -467,6 +587,7 @@ class DataClient:
             compact, provider_id, MilitaryAffiliationStatus.INITIALIZING
         )
 
+    @logger_inject_kwargs(logger, 'compact', 'provider_id')
     def complete_military_affiliation_initialization(self, compact: str, provider_id: str):
         """
         This method is called when the client has uploaded the document for a military affiliation record.
@@ -474,6 +595,8 @@ class DataClient:
         It gets all records in an initializing state, sets the latest to active, and the rest to inactive for a
         self-healing process.
         """
+        logger.info('Completing military affiliation initialization')
+
         initializing_military_affiliation_records = self._get_initializing_military_affiliation_records(
             compact, provider_id
         )
@@ -496,6 +619,7 @@ class DataClient:
                 serialized_record = schema.dump(record)
                 batch.put_item(Item=serialized_record)
 
+    @logger_inject_kwargs(logger, 'compact', 'provider_id', 'affiliation_type')
     def create_military_affiliation(
         self,
         compact: str,
@@ -516,6 +640,7 @@ class DataClient:
         :param document_keys: The list of s3 document keys for the documents
         :return: The created military affiliation record
         """
+        logger.info('Creating military affiliation')
 
         latest_military_affiliation_record = {
             'type': 'militaryAffiliation',
@@ -559,6 +684,7 @@ class DataClient:
                 serialized_record = schema.dump(record)
                 batch.put_item(Item=serialized_record)
 
+    @logger_inject_kwargs(logger, 'compact', 'provider_ids')
     def batch_get_providers_by_id(self, compact: str, provider_ids: list[str]) -> list[dict]:
         """
         Get provider records by their IDs in batches.
@@ -613,3 +739,197 @@ class DataClient:
                 logger.error('Failed to fetch all provider records', unprocessed_keys=response['UnprocessedKeys'])
 
         return providers
+
+    @logger_inject_kwargs(logger, 'compact')
+    def claim_privilege_number(self, compact: str) -> int:
+        """
+        Claim a unique privilege number for a compact by atomically incrementing the privilege counter.
+        If the counter doesn't exist yet, it will be created with an initial value of 1.
+        """
+        logger.info('Claiming privilege number')
+        resp = self.config.provider_table.update_item(
+            Key={
+                'pk': f'{compact}#PRIVILEGE_COUNT',
+                'sk': f'{compact}#PRIVILEGE_COUNT',
+            },
+            UpdateExpression='ADD #count :increment',
+            ExpressionAttributeNames={
+                '#count': 'privilegeCount',
+            },
+            ExpressionAttributeValues={
+                ':increment': 1,
+            },
+            ReturnValues='UPDATED_NEW',
+        )
+        privilege_count = resp['Attributes']['privilegeCount']
+        logger.info('Claimed privilege number', privilege_count=privilege_count)
+        return privilege_count
+
+    @logger_inject_kwargs(logger, 'compact', 'provider_id')
+    def provider_is_registered_in_compact_connect(self, *, compact: str, provider_id: str) -> bool:
+        """Check if a provider is already registered in the system by checking for the cognitoSub field.
+
+        :param compact: The compact name
+        :param provider_id: The provider ID
+        :return: True if the provider is already registered, False otherwise
+        """
+        logger.info('Checking if provider is registered')
+        provider = self.config.provider_table.get_item(
+            Key={
+                'pk': f'{compact}#PROVIDER#{provider_id}',
+                'sk': f'{compact}#PROVIDER',
+            },
+            ProjectionExpression='cognitoSub',
+            ConsistentRead=True,
+        ).get('Item')
+        return provider is not None and provider.get('cognitoSub') is not None
+
+    @logger_inject_kwargs(logger, 'compact', 'provider_id', 'cognito_sub', 'email_address', 'jurisdiction')
+    def process_registration_values(
+        self, *, compact: str, provider_id: str, cognito_sub: str, email_address: str, jurisdiction: str
+    ) -> None:
+        """Set the registration values on a provider record and create home jurisdiction selection record
+        in a transaction.
+
+        :param compact: The compact name
+        :param provider_id: The provider ID
+        :param cognito_sub: The Cognito sub of the user
+        :param email_address: The email address used for registration
+        :param jurisdiction: The jurisdiction postal code for home jurisdiction selection
+        :return: None
+        :raises: CCAwsServiceException if the transaction fails
+        """
+        logger.info('Setting registration values and creating home jurisdiction selection')
+
+        # Create the home jurisdiction selection record
+        home_jurisdiction_selection_record = {
+            'type': 'homeJurisdictionSelection',
+            'compact': compact,
+            'providerId': provider_id,
+            'jurisdiction': jurisdiction,
+            'dateOfSelection': self.config.current_standard_datetime,
+        }
+
+        schema = ProviderHomeJurisdictionSelectionRecordSchema()
+        serialized_record = schema.dump(home_jurisdiction_selection_record)
+
+        # Create both records in a transaction
+        self.config.dynamodb_client.transact_write_items(
+            TransactItems=[
+                {
+                    'Update': {
+                        'TableName': self.config.provider_table_name,
+                        'Key': {
+                            'pk': {'S': f'{compact}#PROVIDER#{provider_id}'},
+                            'sk': {'S': f'{compact}#PROVIDER'},
+                        },
+                        'UpdateExpression': 'SET #cognitoSub = :cognitoSub, #email = :email',
+                        'ExpressionAttributeNames': {
+                            '#cognitoSub': 'cognitoSub',
+                            '#email': 'compactConnectRegisteredEmailAddress',
+                        },
+                        'ExpressionAttributeValues': {
+                            ':cognitoSub': {'S': cognito_sub},
+                            ':email': {'S': email_address},
+                        },
+                        'ConditionExpression': 'attribute_not_exists(cognitoSub)',
+                    }
+                },
+                {
+                    'Put': {
+                        'TableName': self.config.provider_table_name,
+                        'Item': TypeSerializer().serialize(serialized_record)['M'],
+                        'ConditionExpression': 'attribute_not_exists(pk)',
+                    }
+                },
+            ]
+        )
+
+    @logger_inject_kwargs(logger, 'compact', 'provider_id', 'jurisdiction', 'license_type')
+    def deactivate_privilege(
+        self, *, compact: str, provider_id: str, jurisdiction: str, license_type_abbr: str, deactivation_details: dict
+    ) -> None:
+        """
+        Deactivate a privilege for a provider in a jurisdiction.
+
+        This will update the privilege record to have a persistedStatus of 'inactive' and will remove the jurisdiction
+        from the provider's privilegeJurisdictions set.
+
+        :param str compact: The compact to deactivate the privilege for
+        :param str provider_id: The provider to deactivate the privilege for
+        :param str jurisdiction: The jurisdiction to deactivate the privilege for
+        :param str license_type_abbr: The license type abbreviation to deactivate the privilege for
+        :param dict deactivation_details: The details of the deactivation to be added to the history record
+        :raises CCNotFoundException: If the privilege record is not found
+        """
+        # Get the privilege record
+        try:
+            privilege_record = self.config.provider_table.get_item(
+                Key={
+                    'pk': f'{compact}#PROVIDER#{provider_id}',
+                    'sk': f'{compact}#PROVIDER#privilege/{jurisdiction}/{license_type_abbr}#',
+                },
+            )['Item']
+        except KeyError as e:
+            raise CCNotFoundException(f'Privilege not found for jurisdiction {jurisdiction}') from e
+
+        # Find the main privilege record (not history records)
+        privilege_record_schema = PrivilegeRecordSchema()
+        privilege_record = privilege_record_schema.load(privilege_record)
+
+        # If already inactive, do nothing
+        if privilege_record.get('persistedStatus', 'active') == 'inactive':
+            logger.info('Provider already inactive. Doing nothing.')
+            raise CCInvalidRequestException('Privilege already deactivated')
+
+        # Create the update record
+        # Use the schema to generate the update record with proper pk/sk
+        privilege_update_record = PrivilegeUpdateRecordSchema().dump(
+            {
+                'type': 'privilegeUpdate',
+                'updateType': 'deactivation',
+                'providerId': provider_id,
+                'compact': compact,
+                'jurisdiction': jurisdiction,
+                'licenseType': privilege_record['licenseType'],
+                'deactivationDetails': deactivation_details,
+                'previous': {
+                    # We're relying on the schema to trim out unneeded fields
+                    **privilege_record,
+                },
+                'updatedValues': {
+                    'persistedStatus': 'inactive',
+                },
+            }
+        )
+
+        # Update the privilege record and create history record
+        logger.info('Deactivating privilege')
+        self.config.dynamodb_client.transact_write_items(
+            TransactItems=[
+                # Set the privilege record's persistedStatus to inactive and update the dateOfUpdate
+                {
+                    'Update': {
+                        'TableName': self.config.provider_table.name,
+                        'Key': {
+                            'pk': {'S': f'{compact}#PROVIDER#{provider_id}'},
+                            'sk': {'S': f'{compact}#PROVIDER#privilege/{jurisdiction}/{license_type_abbr}#'},
+                        },
+                        'UpdateExpression': 'SET persistedStatus = :status, dateOfUpdate = :dateOfUpdate',
+                        'ExpressionAttributeValues': {
+                            ':status': {'S': 'inactive'},
+                            ':dateOfUpdate': {'S': self.config.current_standard_datetime.isoformat()},
+                        },
+                    },
+                },
+                # Create a history record, reflecting this change
+                {
+                    'Put': {
+                        'TableName': self.config.provider_table.name,
+                        'Item': TypeSerializer().serialize(privilege_update_record)['M'],
+                    },
+                },
+            ],
+        )
+
+        return privilege_record

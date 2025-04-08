@@ -159,15 +159,27 @@ Note the jurisdiction configuration file name must be the name of the jurisdicti
 characters in place of spaces.
 
 
+# Creating App Clients for Machine-to-Machine Authentication
+See [App Client Management for Staff Users](../../app_clients/README.md) for more information on how to create app clients for machine-to-machine authentication.
+
+# Compact Onboarding for Compact Connect
+
 ## Add Global Compact Configuration File to the System
 In addition to the jurisdiction configuration files, if a new compact is being added, a global compact configuration
 file must be added to the root of the `compact-config` directory. If it is not present for an associated directory of
-the same name, the deployment will fail. The compact file includes the following information (all fields are required):
+the same name, the deployment will fail. The compact file includes the following information (all fields are required
+unless otherwise specified):
 ```
-compactName: "<compact name>"
+compactAbbr: "<compact abbreviation ie aslp>"
+compactName: "<compact name ie Audiology and Speech Language Pathology>"
 compactCommissionFee:
     feeType: "FLAT_RATE"                            # Currently only "FLAT_RATE" type is supported.
     feeAmount: <number>                             # This value will be added to the jurisdiciton fee.
+transactionFeeConfiguration:                        # Optional: configuration for transaction fees
+    licenseeCharges:                               # Optional: How the compact wants to charge licensees to cover these fees
+        active: true|false                         # Whether the compact is charging licensees for transaction fees
+        chargeType: "FLAT_FEE_PER_PRIVILEGE"       # Currently only supporting FLAT_FEE_PER_PRIVILEGE
+        chargeAmount: <number>                     # The amount to charge per privilege purchased
 compactOperationsTeamEmails: ["<email address>"]
 compactAdverseActionsNotificationEmails: ["<email address>"]
 compactSummaryReportNotificationEmails: ["<email address>"]
@@ -182,6 +194,28 @@ attestations:                                       # Required attestations for 
 ```
 At deploy time, if the environment name matches one of the files in the `activeEnvironments` list, these configuration
 files will be written to the database and accessible by the system.
+
+### Configure Transaction Fee Settings
+Each compact must decide if they want to charge licensees to absorb payment processor transaction fees. This includes the following fields:
+
+1. **Licensee Charges** - Compacts can choose to charge licensees a fee to help cover transaction costs:
+   - `active`: Whether to charge licensees a transaction fee
+   - `chargeType`: Currently only supports "FLAT_FEE_PER_PRIVILEGE"
+   - `chargeAmount`: The fixed amount to charge per privilege purchase
+
+Example configuration:
+```yaml
+transactionFeeConfiguration:
+    licenseeCharges:
+        active: true
+        chargeType: "FLAT_FEE_PER_PRIVILEGE"
+        chargeAmount: 3.00
+```
+
+In this example:
+- The compact charges licensees a flat fee of $3.00 per privilege to help cover transaction fees
+
+Note: The `licenseeCharges` section is optional. If omitted, no transaction fees will be charged to licensees.
 
 ### Configure Compact Attestations
 Each compact must define a set of attestations that providers must accept when purchasing privileges. Attestations are legally binding statements that providers must agree to, and they are versioned to ensure providers always see and accept the most current version. The attestations must be defined in the compact configuration file under the `attestations` field.
@@ -238,8 +272,22 @@ attestations:
 
 The system automatically handles versioning of attestations. When the text, displayName, description, or required status of an attestation changes, the system will automatically increment the version number. Providers must always accept the latest version of each attestation when purchasing privileges.
 
+## Uploading Authorize.net API Keys
+Compact administrators can configure their Authorize.net payment processing credentials through the Compact Connect UI. These credentials are used to securely process payments for compact privilege applications. For detailed instructions on how to generate these keys in your Authorize.net account, please visit the [Authorize.net documentation](https://support.authorize.net/knowledgebase/Knowledgearticle/?code=000001271). Once these credentials have been generated, the compact admin can set up payment processing for your compact using the following steps:
 
-## Updating Snapshot Tests to match Configuration Changes
+1. Log in to the Compact Connect UI as a compact administrator
+2. Navigate to the Compact Settings page (gear icon in the bottom left corner of the side navigation bar)
+3. Locate the "Authorize.net Credentials" section
+4. Enter the following Authorize.net credentials into the form and press "Submit":
+   - API Login ID
+   - Transaction Key
+
+If the request is successful, payment processing will be enabled for your compact.
+
+**Important Security Notes:**
+- If you ever suspect your credentials have been compromised, generate new ones immediately in your Authorize.net account and update the credentials through the Compact Connect UI.
+
+# Updating CDK Snapshot Tests to match Configuration Changes
 In order to ensure that the system is functioning as expected, we have tests in place to verify that the configuration
 files are being formatted correctly. We do this through 'Snapshot' tests, which are json files stored under the
 `tests/resources/snapshots` directory.

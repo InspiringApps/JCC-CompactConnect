@@ -14,6 +14,7 @@ import {
 } from 'vue';
 import { Component, Vue, toNative } from 'vue-facing-decorator';
 import { AuthTypes } from '@/app.config';
+import RegisterIcon from '@components/Icons/Register/Register.vue';
 import UploadIcon from '@components/Icons/Upload/Upload.vue';
 import UsersIcon from '@components/Icons/Users/Users.vue';
 import LicenseSearchIcon from '@components/Icons/LicenseSearch/LicenseSearch.vue';
@@ -25,6 +26,7 @@ import LogoutIcon from '@components/Icons/Logout/Logout.vue';
 import CompactSelector from '@components/CompactSelector/CompactSelector.vue';
 import { Compact, CompactType } from '@models/Compact/Compact.model';
 import { CompactPermission } from '@models/StaffUser/StaffUser.model';
+import { Licensee } from '@/models/Licensee/Licensee.model';
 
 export interface NavLink {
     to: string;
@@ -41,6 +43,7 @@ export interface NavLink {
 @Component({
     name: 'PageMainNav',
     components: {
+        RegisterIcon,
         UploadIcon,
         UsersIcon,
         LicenseSearchIcon,
@@ -72,6 +75,10 @@ class PageMainNav extends Vue {
         return this.$store.state.user;
     }
 
+    get user() {
+        return this.userStore.model;
+    }
+
     get isLoggedIn(): boolean {
         return this.userStore.isLoggedIn;
     }
@@ -86,6 +93,14 @@ class PageMainNav extends Vue {
 
     get isLoggedInAsLicensee(): boolean {
         return this.authType === AuthTypes.LICENSEE;
+    }
+
+    get licensee(): Licensee | null {
+        return this.isLoggedInAsLicensee ? this.user?.licensee : null;
+    }
+
+    get isPrivilegePurchaseEnabled(): boolean {
+        return this.licensee?.canPurchasePrivileges() || false;
     }
 
     get staffPermission(): CompactPermission | null {
@@ -129,6 +144,31 @@ class PageMainNav extends Vue {
 
     get mainLinks(): Array<NavLink> {
         return reactive([
+            {
+                to: 'DashboardPublic',
+                label: computed(() => this.$t('navigation.dashboard')),
+                iconComponent: markRaw(DashboardIcon),
+                isEnabled: !this.isLoggedIn,
+                isExternal: false,
+                isExactActive: false,
+            },
+            {
+                to: 'LicneseeSearchPublic',
+                label: computed(() => this.$t('navigation.licensingPublic')),
+                iconComponent: markRaw(LicenseSearchIcon),
+                isEnabled: !this.isLoggedIn,
+                isExternal: false,
+                isExactActive: false,
+                isActive: this.isActiveMatch('LicenseeDetailPublic'),
+            },
+            {
+                to: 'RegisterLicensee',
+                label: computed(() => this.$t('navigation.register')),
+                iconComponent: markRaw(RegisterIcon),
+                isEnabled: !this.isLoggedIn,
+                isExternal: false,
+                isExactActive: false,
+            },
             {
                 to: 'StateUpload',
                 params: { compact: this.currentCompact?.type },
@@ -175,11 +215,11 @@ class PageMainNav extends Vue {
                 isExactActive: false,
             },
             {
-                to: 'SelectPrivileges',
+                to: 'PrivilegePurchase',
                 params: { compact: this.currentCompact?.type },
                 label: computed(() => this.$t('navigation.purchasePrivileges')),
                 iconComponent: markRaw(PurchaseIcon),
-                isEnabled: Boolean(this.currentCompact) && !this.isLoggedInAsStaff,
+                isEnabled: Boolean(this.currentCompact) && this.isPrivilegePurchaseEnabled,
                 isExternal: false,
                 isExactActive: false,
             },
@@ -210,6 +250,10 @@ class PageMainNav extends Vue {
     //
     // Methods
     //
+    isActiveMatch(routeName): boolean {
+        return this.$route.name === routeName;
+    }
+
     logoClick(): void {
         this.$router.push({ name: 'Home' });
     }

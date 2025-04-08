@@ -12,6 +12,7 @@ import {
     toNative
 } from 'vue-facing-decorator';
 import { reactive, computed, ComputedRef } from 'vue';
+import { Permission } from '@/app.config';
 import MixinForm from '@components/Forms/_mixins/form.mixin';
 import Card from '@components/Card/Card.vue';
 import InputSelect from '@components/Forms/InputSelect/InputSelect.vue';
@@ -35,15 +36,9 @@ interface PermissionOption {
     isDisabled?: boolean;
 }
 
-enum Permission {
-    NONE = 'none',
-    READ_PRIVATE = 'readPrivate',
-    WRITE = 'write',
-    ADMIN = 'admin',
-}
-
 interface PermissionObject {
     isReadPrivate?: boolean;
+    isReadSsn?: boolean;
     isWrite?: boolean;
     isAdmin?: boolean;
 }
@@ -73,6 +68,10 @@ class UserRowEdit extends mixins(MixinForm) {
     created() {
         this.shouldValuesIncludeDisabled = true;
         this.initFormInputs();
+    }
+
+    mounted() {
+        document.getElementById('cancel-edit-user')?.focus();
     }
 
     //
@@ -146,6 +145,7 @@ class UserRowEdit extends mixins(MixinForm) {
         return [
             { value: Permission.NONE, name: this.$t('account.accessLevel.none') },
             { value: Permission.READ_PRIVATE, name: this.$t('account.accessLevel.readPrivate') },
+            { value: Permission.READ_SSN, name: this.$t('account.accessLevel.readSsn') },
             { value: Permission.ADMIN, name: this.$t('account.accessLevel.admin') },
         ];
     }
@@ -164,6 +164,7 @@ class UserRowEdit extends mixins(MixinForm) {
         return [
             { value: Permission.NONE, name: this.$t('account.accessLevel.none') },
             { value: Permission.READ_PRIVATE, name: this.$t('account.accessLevel.readPrivate') },
+            { value: Permission.READ_SSN, name: this.$t('account.accessLevel.readSsn') },
             { value: Permission.WRITE, name: this.$t('account.accessLevel.write') },
             { value: Permission.ADMIN, name: this.$t('account.accessLevel.admin') },
         ];
@@ -348,6 +349,8 @@ class UserRowEdit extends mixins(MixinForm) {
         if (compactPermission) {
             if (compactPermission.isAdmin) {
                 permission = Permission.ADMIN;
+            } else if (compactPermission.isReadSsn) {
+                permission = Permission.READ_SSN;
             } else if (compactPermission.isReadPrivate) {
                 permission = Permission.READ_PRIVATE;
             }
@@ -363,14 +366,22 @@ class UserRowEdit extends mixins(MixinForm) {
             switch (permission) {
             case Permission.NONE:
                 response.isReadPrivate = false;
+                response.isReadSsn = false;
                 response.isAdmin = false;
                 break;
             case Permission.READ_PRIVATE:
                 response.isReadPrivate = true;
+                response.isReadSsn = false;
+                response.isAdmin = false;
+                break;
+            case Permission.READ_SSN:
+                response.isReadPrivate = true;
+                response.isReadSsn = true;
                 response.isAdmin = false;
                 break;
             case Permission.ADMIN:
                 response.isReadPrivate = true;
+                response.isReadSsn = true;
                 response.isAdmin = true;
                 break;
             default:
@@ -389,6 +400,8 @@ class UserRowEdit extends mixins(MixinForm) {
                 permission = Permission.ADMIN;
             } else if (statePermission.isWrite) {
                 permission = Permission.WRITE;
+            } else if (statePermission.isReadSsn) {
+                permission = Permission.READ_SSN;
             } else if (statePermission.isReadPrivate) {
                 permission = Permission.READ_PRIVATE;
             }
@@ -403,21 +416,31 @@ class UserRowEdit extends mixins(MixinForm) {
         switch (permission) {
         case Permission.NONE:
             response.isReadPrivate = false;
+            response.isReadSsn = false;
             response.isWrite = false;
             response.isAdmin = false;
             break;
         case Permission.READ_PRIVATE:
             response.isReadPrivate = true;
+            response.isReadSsn = false;
+            response.isWrite = false;
+            response.isAdmin = false;
+            break;
+        case Permission.READ_SSN:
+            response.isReadPrivate = true;
+            response.isReadSsn = true;
             response.isWrite = false;
             response.isAdmin = false;
             break;
         case Permission.WRITE:
             response.isReadPrivate = true;
+            response.isReadSsn = true;
             response.isWrite = true;
             response.isAdmin = false;
             break;
         case Permission.ADMIN:
             response.isReadPrivate = true;
+            response.isReadSsn = true;
             response.isWrite = true;
             response.isAdmin = true;
             break;

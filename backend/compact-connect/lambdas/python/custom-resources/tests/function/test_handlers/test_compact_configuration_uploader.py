@@ -25,14 +25,15 @@ def generate_mock_attestation():
     }
 
 
-def generate_single_root_compact_config(compact_name: str, active_environments: list):
+def generate_single_root_compact_config(compact_abbr: str, active_environments: list):
     return {
-        'compactName': compact_name,
+        'compactAbbr': compact_abbr,
         'compactCommissionFee': {'feeType': 'FLAT_RATE', 'feeAmount': 3.5},
         'compactOperationsTeamEmails': [],
         'compactAdverseActionsNotificationEmails': [],
         'compactSummaryReportNotificationEmails': [],
         'activeEnvironments': active_environments,
+        'licenseeRegistrationEnabledForEnvironments': [],
         'attestations': [generate_mock_attestation()],
     }
 
@@ -47,6 +48,7 @@ def generate_single_jurisdiction_config(jurisdiction_name: str, postal_abbreviat
         'jurisdictionAdverseActionsNotificationEmails': [],
         'jurisdictionSummaryReportNotificationEmails': [],
         'jurisprudenceRequirements': {'required': True},
+        'licenseeRegistrationEnabledForEnvironments': [],
         'activeEnvironments': active_environments,
     }
 
@@ -103,12 +105,13 @@ class TestCompactConfigurationUploader(TstFunction):
                 {
                     'compactAdverseActionsNotificationEmails': [],
                     'compactCommissionFee': {'feeAmount': Decimal('3.5'), 'feeType': 'FLAT_RATE'},
-                    'compactName': 'aslp',
+                    'compactAbbr': 'aslp',
                     'compactOperationsTeamEmails': [],
                     'compactSummaryReportNotificationEmails': [],
                     'dateOfUpdate': MOCK_CURRENT_TIMESTAMP,
                     'pk': 'aslp#CONFIGURATION',
                     'sk': 'aslp#CONFIGURATION',
+                    'licenseeRegistrationEnabledForEnvironments': [],
                     'type': 'compact',
                 },
                 {
@@ -125,6 +128,7 @@ class TestCompactConfigurationUploader(TstFunction):
                     'postalAbbreviation': 'ne',
                     'sk': 'aslp#JURISDICTION#ne',
                     'type': 'jurisdiction',
+                    'licenseeRegistrationEnabledForEnvironments': [],
                 },
                 {
                     'compact': 'aslp',
@@ -140,17 +144,19 @@ class TestCompactConfigurationUploader(TstFunction):
                     'postalAbbreviation': 'oh',
                     'sk': 'aslp#JURISDICTION#oh',
                     'type': 'jurisdiction',
+                    'licenseeRegistrationEnabledForEnvironments': [],
                 },
                 {
                     'compactAdverseActionsNotificationEmails': [],
                     'compactCommissionFee': {'feeAmount': Decimal('3.5'), 'feeType': 'FLAT_RATE'},
-                    'compactName': 'octp',
+                    'compactAbbr': 'octp',
                     'compactOperationsTeamEmails': [],
                     'compactSummaryReportNotificationEmails': [],
                     'dateOfUpdate': MOCK_CURRENT_TIMESTAMP,
                     'pk': 'octp#CONFIGURATION',
                     'sk': 'octp#CONFIGURATION',
                     'type': 'compact',
+                    'licenseeRegistrationEnabledForEnvironments': [],
                 },
                 {
                     'compact': 'octp',
@@ -166,6 +172,7 @@ class TestCompactConfigurationUploader(TstFunction):
                     'postalAbbreviation': 'ne',
                     'sk': 'octp#JURISDICTION#ne',
                     'type': 'jurisdiction',
+                    'licenseeRegistrationEnabledForEnvironments': [],
                 },
                 {
                     'compact': 'octp',
@@ -181,6 +188,7 @@ class TestCompactConfigurationUploader(TstFunction):
                     'postalAbbreviation': 'oh',
                     'sk': 'octp#JURISDICTION#oh',
                     'type': 'jurisdiction',
+                    'licenseeRegistrationEnabledForEnvironments': [],
                 },
             ],
             items,

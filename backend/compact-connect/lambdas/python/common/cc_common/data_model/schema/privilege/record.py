@@ -1,11 +1,19 @@
 # ruff: noqa: N801, N815, ARG002  invalid-name unused-argument
-from marshmallow import Schema, post_dump, pre_dump, pre_load
+from datetime import date, datetime
+
+from marshmallow import Schema, ValidationError, post_dump, post_load, pre_dump, pre_load, validates_schema
 from marshmallow.fields import UUID, Date, DateTime, List, Nested, String
+from marshmallow.validate import Length
 
 from cc_common.config import config
-from cc_common.data_model.schema.base_record import BaseRecordSchema, CalculatedStatusRecordSchema, ForgivingSchema
-from cc_common.data_model.schema.common import ChangeHashMixin, ensure_value_is_datetime
-from cc_common.data_model.schema.fields import Compact, Jurisdiction, UpdateType
+from cc_common.data_model.schema.base_record import BaseRecordSchema, ForgivingSchema
+from cc_common.data_model.schema.common import (
+    ChangeHashMixin,
+    UpdateCategory,
+    ValidatesLicenseTypeMixin,
+    ensure_value_is_datetime,
+)
+from cc_common.data_model.schema.fields import ActiveInactive, Compact, Jurisdiction, UpdateType
 
 
 class AttestationVersionRecordSchema(Schema):
@@ -23,8 +31,18 @@ class AttestationVersionRecordSchema(Schema):
     version = String(required=True, allow_none=False)
 
 
+class DeactivationDetailsSchema(Schema):
+    """
+    Schema for tracking details about a privilege deactivation.
+    """
+
+    note = String(required=False, allow_none=False, validate=Length(1, 256))
+    deactivatedByStaffUserId = UUID(required=True, allow_none=False)
+    deactivatedByStaffUserName = String(required=True, allow_none=False)
+
+
 @BaseRecordSchema.register_schema('privilege')
-class PrivilegeRecordSchema(CalculatedStatusRecordSchema):
+class PrivilegeRecordSchema(BaseRecordSchema, ValidatesLicenseTypeMixin):
     """
     Schema for privilege records in the license data table
 
@@ -38,6 +56,8 @@ class PrivilegeRecordSchema(CalculatedStatusRecordSchema):
     providerId = UUID(required=True, allow_none=False)
     compact = Compact(required=True, allow_none=False)
     jurisdiction = Jurisdiction(required=True, allow_none=False)
+    licenseJurisdiction = Jurisdiction(required=True, allow_none=False)
+    licenseType = String(required=True, allow_none=False)
     dateOfIssuance = DateTime(required=True, allow_none=False)
     dateOfRenewal = DateTime(required=True, allow_none=False)
     # this is determined by the license expiration date, which is a date field, so this is also a date field
@@ -45,12 +65,28 @@ class PrivilegeRecordSchema(CalculatedStatusRecordSchema):
     # the id of the transaction that was made when the user purchased the privilege
     compactTransactionId = String(required=False, allow_none=False)
     # list of attestations that were accepted when purchasing this privilege
-    attestations = List(Nested(AttestationVersionRecordSchema()), required=False, allow_none=False)
+    attestations = List(Nested(AttestationVersionRecordSchema()), required=True, allow_none=False)
+    # the human-friendly identifier for this privilege
+    privilegeId = String(required=True, allow_none=False)
+    # the persisted status of the privilege, which can be manually set to inactive
+    persistedStatus = ActiveInactive(required=True, allow_none=False)
+
+    # This field is the actual status referenced by the system, which is determined by the expiration date
+    # in addition to the persistedStatus. This should never be written to the DB. It is calculated
+    # whenever the record is loaded.
+    status = ActiveInactive(required=True, allow_none=False)
+    compactTransactionIdGSIPK = String(required=True, allow_none=False)
 
     @pre_dump
     def generate_pk_sk(self, in_data, **kwargs):  # noqa: ARG001 unused-argument
-        in_data['pk'] = f'{in_data['compact']}#PROVIDER#{in_data['providerId']}'
-        in_data['sk'] = f'{in_data['compact']}#PROVIDER#privilege/{in_data['jurisdiction']}#'
+        in_data['pk'] = f'{in_data["compact"]}#PROVIDER#{in_data["providerId"]}'
+        license_type_abbr = config.license_type_abbreviations[in_data['compact']][in_data['licenseType']]
+        in_data['sk'] = f'{in_data["compact"]}#PROVIDER#privilege/{in_data["jurisdiction"]}/{license_type_abbr}#'
+        return in_data
+
+    @pre_dump
+    def generate_compact_transaction_gsi_field(self, in_data, **kwargs):  # noqa: ARG001 unused-argument
+        in_data['compactTransactionIdGSIPK'] = f'COMPACT#{in_data["compact"]}#TX#{in_data["compactTransactionId"]}#'
         return in_data
 
     @pre_load
@@ -66,6 +102,34 @@ class PrivilegeRecordSchema(CalculatedStatusRecordSchema):
 
         return in_data
 
+    @pre_dump
+    def remove_status_field_if_present(self, in_data, **kwargs):
+        """Remove the status field before dumping to the database"""
+        in_data.pop('status', None)
+        return in_data
+
+    @pre_load
+    def _calculate_status(self, in_data, **kwargs):
+        """Determine the status of the record based on the expiration date and persistedStatus"""
+        in_data['status'] = (
+            'active'
+            if (
+                in_data.get('persistedStatus', 'active') == 'active'
+                and date.fromisoformat(in_data['dateOfExpiration'])
+                > datetime.now(tz=config.expiration_date_resolution_timezone).date()
+            )
+            else 'inactive'
+        )
+
+        return in_data
+
+    @post_load
+    def drop_compact_transaction_id_gsi_field(self, in_data, **kwargs):  # noqa: ARG001 unused-argument
+        """Drop the db-specific license GSI fields before returning loaded data"""
+        # only drop the field if it's present, else continue on
+        in_data.pop('compactTransactionIdGSIPK', None)
+        return in_data
+
 
 class PrivilegeUpdatePreviousRecordSchema(ForgivingSchema):
     """
@@ -79,12 +143,15 @@ class PrivilegeUpdatePreviousRecordSchema(ForgivingSchema):
     dateOfRenewal = DateTime(required=True, allow_none=False)
     dateOfExpiration = Date(required=True, allow_none=False)
     dateOfUpdate = DateTime(required=True, allow_none=False)
-    compactTransactionId = String(required=False, allow_none=False)
-    attestations = List(Nested(AttestationVersionRecordSchema()), required=False, allow_none=False)
+    privilegeId = String(required=True, allow_none=False)
+    compactTransactionId = String(required=True, allow_none=False)
+    attestations = List(Nested(AttestationVersionRecordSchema()), required=True, allow_none=False)
+    persistedStatus = ActiveInactive(required=False, allow_none=False)
+    licenseJurisdiction = Jurisdiction(required=True, allow_none=False)
 
 
 @BaseRecordSchema.register_schema('privilegeUpdate')
-class PrivilegeUpdateRecordSchema(BaseRecordSchema, ChangeHashMixin):
+class PrivilegeUpdateRecordSchema(BaseRecordSchema, ChangeHashMixin, ValidatesLicenseTypeMixin):
     """
     Schema for privilege update history records in the provider data table
 
@@ -98,18 +165,48 @@ class PrivilegeUpdateRecordSchema(BaseRecordSchema, ChangeHashMixin):
     providerId = UUID(required=True, allow_none=False)
     compact = Compact(required=True, allow_none=False)
     jurisdiction = Jurisdiction(required=True, allow_none=False)
+    licenseType = String(required=True, allow_none=False)
+    compactTransactionIdGSIPK = String(required=True, allow_none=False)
     previous = Nested(PrivilegeUpdatePreviousRecordSchema, required=True, allow_none=False)
     # We'll allow any fields that can show up in the previous field to be here as well, but none are required
     updatedValues = Nested(PrivilegeUpdatePreviousRecordSchema(partial=True), required=True, allow_none=False)
+    # optional field that is only included if the update was a deactivation
+    deactivationDetails = Nested(DeactivationDetailsSchema(), required=False, allow_none=False)
 
     @post_dump  # Must be _post_ dump so we have values that are more easily hashed
     def generate_pk_sk(self, in_data, **kwargs):  # noqa: ARG001 unused-argument
-        in_data['pk'] = f'{in_data['compact']}#PROVIDER#{in_data['providerId']}'
+        in_data['pk'] = f'{in_data["compact"]}#PROVIDER#{in_data["providerId"]}'
         # This needs to include a POSIX timestamp (seconds) and a hash of the changes
         # to the record. We'll use the current time and the hash of the updatedValues
         # field for this.
         change_hash = self.hash_changes(in_data)
+        license_type_abbr = config.license_type_abbreviations[in_data['compact']][in_data['licenseType']]
         in_data['sk'] = (
-            f'{in_data['compact']}#PROVIDER#privilege/{in_data['jurisdiction']}#UPDATE#{int(config.current_standard_datetime.timestamp())}/{change_hash}'
+            f'{in_data["compact"]}#PROVIDER#privilege/{in_data["jurisdiction"]}/{license_type_abbr}#UPDATE#{int(config.current_standard_datetime.timestamp())}/{change_hash}'
         )
+        return in_data
+
+    @validates_schema
+    def validate_deactivation_details_present_if_deactivation_update(self, data, **kwargs):  # noqa: ARG002 unused-argument
+        if data['updateType'] == UpdateCategory.DEACTIVATION and not data.get('deactivationDetails'):
+            raise ValidationError({'deactivationDetails': ['This field is required when update was deactivation type']})
+
+    @pre_dump
+    def generate_compact_transaction_gsi_field(self, in_data, **kwargs):  # noqa: ARG001 unused-argument
+        """
+        In order for us to be able to look up privilege records by transaction, we need each update record
+        to track a top level compact transaction id GSI field. We use the value of the compactTransactionId nested in
+        the previous field, since that is guaranteed to include the compactTransactionId field, and by using the
+        previous field, we can trace back to the transaction id for every privilege update record.
+        """
+        in_data['compactTransactionIdGSIPK'] = (
+            f'COMPACT#{in_data["compact"]}#TX#{in_data["previous"]["compactTransactionId"]}#'
+        )
+        return in_data
+
+    @post_load
+    def drop_compact_transaction_id_gsi_field(self, in_data, **kwargs):  # noqa: ARG001 unused-argument
+        """Drop the db-specific license GSI fields before returning loaded data"""
+        # only drop the field if it's present, else continue on
+        in_data.pop('compactTransactionIdGSIPK', None)
         return in_data

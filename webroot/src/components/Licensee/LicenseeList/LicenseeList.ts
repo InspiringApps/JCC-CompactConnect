@@ -32,6 +32,7 @@ import { State } from '@models/State/State.model';
 })
 class LicenseeList extends Vue {
     @Prop({ required: true }) protected listId!: string;
+    @Prop({ default: false }) protected isPublicSearch?: boolean;
 
     //
     // Data
@@ -46,15 +47,22 @@ class LicenseeList extends Vue {
     // Lifecycle
     //
     async created() {
-        if (this.licenseStore.model?.length) {
+        if (this.licenseStoreRecordCount) {
             this.hasSearched = true;
         }
     }
 
     async mounted() {
-        if (!this.licenseStore.model?.length) {
+        if (!this.licenseStoreRecordCount) {
+            // License store is empty - apply defaults
             await this.setDefaultSort();
             await this.setDefaultPaging();
+        } else if (this.licenseStoreRecordCount === 1 && !this.searchDisplayAll) {
+            // Edge case: Returning from a detail page that was refreshed / cache-cleared
+            this.shouldShowSearchModal = true;
+        } else {
+            // License store already has records
+            this.isInitialFetchCompleted = true;
         }
     }
 
@@ -77,39 +85,45 @@ class LicenseeList extends Vue {
         return this.$store.state.license;
     }
 
+    get licenseStoreRecordCount(): number {
+        return this.licenseStore.model?.length || 0;
+    }
+
     get searchParams(): LicenseSearch {
         return this.licenseStore.search;
     }
 
+    get searchDisplayCompact(): string {
+        return (this.isPublicSearch) ? this.userStore.currentCompact?.abbrev() || '' : '';
+    }
+
     get searchDisplayFirstName(): string {
-        return this.searchParams.firstName || '';
+        const delimiter = (this.searchDisplayCompact) ? ', ' : '';
+        let displayFirstName = '';
+
+        if (this.searchParams.firstName) {
+            displayFirstName = `${delimiter}${this.searchParams.firstName}` || '';
+        }
+
+        return displayFirstName;
     }
 
     get searchDisplayLastName(): string {
-        const delimiter = (this.searchDisplayFirstName) ? ' ' : '';
+        const delimiter = (this.searchDisplayCompact && !this.searchDisplayFirstName) ? ', ' : '';
+        const subDelimiter = (this.searchDisplayFirstName) ? ' ' : '';
+        let displayLastName = '';
 
-        return `${delimiter}${this.searchParams.lastName}` || '';
-    }
-
-    get searchDisplaySsn(): string {
-        const { ssn } = this.searchParams;
-        const delimiter = (this.searchDisplayFirstName || this.searchDisplayLastName) ? ', ' : '';
-        let displaySsn = '';
-
-        if (ssn) {
-            const masked = ssn.slice(0, 7).replace(/[0-9]/g, '#');
-            const unmasked = ssn.slice(-4);
-
-            displaySsn = `${delimiter}${masked}${unmasked}`;
+        if (this.searchParams.lastName) {
+            displayLastName = `${delimiter}${subDelimiter}${this.searchParams.lastName}` || '';
         }
 
-        return displaySsn;
+        return displayLastName;
     }
 
     get searchDisplayState(): string {
         const { state } = this.searchParams;
-        const { searchDisplayFirstName, searchDisplayLastName, searchDisplaySsn } = this;
-        const delimiter = (searchDisplayFirstName || searchDisplayLastName || searchDisplaySsn) ? ', ' : '';
+        const { searchDisplayCompact, searchDisplayFirstName, searchDisplayLastName } = this;
+        const delimiter = (searchDisplayCompact || searchDisplayFirstName || searchDisplayLastName) ? ', ' : '';
         let displayState = '';
 
         if (state) {
@@ -123,13 +137,18 @@ class LicenseeList extends Vue {
 
     get searchDisplayAll(): string {
         const {
+            searchDisplayCompact,
             searchDisplayFirstName,
             searchDisplayLastName,
-            searchDisplaySsn,
             searchDisplayState
         } = this;
 
-        return [searchDisplayFirstName, searchDisplayLastName, searchDisplaySsn, searchDisplayState].join('').trim();
+        return [
+            searchDisplayCompact,
+            searchDisplayFirstName,
+            searchDisplayLastName,
+            searchDisplayState
+        ].join('').trim();
     }
 
     get sortOptions(): Array<any> {
@@ -137,7 +156,6 @@ class LicenseeList extends Vue {
             // Temp for limited server sorting support
             // { value: 'firstName', name: this.$t('common.firstName') },
             { value: 'lastName', name: this.$t('common.lastName'), isDefault: true },
-            // { value: 'ssn', name: this.$t('licensing.ssn') },
             // { value: 'licenseStates', name: this.$t('licensing.homeState') },
             // { value: 'privilegeStates', name: this.$t('licensing.privileges') },
             // { value: 'status', name: this.$t('licensing.status') },
@@ -151,7 +169,7 @@ class LicenseeList extends Vue {
             firstName: this.$t('common.firstName'),
             lastName: this.$t('common.lastName'),
             ssnMaskedPartial: () => this.$t('licensing.ssn'),
-            licenseStatesDisplay: () => this.$t('licensing.homeState'),
+            homeJurisdictionDisplay: () => this.$t('licensing.homeState'),
             privilegeStatesDisplay: () => this.$t('licensing.privileges'),
             statusDisplay: () => this.$t('licensing.status'),
         };
@@ -183,6 +201,11 @@ class LicenseeList extends Vue {
 
     resetSearch(): void {
         this.$store.dispatch('license/resetStoreSearch');
+
+        if (this.isPublicSearch) {
+            this.$store.dispatch('user/setCurrentCompact', null);
+        }
+
         this.toggleSearch();
     }
 
@@ -268,16 +291,19 @@ class LicenseeList extends Vue {
         }
 
         // Search params
-        requestConfig.compact = this.userStore.currentCompact?.type;
+        requestConfig.isPublic = this.isPublicSearch;
+
+        if (searchParams?.compact) {
+            requestConfig.compact = searchParams?.compact;
+        } else {
+            requestConfig.compact = this.userStore.currentCompact?.type;
+        }
 
         if (searchParams?.firstName) {
             requestConfig.licenseeFirstName = searchParams.firstName;
         }
         if (searchParams?.lastName) {
             requestConfig.licenseeLastName = searchParams.lastName;
-        }
-        if (searchParams?.ssn) {
-            requestConfig.licenseeSsn = searchParams.ssn;
         }
         if (searchParams?.state) {
             requestConfig.jurisdiction = searchParams.state.toLowerCase();

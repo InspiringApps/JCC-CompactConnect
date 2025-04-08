@@ -22,7 +22,7 @@ with open('cdk.json') as context_file:
     _context = json.load(context_file)['context']
 JURISDICTIONS = _context['jurisdictions']
 COMPACTS = _context['compacts']
-LICENSE_TYPES = _context['license_types']
+LICENSE_TYPES = {compact: [t['name'] for t in types] for compact, types in _context['license_types'].items()}
 
 
 os.environ['COMPACTS'] = json.dumps(COMPACTS)
@@ -39,6 +39,7 @@ schema = LicensePostRequestSchema()
 FIELDS = (
     'ssn',
     'npi',
+    'licenseNumber',
     'licenseType',
     'status',
     'givenName',
@@ -54,7 +55,6 @@ FIELDS = (
     'homeAddressCity',
     'homeAddressState',
     'homeAddressPostalCode',
-    'militaryWaiver',
     'emailAddress',
     'phoneNumber',
 )
@@ -75,7 +75,7 @@ def generate_csv_rows(count, *, compact: str, jurisdiction: str = None) -> dict:
         i += 1
         if i % 1000 == 0:
             sys.stdout.write(f'Generated {i} records')
-    sys.stdout.write(f'Final record count: {i}')
+    sys.stdout.write(f'Final record count: {i}\n')
 
 
 def get_mock_license(i: int, *, compact: str, jurisdiction: str = None) -> dict:
@@ -83,9 +83,11 @@ def get_mock_license(i: int, *, compact: str, jurisdiction: str = None) -> dict:
         jurisdiction = faker.state_abbr().lower()
     license_data = {
         #                                                          |Zero padded 4 digit int|
-        'ssn': f'{(i//1_000_000) % 1000:03}-{(i//10_000) % 100:02}-{(i % 10_000):04}',
+        'ssn': f'{(i // 1_000_000) % 1000:03}-{(i // 10_000) % 100:02}-{(i % 10_000):04}',
         # Some have NPI, some don't
         'npi': str(randint(1_000_000_000, 9_999_999_999)) if choice([True, False]) else None,
+        # Some have License number, some don't
+        'licenseNumber': generate_mock_license_number() if choice([True, False]) else None,
         'licenseType': choice(LICENSE_TYPES[compact]),
         'givenName': name_faker.first_name(),
         'middleName': name_faker.first_name(),
@@ -105,27 +107,28 @@ def get_mock_license(i: int, *, compact: str, jurisdiction: str = None) -> dict:
     return schema.dump(license_data)
 
 
+def generate_mock_license_number() -> str:
+    license_str = ''
+    size = randint(5, 20)
+
+    for _ in range(size):
+        if choice([True, False]):
+            if randint(0, 9) > 2:
+                license_str += chr(randint(ord('A'), ord('Z')))
+            else:
+                license_str += '-'
+        else:
+            license_str += str(randint(0, 9))
+    return license_str
+
+
 def _set_address_state(license_data: dict, jurisdiction: str) -> dict:
-    # 1/5 will have a military waiver
-    military = choice([False, False, False, False, True])
-    if military:
-        home_state = faker.state_abbr().lower()
-        license_data.update(
-            {
-                'homeAddressState': home_state,
-                'homeAddressPostalCode': faker.zipcode_in_state(state_abbr=home_state.upper()),
-                'militaryWaiver': military,
-            },
-        )
-    else:
-        license_data.update(
-            {
-                'homeAddressState': jurisdiction,
-                'homeAddressPostalCode': faker.zipcode_in_state(state_abbr=jurisdiction.upper()),
-                # Explicitly set False for some, omit for others
-                'militaryWaiver': military if choice([True, False]) else None,
-            },
-        )
+    license_data.update(
+        {
+            'homeAddressState': jurisdiction,
+            'homeAddressPostalCode': faker.zipcode_in_state(state_abbr=jurisdiction.upper()),
+        },
+    )
     return license_data
 
 

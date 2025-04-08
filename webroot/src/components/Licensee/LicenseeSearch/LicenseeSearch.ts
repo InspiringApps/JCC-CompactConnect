@@ -17,14 +17,14 @@ import InputText from '@components/Forms/InputText/InputText.vue';
 import InputSelect from '@components/Forms/InputSelect/InputSelect.vue';
 import InputSubmit from '@components/Forms/InputSubmit/InputSubmit.vue';
 import SearchIcon from '@components/Icons/LicenseSearchAlt/LicenseSearchAlt.vue';
-import { CompactType } from '@models/Compact/Compact.model';
+import { CompactType, CompactSerializer } from '@models/Compact/Compact.model';
 import { FormInput } from '@models/FormInput/FormInput.model';
 import Joi from 'joi';
 
 export interface LicenseSearch {
+    compact?: string;
     firstName?: string;
     lastName?: string;
-    ssn?: string;
     state?: string;
 }
 
@@ -40,6 +40,7 @@ export interface LicenseSearch {
 })
 class LicenseeSearch extends mixins(MixinForm) {
     @Prop({ default: {}}) searchParams!: LicenseSearch;
+    @Prop({ default: false }) isPublicSearch!: boolean;
 
     //
     // Lifecycle
@@ -57,6 +58,24 @@ class LicenseeSearch extends mixins(MixinForm) {
 
     get compactType(): CompactType | null {
         return this.userStore.currentCompact?.type;
+    }
+
+    get compactOptions(): Array<any> {
+        const options = this.$tm('compacts').map((compact) => ({
+            value: compact.key,
+            name: compact.name,
+        }));
+
+        options.unshift({
+            value: '',
+            name: computed(() => this.$t('common.selectOption')),
+        });
+
+        return options;
+    }
+
+    get enableCompactSelect(): boolean {
+        return this.isPublicSearch;
     }
 
     get stateOptions(): Array<any> {
@@ -100,52 +119,42 @@ class LicenseeSearch extends mixins(MixinForm) {
                 value: this.searchParams.lastName || '',
                 enforceMax: true,
             }),
-            ssn: new FormInput({
-                id: 'ssn',
-                name: 'ssn',
-                label: computed(() => this.$t('licensing.ssn')),
-                placeholder: '000-00-0000',
-                validation: Joi.string().pattern(/^([0-9]){3}-([0-9]{2}-([0-9]{4}$))/).allow('').messages({
-                    ...this.joiMessages.string,
-                    'string.pattern.base': this.$t('inputErrors.ssnFormat'),
-                }),
-                value: this.searchParams.ssn || '',
-            }),
             state: new FormInput({
                 id: 'state',
                 name: 'state',
                 label: computed(() => this.$t('common.stateJurisdiction')),
                 valueOptions: this.stateOptions,
                 value: this.searchParams.state || '',
+                isDisabled: computed(() => this.enableCompactSelect && !this.compactType),
             }),
             submit: new FormInput({
                 isSubmitInput: true,
                 id: 'submit',
             }),
         });
+
+        if (this.enableCompactSelect) {
+            this.formData.compact = new FormInput({
+                id: 'search-compact',
+                name: 'search-compact',
+                label: computed(() => this.$t('licensing.licenseTypeSearch')),
+                validation: Joi.string().required().messages(this.joiMessages.string),
+                valueOptions: this.compactOptions,
+                value: this.searchParams.compact || this.compactType || '',
+            });
+        }
+
         this.watchFormInputs(); // Important if you want automated form validation
     }
 
-    formatSsn(): void {
-        const { ssn } = this.formData;
-        const format = (ssnInputVal) => {
-            // Remove all non-dash and non-numerals
-            let formatted = ssnInputVal.replace(/[^\d-]/g, '');
+    async updateCurrentCompact(): Promise<void> {
+        const { compact: selectedCompactType, state } = this.formData;
 
-            // Add the first dash if a number from the second group appears
-            formatted = formatted.replace(/^(\d{3})-?(\d{1,2})/, '$1-$2');
-
-            // Add the second dash if a number from the third group appears
-            formatted = formatted.replace(/^(\d{3})-?(\d{2})-?(\d{1,4})/, '$1-$2-$3');
-
-            // Remove misplaced dashes
-            formatted = formatted.split('').filter((val, idx) => val !== '-' || idx === 3 || idx === 6).join('');
-
-            // Enforce max length
-            return formatted.substring(0, 11);
-        };
-
-        ssn.value = format(ssn.value);
+        if (this.enableCompactSelect) {
+            await this.$store.dispatch('user/setCurrentCompact', CompactSerializer.fromServer({ type: selectedCompactType.value }));
+            state.value = '';
+            state.valueOptions = this.stateOptions;
+        }
     }
 
     async handleSubmit(): Promise<void> {
@@ -156,9 +165,9 @@ class LicenseeSearch extends mixins(MixinForm) {
             this.startFormLoading();
 
             const allowedSearchProps = [
+                'compact',
                 'firstName',
                 'lastName',
-                'ssn',
                 'state'
             ];
             const searchProps: LicenseSearch = {};

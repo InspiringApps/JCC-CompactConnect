@@ -4,6 +4,13 @@
     "userId": {
       "type": "string"
     },
+    "status": {
+      "enum": [
+        "active",
+        "inactive"
+      ],
+      "type": "string"
+    },
     "attributes": {
       "additionalProperties": false,
       "properties": {
@@ -42,7 +49,7 @@
               "admin": {
                 "type": "boolean"
               },
-              "read": {
+              "readSSN": {
                 "type": "boolean"
               }
             },
@@ -62,6 +69,9 @@
                     },
                     "readPrivate": {
                       "type": "boolean"
+                    },
+                    "readSSN": {
+                      "type": "boolean"
                     }
                   },
                   "type": "object"
@@ -80,7 +90,8 @@
   "required": [
     "userId",
     "attributes",
-    "permissions"
+    "permissions",
+    "status"
   ],
   "type": "object",
   "$schema": "http://json-schema.org/draft-04/schema#"

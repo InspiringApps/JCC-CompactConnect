@@ -67,6 +67,18 @@ class _Config:
         return boto3.client('events', config=BotoConfig(retries={'mode': 'standard'}))
 
     @cached_property
+    def license_preprocessing_queue(self):
+        """
+        Returns the SQS Queue resource for the license preprocessing queue.
+        This allows for using the Queue's methods directly like send_messages.
+        """
+        return boto3.resource('sqs').Queue(self.license_preprocessing_queue_url)
+
+    @cached_property
+    def license_preprocessing_queue_url(self):
+        return os.environ['LICENSE_PREPROCESSING_QUEUE_URL']
+
+    @cached_property
     def event_bus_name(self):
         return os.environ['EVENT_BUS_NAME']
 
@@ -96,7 +108,40 @@ class _Config:
 
     @property
     def license_types(self):
-        return json.loads(os.environ['LICENSE_TYPES'])
+        """
+        Reshapes the new LICENSE_TYPES format into the previous format for backward compatibility.
+        The new format is:
+        {
+            "aslp": [
+                {"abbreviation": "aud", "name": "audiologist"},
+                {"abbreviation": "slp", "name": "speech-language pathologist"}
+            ]
+        }
+        The returned format is:
+        {
+            "aslp": ["audiologist", "speech-language pathologist"]
+        }
+        """
+        raw_license_types = json.loads(os.environ['LICENSE_TYPES'])
+        return {compact: [lt['name'] for lt in license_types] for compact, license_types in raw_license_types.items()}
+
+    @property
+    def license_type_abbreviations(self):
+        """
+        Creates a lookup dictionary for license type abbreviations based on compact and full name.
+        Returns a structure like:
+        {
+            "aslp": {
+                "audiologist": "aud",
+                "speech-language pathologist": "slp"
+            }
+        }
+        """
+        raw_license_types = json.loads(os.environ['LICENSE_TYPES'])
+        return {
+            compact: {lt['name']: lt['abbreviation'] for lt in license_types}
+            for compact, license_types in raw_license_types.items()
+        }
 
     def license_types_for_compact(self, compact):
         return self.license_types[compact]
@@ -118,8 +163,16 @@ class _Config:
         return os.environ['PROV_DATE_OF_UPDATE_INDEX_NAME']
 
     @property
-    def ssn_inverted_index_name(self):
-        return os.environ['SSN_INVERTED_INDEX_NAME']
+    def license_gsi_name(self):
+        return os.environ['LICENSE_GSI_NAME']
+
+    @property
+    def compact_transaction_id_gsi_name(self):
+        return os.environ['COMPACT_TRANSACTION_ID_GSI_NAME']
+
+    @property
+    def ssn_index_name(self):
+        return os.environ['SSN_INDEX_NAME']
 
     @property
     def bulk_bucket_name(self):
@@ -131,10 +184,20 @@ class _Config:
 
     @property
     def user_pool_id(self):
+        """
+        Return the user pool id of the staff user pool
+        """
         return os.environ['USER_POOL_ID']
 
     @property
+    def provider_user_pool_id(self):
+        return os.environ['PROVIDER_USER_POOL_ID']
+
+    @property
     def users_table_name(self):
+        """
+        Get the staff users table name
+        """
         return os.environ['USERS_TABLE_NAME']
 
     @property
@@ -186,12 +249,24 @@ class _Config:
         return TransactionClient(self)
 
     @property
+    def transaction_reports_bucket_name(self):
+        return os.environ['TRANSACTION_REPORTS_BUCKET_NAME']
+
+    @property
     def transaction_history_table_name(self):
         return os.environ['TRANSACTION_HISTORY_TABLE_NAME']
 
     @property
     def transaction_history_table(self):
         return boto3.resource('dynamodb').Table(self.transaction_history_table_name)
+
+    @property
+    def rate_limiting_table_name(self):
+        return os.environ['RATE_LIMITING_TABLE_NAME']
+
+    @property
+    def rate_limiting_table(self):
+        return boto3.resource('dynamodb').Table(self.rate_limiting_table_name)
 
     @cached_property
     def allowed_origins(self):
@@ -204,6 +279,16 @@ class _Config:
     @property
     def email_notification_service_lambda_name(self):
         return os.environ['EMAIL_NOTIFICATION_SERVICE_LAMBDA_NAME']
+
+    @cached_property
+    def email_service_client(self):
+        from cc_common.email_service_client import EmailServiceClient
+
+        return EmailServiceClient(
+            lambda_client=self.lambda_client,
+            email_notification_service_lambda_name=self.email_notification_service_lambda_name,
+            logger=logger,
+        )
 
 
 config = _Config()

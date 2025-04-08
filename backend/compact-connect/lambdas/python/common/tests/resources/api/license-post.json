@@ -1,6 +1,7 @@
 {
   "ssn": "123-12-1234",
   "npi": "0608337260",
+  "licenseNumber": "A0608337260",
   "givenName": "Björk",
   "middleName": "Gunnar",
   "familyName": "Guðmundsdóttir",
@@ -16,6 +17,5 @@
   "dateOfExpiration": "2025-04-04",
   "dateOfBirth": "1985-06-06",
   "emailAddress": "björk@example.com",
-  "phoneNumber": "+13213214321",
-  "militaryWaiver": false
+  "phoneNumber": "+13213214321"
 }

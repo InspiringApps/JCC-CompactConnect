@@ -16,10 +16,22 @@ export enum AuthTypes {
 }
 
 // =========================
+// =   Permission Types    =
+// =========================
+export enum Permission {
+    NONE = 'none',
+    READ_PRIVATE = 'readPrivate',
+    READ_SSN = 'readSSN',
+    WRITE = 'write',
+    ADMIN = 'admin',
+}
+
+// =========================
 // =       Fee Types       =
 // =========================
 export enum FeeTypes {
-    FLAT_RATE = 'FLAT_RATE'
+    FLAT_RATE = 'FLAT_RATE',
+    FLAT_FEE_PER_PRIVILEGE = 'FLAT_FEE_PER_PRIVILEGE'
 }
 
 // ====================

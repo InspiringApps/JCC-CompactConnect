@@ -10,6 +10,7 @@ from aws_cdk.aws_cognito import (
     ClientAttributes,
     CognitoDomainOptions,
     DeviceTracking,
+    FeaturePlan,
     ICustomAttribute,
     Mfa,
     MfaSecondFactor,
@@ -56,12 +57,13 @@ class UserPool(CdkUserPool):
             removal_policy=removal_policy,
             deletion_protection=removal_policy != RemovalPolicy.DESTROY,
             email=email,
-            # user_invitation=UserInvitationConfig(...),
             account_recovery=AccountRecovery.EMAIL_ONLY,
             auto_verify=AutoVerifiedAttrs(email=True),
             advanced_security_mode=AdvancedSecurityMode.ENFORCED
             if security_profile == SecurityProfile.RECOMMENDED
             else AdvancedSecurityMode.AUDIT,
+            # required for advanced security mode
+            feature_plan=FeaturePlan.PLUS,
             custom_sender_kms_key=encryption_key,
             device_tracking=DeviceTracking(
                 challenge_required_on_new_device=True, device_only_remembered_on_user_prompt=True
@@ -79,11 +81,12 @@ class UserPool(CdkUserPool):
 
         self.security_profile = security_profile
 
-        self.user_pool_domain = self.add_domain(
-            f'{construct_id}Domain', cognito_domain=CognitoDomainOptions(domain_prefix=cognito_domain_prefix)
-        )
+        if cognito_domain_prefix:
+            self.user_pool_domain = self.add_domain(
+                f'{construct_id}Domain', cognito_domain=CognitoDomainOptions(domain_prefix=cognito_domain_prefix)
+            )
 
-        CfnOutput(self, f'{construct_id}UsersDomain', value=self.user_pool_domain.domain_name)
+            CfnOutput(self, f'{construct_id}UsersDomain', value=self.user_pool_domain.domain_name)
         CfnOutput(self, f'{construct_id}UserPoolId', value=self.user_pool_id)
 
         self._add_risk_configuration(security_profile)
@@ -149,12 +152,14 @@ class UserPool(CdkUserPool):
         logout_urls = []
         if ui_domain_name is not None:
             logout_urls.append(f'https://{ui_domain_name}/Login')
+            logout_urls.append(f'https://{ui_domain_name}/Dashboard')
             logout_urls.append(f'https://{ui_domain_name}/Logout')
         # This toggle will allow front-end devs to point their local UI at this environment's user pool to support
         # authenticated actions.
         if environment_context.get('allow_local_ui', False):
             local_ui_port = environment_context.get('local_ui_port', '3018')
             logout_urls.append(f'http://localhost:{local_ui_port}/Login')
+            logout_urls.append(f'http://localhost:{local_ui_port}/Dashboard')
             logout_urls.append(f'http://localhost:{local_ui_port}/Logout')
         if not logout_urls:
             raise ValueError(

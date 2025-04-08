@@ -4,7 +4,7 @@ Schema for API objects.
 """
 
 from marshmallow import ValidationError, validates_schema
-from marshmallow.fields import Boolean, Date, Email, List, Nested, Raw, String
+from marshmallow.fields import Date, Email, List, Nested, Raw, String
 from marshmallow.validate import Length
 
 from cc_common.config import config
@@ -30,6 +30,7 @@ class LicensePostRequestSchema(ForgivingSchema):
 
     ssn = SocialSecurityNumber(required=True, allow_none=False)
     npi = NationalProviderIdentifier(required=False, allow_none=False)
+    licenseNumber = String(required=False, allow_none=False, validate=Length(1, 100))
     # This status field is required when posting a license record. It will be transformed into the
     # jurisdictionStatus field when the record is ingested.
     status = ActiveInactive(required=True, allow_none=False)
@@ -51,7 +52,6 @@ class LicensePostRequestSchema(ForgivingSchema):
     homeAddressCity = String(required=True, allow_none=False, validate=Length(2, 100))
     homeAddressState = String(required=True, allow_none=False, validate=Length(2, 100))
     homeAddressPostalCode = String(required=True, allow_none=False, validate=Length(5, 7))
-    militaryWaiver = Boolean(required=False, allow_none=False)
     emailAddress = Email(required=False, allow_none=False, validate=Length(1, 100))
     phoneNumber = ITUTE164PhoneNumber(required=False, allow_none=False)
 
@@ -59,7 +59,7 @@ class LicensePostRequestSchema(ForgivingSchema):
     def validate_license_type(self, data, **kwargs):  # noqa: ARG001 unused-argument
         license_types = config.license_types_for_compact(data['compact'])
         if data['licenseType'] not in license_types:
-            raise ValidationError({'licenseType': [f'Must be one of: {', '.join(license_types)}.']})
+            raise ValidationError({'licenseType': [f'Must be one of: {", ".join(license_types)}.']})
 
 
 class LicenseUpdatePreviousGeneralResponseSchema(ForgivingSchema):
@@ -71,7 +71,7 @@ class LicenseUpdatePreviousGeneralResponseSchema(ForgivingSchema):
     """
 
     npi = NationalProviderIdentifier(required=False, allow_none=False)
-    licenseType = String(required=True, allow_none=False)
+    licenseNumber = String(required=False, allow_none=False, validate=Length(1, 100))
     givenName = String(required=True, allow_none=False, validate=Length(1, 100))
     middleName = String(required=False, allow_none=False, validate=Length(1, 100))
     familyName = String(required=True, allow_none=False, validate=Length(1, 100))
@@ -85,8 +85,7 @@ class LicenseUpdatePreviousGeneralResponseSchema(ForgivingSchema):
     homeAddressCity = String(required=True, allow_none=False, validate=Length(2, 100))
     homeAddressState = String(required=True, allow_none=False, validate=Length(2, 100))
     homeAddressPostalCode = String(required=True, allow_none=False, validate=Length(5, 7))
-    militaryWaiver = Boolean(required=False, allow_none=False)
-    emailAddress = Email(required=False, allow_none=False, validate=Length(1, 100))
+    emailAddress = Email(required=False, allow_none=False)
     phoneNumber = ITUTE164PhoneNumber(required=False, allow_none=False)
     jurisdictionStatus = ActiveInactive(required=True, allow_none=False)
 
@@ -104,6 +103,7 @@ class LicenseUpdateGeneralResponseSchema(ForgivingSchema):
     providerId = Raw(required=True, allow_none=False)
     compact = Compact(required=True, allow_none=False)
     jurisdiction = Jurisdiction(required=True, allow_none=False)
+    licenseType = String(required=True, allow_none=False)
     dateOfUpdate = Raw(required=True, allow_none=False)
     previous = Nested(LicenseUpdatePreviousGeneralResponseSchema(), required=True, allow_none=False)
     # We'll allow any fields that can show up in the previous field to be here as well, but none are required
@@ -128,6 +128,7 @@ class LicenseGeneralResponseSchema(ForgivingSchema):
     licenseType = String(required=True, allow_none=False)
     jurisdictionStatus = ActiveInactive(required=True, allow_none=False)
     npi = NationalProviderIdentifier(required=False, allow_none=False)
+    licenseNumber = String(required=False, allow_none=False, validate=Length(1, 100))
     givenName = String(required=True, allow_none=False, validate=Length(1, 100))
     middleName = String(required=False, allow_none=False, validate=Length(1, 100))
     familyName = String(required=True, allow_none=False, validate=Length(1, 100))
@@ -140,8 +141,7 @@ class LicenseGeneralResponseSchema(ForgivingSchema):
     homeAddressCity = String(required=True, allow_none=False, validate=Length(2, 100))
     homeAddressState = String(required=True, allow_none=False, validate=Length(2, 100))
     homeAddressPostalCode = String(required=True, allow_none=False, validate=Length(5, 7))
-    emailAddress = Email(required=False, allow_none=False, validate=Length(1, 100))
+    emailAddress = Email(required=False, allow_none=False)
     phoneNumber = ITUTE164PhoneNumber(required=False, allow_none=False)
     status = ActiveInactive(required=True, allow_none=False)
-    militaryWaiver = Boolean(required=False, allow_none=False)
     history = List(Nested(LicenseUpdateGeneralResponseSchema, required=False, allow_none=False))

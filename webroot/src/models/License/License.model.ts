@@ -11,12 +11,13 @@ import { dateDisplay, dateDiff } from '@models/_formatters/date';
 import { Compact } from '@models/Compact/Compact.model';
 import { State } from '@models/State/State.model';
 import { LicenseHistoryItem, LicenseHistoryItemSerializer } from '@models/LicenseHistoryItem/LicenseHistoryItem.model';
+import { Address, AddressSerializer } from '@models/Address/Address.model';
 import moment from 'moment';
 
 // ========================================================
 // =                       Interface                      =
 // ========================================================
-export enum LicenseOccupation { // Temp server definition until server returns via endpoint
+export enum LicenseType { // Temp server definition until server returns via endpoint
     AUDIOLOGIST = 'audiologist',
     SPEECH_LANGUAGE_PATHOLOGIST = 'speech-language pathologist',
     SPEECH_AND_LANGUAGE_PATHOLOGIST = 'speech and language pathologist',
@@ -37,34 +38,42 @@ export interface InterfaceLicense {
     id?: string | null;
     compact?: Compact | null;
     isPrivilege?: boolean;
+    licenseeId?: string | null;
     issueState?: State,
     isHomeState?: boolean;
     issueDate?: string | null;
     renewalDate?: string | null;
+    mailingAddress?: Address;
     expireDate?: string | null;
-    occupation?: LicenseOccupation | null,
+    npi?: string | null;
+    licenseNumber?: string | null;
+    privilegeId?: string | null;
+    licenseType?: LicenseType | null,
     history?: Array<LicenseHistoryItem>,
-    statusState?: LicenseStatus,
-    statusCompact?: LicenseStatus,
+    status?: LicenseStatus,
 }
 
 // ========================================================
 // =                        Model                         =
 // ========================================================
 export class License implements InterfaceLicense {
+    // This model is used to represent both privileges and licenses as their shape almost entirely overlaps
     public $tm?: any = () => [];
     public id? = null;
     public compact? = null;
     public isPrivilege? = false;
+    public licenseeId? = null;
     public issueState? = new State();
-    public isHomeState? = false;
     public issueDate? = null;
+    public mailingAddress? = new Address();
     public renewalDate? = null;
+    public npi? = null;
+    public licenseNumber? = null;
+    public privilegeId? = null;
     public expireDate? = null;
-    public occupation? = null;
+    public licenseType? = null;
     public history? = [];
-    public statusState? = LicenseStatus.INACTIVE;
-    public statusCompact? = LicenseStatus.INACTIVE;
+    public status? = LicenseStatus.INACTIVE;
 
     constructor(data?: InterfaceLicense) {
         const cleanDataObject = deleteUndefinedProperties(data);
@@ -99,12 +108,26 @@ export class License implements InterfaceLicense {
         return Boolean(diff > 0);
     }
 
-    public occupationName(): string {
-        const occupations = this.$tm('licensing.occupations') || [];
-        const occupation = occupations.find((translate) => translate.key === this.occupation);
-        const occupationName = occupation?.name || '';
+    // Relevant for License only until licenseType is included in privilege return
+    public licenseTypeName(): string {
+        const licenseTypes = this.$tm('licensing.licenseTypes') || [];
+        const licenseType = licenseTypes.find((translate) => translate.key === this.licenseType);
+        const licenseTypeName = licenseType?.name || '';
 
-        return occupationName;
+        return licenseTypeName;
+    }
+
+    public licenseTypeAbbreviation(): string {
+        const licenseTypes = this.$tm('licensing.licenseTypes') || [];
+        const licenseType = licenseTypes.find((translate) => translate.key === this.licenseType);
+        const licenseTypeAbbrev = licenseType?.abbrev || '';
+        const upperCaseAbbrev = licenseTypeAbbrev.toUpperCase();
+
+        return upperCaseAbbrev;
+    }
+
+    public displayName(): string {
+        return `${this.issueState?.name() || ''}${this.issueState?.name() && this.licenseTypeAbbreviation() ? ' - ' : ''}${this.licenseTypeAbbreviation()}`;
     }
 }
 
@@ -114,18 +137,27 @@ export class License implements InterfaceLicense {
 export class LicenseSerializer {
     static fromServer(json: any): License {
         const licenseData = {
-            id: json.id,
+            id: `${json.providerId}-${json.jurisdiction}-${json.licenseType}`,
             compact: new Compact({ type: json.compact }),
             isPrivilege: Boolean(json.type === 'privilege'),
+            licenseeId: json.providerId,
+            mailingAddress: AddressSerializer.fromServer({
+                street1: json.homeAddressStreet1,
+                street2: json.homeAddressStreet2,
+                city: json.homeAddressCity,
+                state: json.homeAddressState,
+                zip: json.homeAddressPostalCode,
+            }),
             issueState: new State({ abbrev: json.jurisdiction || json.licenseJurisdiction }),
-            isHomeState: Boolean(json.type === 'license-home'),
             issueDate: json.dateOfIssuance,
+            npi: json.npi,
+            licenseNumber: json.licenseNumber, // License field only
+            privilegeId: json.privilegeId, // Privilege field only
             renewalDate: json.dateOfRenewal,
             expireDate: json.dateOfExpiration,
-            occupation: json.licenseType,
-            statusState: json.status,
+            licenseType: json.licenseType,
+            status: json.status,
             history: [] as Array <LicenseHistoryItem>,
-            statusCompact: json.status, // In the near future, the server will send a separate field for this
         };
 
         if (Array.isArray(json.history)) {

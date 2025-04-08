@@ -45,6 +45,7 @@
                     :to="{ name: link.to, params: link.params || {}}"
                     :aria-label="link.label"
                     tabindex="0"
+                    :class="{ 'router-link-active': link.isActive }"
                 >
                     <component v-if="link.iconComponent" :is="link.iconComponent" class="link-icon" />
                     <span v-if="isNavExpanded" class="link-label">{{ link.label }}</span>
@@ -70,7 +71,7 @@
                 :hideIfNotMultiple="true"
             />
         </div>
-        <div class="separator"></div>
+        <div v-if="isLoggedIn" class="separator"></div>
         <ul class="nav my-nav">
             <li v-for="link in myLinks" :key="link.label" class="page-nav my-links">
                 <!-- Internal links that should only have active style if the route path matches exactly -->

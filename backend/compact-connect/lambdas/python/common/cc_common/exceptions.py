@@ -20,6 +20,10 @@ class CCNotFoundException(CCInvalidRequestException):
     """Requested resource is not found, corresponds to a 404 response"""
 
 
+class CCRateLimitingException(CCInvalidRequestException):
+    """Client is rate limited, corresponds to a 429 response"""
+
+
 class CCInternalException(CCBaseException):
     """Internal error in the request, corresponds to a 500 response"""
 
@@ -34,7 +38,3 @@ class CCAwsServiceException(CCBaseException):
 
 class CCConflictException(CCBaseException):
     """Client error in the request, corresponds to a 409 response"""
-
-
-class TransactionBatchSettlementFailureException(CCBaseException):
-    """Raised when a transaction batch has a settlement error."""

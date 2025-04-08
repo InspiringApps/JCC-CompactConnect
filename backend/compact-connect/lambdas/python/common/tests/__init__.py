@@ -26,11 +26,19 @@ class TstLambdas(TestCase):
                 'FAM_GIV_INDEX_NAME': 'famGiv',
                 'USER_POOL_ID': 'us-east-1-12345',
                 'USERS_TABLE_NAME': 'users-table',
+                'SSN_TABLE_NAME': 'ssn-table',
+                'SSN_INDEX_NAME': 'ssn-index',
+                'LICENSE_PREPROCESSING_QUEUE_URL': 'license-preprocessing-queue-url',
                 'PROV_DATE_OF_UPDATE_INDEX_NAME': 'providerDateOfUpdate',
                 'COMPACTS': '["aslp", "octp", "coun"]',
                 'JURISDICTIONS': '["ne", "oh", "ky"]',
                 'LICENSE_TYPES': json.dumps(
-                    {'aslp': ['audiologist', 'speech-language pathologist', 'speech and language pathologist']},
+                    {
+                        'aslp': [
+                            {'name': 'audiologist', 'abbreviation': 'aud'},
+                            {'name': 'speech-language pathologist', 'abbreviation': 'slp'},
+                        ]
+                    },
                 ),
             },
         )

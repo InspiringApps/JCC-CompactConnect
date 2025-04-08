@@ -12,7 +12,8 @@ from .. import TstFunction
 class TestTransformations(TstFunction):
     # Yes, this is an excessively long method. We're going with it for sake of a single illustrative test.
     @patch('cc_common.config._Config.current_standard_datetime', datetime.fromisoformat('2024-11-08T23:59:59+00:00'))
-    def test_transformations(self):
+    @patch('cc_common.config._Config.license_preprocessing_queue')
+    def test_transformations(self, mock_license_preprocessing_queue):
         """Provider data undergoes several transformations from when a license is first posted, stored into the
         database, then returned via the API. We will specifically test that chain, end to end, to make sure the
         transformations all happen as expected.
@@ -39,27 +40,34 @@ class TestTransformations(TstFunction):
         # Compact and jurisdiction are provided via path parameters
         event['pathParameters'] = {'compact': 'aslp', 'jurisdiction': 'oh'}
         # Authorize ourselves to write the license
-        event['requestContext']['authorizer']['claims']['scope'] = 'openid email aslp/write aslp/oh.write'
+        event['requestContext']['authorizer']['claims']['scope'] = 'openid email oh/aslp.write'
 
         from handlers.licenses import post_licenses
 
-        # Mock EventBatchWriter so we can intercept the EventBridge event for later
-        with patch('handlers.licenses.EventBatchWriter', autospec=True) as mock_event_batch_writer:
-            mock_event_batch_writer.return_value.__enter__.return_value.failed_entry_count = 0
-            mock_event_batch_writer.return_value.__enter__.return_value.failed_entries = []
+        # POST the license via the API
+        post_licenses(event, self.mock_context)
 
-            # POST the license via the API
-            post_licenses(event, self.mock_context)
+        # Capture the message sent to the preprocessing queue
+        preprocessing_message = json.loads(
+            mock_license_preprocessing_queue.send_messages.call_args.kwargs['Entries'][0]['MessageBody']
+        )
 
-            # Capture the event the API POST will produce
-            event_bridge_event = json.loads(
-                mock_event_batch_writer.return_value.__enter__.return_value.put_event.call_args.kwargs['Entry'][
-                    'Detail'
-                ],
-            )
+        # Now we need to simulate the preprocessing step
+        # Mock EventBatchWriter so we can intercept the EventBridge event
+        with patch('handlers.ingest.config.events_client', autospec=True) as mock_event_client:
+            from handlers.ingest import preprocess_license_ingest
+
+            # Create an SQS event with our preprocessing message
+            preprocess_event = {'Records': [{'messageId': '123', 'body': json.dumps(preprocessing_message)}]}
+
+            # Run the preprocessing step
+            preprocess_license_ingest(preprocess_event, self.mock_context)
+
+            # Capture the event the preprocessor will produce for the event bus
+            event_bridge_event = json.loads(mock_event_client.put_events.call_args.kwargs['Entries'][0]['Detail'])
 
         # A sample SQS message from EventBridge
-        with open('../common/tests/resources/ingest/message.json') as f:
+        with open('../common/tests/resources/ingest/event-bridge-message.json') as f:
             message = json.load(f)
 
         # Pack our license.ingest event into the sample message
@@ -80,7 +88,20 @@ class TestTransformations(TstFunction):
             ssn=license_ssn,
         )
         self.assertEqual(expected_provider_id, provider_id)
-        provider_record = client.get_provider(compact='aslp', provider_id=provider_id, detail=False)
+        provider_record = client.get_provider(compact='aslp', provider_id=provider_id, detail=False)['items'][0]
+
+        # Expected representation of each record in the database
+        with open('../common/tests/resources/dynamo/provider.json') as f:
+            expected_provider = json.load(f)
+
+        # register the provider in the system
+        client.process_registration_values(
+            compact='aslp',
+            provider_id=provider_id,
+            cognito_sub=expected_provider['cognitoSub'],
+            jurisdiction='oh',
+            email_address=expected_provider['compactConnectRegisteredEmailAddress'],
+        )
 
         # Add a privilege to practice in Nebraska
         client.create_provider_privileges(
@@ -91,7 +112,8 @@ class TestTransformations(TstFunction):
             jurisdiction_postal_abbreviations=['ne'],
             license_expiration_date=date(2025, 4, 4),
             compact_transaction_id='1234567890',
-            existing_privileges=[],
+            existing_privileges_for_license=[],
+            license_type='speech-language pathologist',
             attestations=[{'attestationId': 'jurisprudence-confirmation', 'version': '1'}],
         )
 
@@ -114,13 +136,10 @@ class TestTransformations(TstFunction):
             KeyConditionExpression=Key('pk').eq(f'aslp#PROVIDER#{provider_id}')
             & Key('sk').begins_with('aslp#PROVIDER'),
         )
-        # One record for each of: provider, license, privilege, militaryAffiliation
-        self.assertEqual(4, len(resp['Items']))
+        # One record for each of: provider, license, privilege, militaryAffiliation, and homeJurisdictionSelection
+        self.assertEqual(5, len(resp['Items']))
         records = {item['type']: item for item in resp['Items']}
 
-        # Expected representation of each record in the database
-        with open('../common/tests/resources/dynamo/provider.json') as f:
-            expected_provider = json.load(f)
         # Convert this to the data type expected from DynamoDB
         expected_provider['privilegeJurisdictions'] = set(expected_provider['privilegeJurisdictions'])
 
@@ -168,7 +187,7 @@ class TestTransformations(TstFunction):
             event = json.load(f)
 
         event['pathParameters'] = {'compact': 'aslp', 'providerId': provider_id}
-        event['requestContext']['authorizer']['claims']['scope'] = 'openid email aslp/readGeneral aslp/aslp.readPrivate'
+        event['requestContext']['authorizer']['claims']['scope'] = 'openid email aslp/readGeneral aslp/readPrivate'
 
         resp = get_provider(event, self.mock_context)
 
@@ -195,6 +214,8 @@ class TestTransformations(TstFunction):
         del provider_data['privileges'][0]['dateOfRenewal']
         del provider_data['militaryAffiliations'][0]['dateOfUpload']
         del provider_data['militaryAffiliations'][0]['dateOfUpdate']
+        del provider_data['homeJurisdictionSelection']['dateOfSelection']
+        del provider_data['homeJurisdictionSelection']['dateOfUpdate']
         del expected_provider['dateOfUpdate']
         del expected_provider['licenses'][0]['dateOfUpdate']
         del expected_provider['privileges'][0]['dateOfUpdate']
@@ -202,6 +223,8 @@ class TestTransformations(TstFunction):
         del expected_provider['privileges'][0]['dateOfRenewal']
         del expected_provider['militaryAffiliations'][0]['dateOfUpload']
         del expected_provider['militaryAffiliations'][0]['dateOfUpdate']
+        del expected_provider['homeJurisdictionSelection']['dateOfUpdate']
+        del expected_provider['homeJurisdictionSelection']['dateOfSelection']
 
         # This lengthy test does not include change records for licenses or privileges, so we'll blank out the
         # sample history from our expected_provider

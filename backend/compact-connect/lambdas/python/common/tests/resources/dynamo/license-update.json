@@ -1,16 +1,17 @@
 {
   "pk": "aslp#PROVIDER#89a6377e-c3a5-40e5-bca5-317ec854c570",
-  "sk": "aslp#PROVIDER#license/oh#UPDATE#1586264399/10bd49b5c65f404b9b505884a61cd3c4",
+  "sk": "aslp#PROVIDER#license/oh/slp#UPDATE#1586264399/745e7ccd253c6912b1e27c176c708395",
   "type": "licenseUpdate",
   "updateType": "renewal",
   "providerId": "89a6377e-c3a5-40e5-bca5-317ec854c570",
   "compact": "aslp",
   "jurisdiction": "oh",
+  "licenseType": "speech-language pathologist",
   "dateOfUpdate": "2020-04-07T12:59:59+00:00",
   "previous": {
-    "ssn": "123-12-1234",
     "npi": "0608337260",
-    "licenseType": "speech-language pathologist",
+    "licenseNumber": "A0608337260",
+    "ssnLastFour": "1234",
     "givenName": "Björk",
     "middleName": "Gunnar",
     "familyName": "Guðmundsdóttir",
@@ -26,7 +27,6 @@
     "homeAddressPostalCode": "43004",
     "emailAddress": "björk@example.com",
     "phoneNumber": "+13213214321",
-    "militaryWaiver": false,
     "jurisdictionStatus": "active"
   },
   "updatedValues": {

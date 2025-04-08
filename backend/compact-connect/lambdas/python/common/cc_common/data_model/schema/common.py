@@ -4,8 +4,10 @@ from datetime import UTC, datetime
 from enum import StrEnum
 from hashlib import md5
 
-from marshmallow import Schema
+from marshmallow import Schema, ValidationError, validates_schema
 from marshmallow.fields import Dict, String, Url
+
+from cc_common.config import config
 
 
 class CCEnum(StrEnum):
@@ -19,6 +21,19 @@ class CCEnum(StrEnum):
     @classmethod
     def from_str(cls, label: str) -> 'CCEnum':
         return cls[label]
+
+
+class CCPermissionsAction(StrEnum):
+    """
+    Enum for Compact Connect permissions actions
+    """
+
+    READ = 'read'
+    WRITE = 'write'
+    ADMIN = 'admin'
+    READ_GENERAL = 'readGeneral'
+    READ_PRIVATE = 'readPrivate'
+    READ_SSN = 'readSSN'
 
 
 class S3PresignedPostSchema(Schema):
@@ -68,7 +83,12 @@ class UpdateCategory(CCEnum):
     OTHER = 'other'
 
 
-class Status(CCEnum):
+class ProviderEligibilityStatus(CCEnum):
+    ACTIVE = 'active'
+    INACTIVE = 'inactive'
+
+
+class StaffUserStatus(CCEnum):
     ACTIVE = 'active'
     INACTIVE = 'inactive'
 
@@ -101,3 +121,11 @@ class ChangeHashMixin:
         change_hash.update(json.dumps(hash_data, sort_keys=True).encode('utf-8'))
 
         return change_hash.hexdigest()
+
+
+class ValidatesLicenseTypeMixin:
+    @validates_schema
+    def validate_license_type(self, data, **kwargs):  # noqa: ARG002 unused-argument
+        license_types = config.license_types_for_compact(data['compact'])
+        if data['licenseType'] not in license_types:
+            raise ValidationError({'licenseType': [f'Must be one of: {", ".join(license_types)}.']})

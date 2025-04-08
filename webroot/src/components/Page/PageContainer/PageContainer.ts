@@ -45,18 +45,17 @@ class PageContainer extends Vue {
     }
 
     get includePageHeader(): boolean {
-        const { isLoggedIn } = this.userStore;
         const nonHeaderRouteNames: Array<string> = [
-            'Login',
             'Logout',
         ];
 
-        return (isLoggedIn && this.isPhone && !nonHeaderRouteNames.includes(this.currentRouteName));
+        return (this.isPhone && !nonHeaderRouteNames.includes(this.currentRouteName));
     }
 
     get shouldPadTop(): boolean {
         const nonPadTopRouteNames: Array<string> = [
             'LicensingDetail',
+            'LicenseeDetailPublic',
         ];
 
         return !nonPadTopRouteNames.includes(this.currentRouteName);

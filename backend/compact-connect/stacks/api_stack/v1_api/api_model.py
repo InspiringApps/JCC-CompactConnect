@@ -1,6 +1,8 @@
-# ruff: noqa: SLF001  Private member accessed
+# ruff: noqa: SLF001
 # This class initializes the api models for the root api, which we then want to set as protected
 # so other classes won't modify it. This is a valid use case for protected access to work with cdk.
+from __future__ import annotations
+
 from aws_cdk.aws_apigateway import JsonSchema, JsonSchemaType, Model
 from common_constructs.stack import AppStack
 
@@ -11,7 +13,8 @@ from stacks.api_stack import cc_api
 class ApiModel:
     """This class is responsible for defining the model definitions used in the API endpoints."""
 
-    def __init__(self, api: cc_api):
+    def __init__(self, api: cc_api.CCApi):
+        self.stack: AppStack = AppStack.of(api)
         self.api = api
 
     @property
@@ -51,12 +54,8 @@ class ApiModel:
                     'query': JsonSchema(
                         type=JsonSchemaType.OBJECT,
                         description='The query parameters',
+                        additional_properties=False,
                         properties={
-                            'ssn': JsonSchema(
-                                type=JsonSchemaType.STRING,
-                                description='Social security number to look up',
-                                pattern=cc_api.SSN_FORMAT,
-                            ),
                             'providerId': JsonSchema(
                                 type=JsonSchemaType.STRING,
                                 description='Internal UUID for the provider',
@@ -66,6 +65,17 @@ class ApiModel:
                                 type=JsonSchemaType.STRING,
                                 description='Filter for providers with privilege/license in a jurisdiction',
                                 enum=self.api.node.get_context('jurisdictions'),
+                            ),
+                            'givenName': JsonSchema(
+                                type=JsonSchemaType.STRING,
+                                max_length=100,
+                                description='Filter for providers with a given name (familyName is required if'
+                                ' givenName is provided)',
+                            ),
+                            'familyName': JsonSchema(
+                                type=JsonSchemaType.STRING,
+                                max_length=100,
+                                description='Filter for providers with a family name',
                             ),
                         },
                     ),
@@ -142,7 +152,10 @@ class ApiModel:
                         'status',
                     ],
                     additional_properties=False,
-                    properties=self._common_license_properties,
+                    properties={
+                        'licenseType': JsonSchema(type=JsonSchemaType.STRING, enum=self.stack.license_types),
+                        **self._common_license_properties,
+                    },
                 ),
             ),
         )
@@ -296,9 +309,7 @@ class ApiModel:
                         properties={
                             'readPrivate': JsonSchema(type=JsonSchemaType.BOOLEAN),
                             'admin': JsonSchema(type=JsonSchemaType.BOOLEAN),
-                            # TODO keeping 'read' action for backwards compatibility  # noqa: FIX002
-                            #  this should be removed after the frontend is updated
-                            'read': JsonSchema(type=JsonSchemaType.BOOLEAN),
+                            'readSSN': JsonSchema(type=JsonSchemaType.BOOLEAN),
                         },
                     ),
                     'jurisdictions': JsonSchema(
@@ -313,6 +324,7 @@ class ApiModel:
                                         'write': JsonSchema(type=JsonSchemaType.BOOLEAN),
                                         'admin': JsonSchema(type=JsonSchemaType.BOOLEAN),
                                         'readPrivate': JsonSchema(type=JsonSchemaType.BOOLEAN),
+                                        'readSSN': JsonSchema(type=JsonSchemaType.BOOLEAN),
                                     },
                                 ),
                             },
@@ -330,10 +342,41 @@ class ApiModel:
     def _staff_user_response_schema(self):
         return JsonSchema(
             type=JsonSchemaType.OBJECT,
-            required=['userId', 'attributes', 'permissions'],
+            required=['userId', 'attributes', 'permissions', 'status'],
             additional_properties=False,
-            properties={'userId': JsonSchema(type=JsonSchemaType.STRING), **self._common_staff_user_properties},
+            properties={
+                'userId': JsonSchema(type=JsonSchemaType.STRING),
+                'status': JsonSchema(type=JsonSchemaType.STRING, enum=['active', 'inactive']),
+                **self._common_staff_user_properties,
+            },
         )
+
+    @property
+    def post_privilege_deactivation_request_model(self) -> Model:
+        """Return the post privilege deactivation request model, which should only be created once per API"""
+        if hasattr(self.api, '_v1_post_privilege_deactivation_request_model'):
+            return self.api._v1_post_privilege_deactivation_request_model
+        self.api._v1_post_privilege_deactivation_request_model = self.api.add_model(
+            'V1PostPrivilegeDeactivationRequestModel',
+            description='Post privilege deactivation request model',
+            schema=JsonSchema(
+                type=JsonSchemaType.OBJECT,
+                additional_properties=False,
+                # TODO - this 'deactivationNote' should be set to required after frontend has been # noqa: FIX002
+                #  updated to pass it in
+                # required=['deactivationNote'],
+                properties={
+                    'deactivationNote': JsonSchema(
+                        type=JsonSchemaType.STRING,
+                        description='Note describing why the privilege is being deactivated',
+                        # setting a max file name length of 256 to prevent abuse
+                        max_length=256,
+                    ),
+                },
+            ),
+        )
+
+        return self.api._v1_post_privilege_deactivation_request_model
 
     @property
     def post_provider_user_military_affiliation_request_model(self) -> Model:
@@ -476,8 +519,13 @@ class ApiModel:
             description='Post purchase privileges request model',
             schema=JsonSchema(
                 type=JsonSchemaType.OBJECT,
-                required=['selectedJurisdictions', 'orderInformation'],
+                required=['licenseType', 'selectedJurisdictions', 'orderInformation', 'attestations'],
                 properties={
+                    'licenseType': JsonSchema(
+                        type=JsonSchemaType.STRING,
+                        description='The type of license the provider is purchasing a privilege for.',
+                        enum=self.stack.license_types,
+                    ),
                     'selectedJurisdictions': JsonSchema(
                         type=JsonSchemaType.ARRAY,
                         # setting a max length to prevent abuse
@@ -711,16 +759,52 @@ class ApiModel:
             one_of=[
                 JsonSchema(
                     type=JsonSchemaType.OBJECT,
-                    required=['type', 'compactName', 'compactCommissionFee'],
+                    required=[
+                        'type',
+                        'compactAbbr',
+                        'compactName',
+                        'compactCommissionFee',
+                        'transactionFeeConfiguration',
+                    ],
                     properties={
                         'type': JsonSchema(type=JsonSchemaType.STRING, enum=['compact']),
-                        'compactName': JsonSchema(type=JsonSchemaType.STRING, description='The name of the compact'),
+                        'compactAbbr': JsonSchema(
+                            type=JsonSchemaType.STRING, description='The abbreviation of the compact'
+                        ),
+                        'compactName': JsonSchema(
+                            type=JsonSchemaType.STRING, description='The full name of the compact'
+                        ),
                         'compactCommissionFee': JsonSchema(
                             type=JsonSchemaType.OBJECT,
                             required=['feeType', 'feeAmount'],
                             properties={
                                 'feeType': JsonSchema(type=JsonSchemaType.STRING, enum=['FLAT_RATE']),
                                 'feeAmount': JsonSchema(type=JsonSchemaType.NUMBER),
+                            },
+                        ),
+                        'transactionFeeConfiguration': JsonSchema(
+                            type=JsonSchemaType.OBJECT,
+                            required=['licenseeCharges'],
+                            properties={
+                                'licenseeCharges': JsonSchema(
+                                    type=JsonSchemaType.OBJECT,
+                                    required=['active', 'chargeType', 'chargeAmount'],
+                                    properties={
+                                        'active': JsonSchema(
+                                            type=JsonSchemaType.BOOLEAN,
+                                            description='Whether the compact is charging licensees transaction fees',
+                                        ),
+                                        'chargeType': JsonSchema(
+                                            type=JsonSchemaType.STRING,
+                                            enum=['FLAT_FEE_PER_PRIVILEGE'],
+                                            description='The type of transaction fee charge',
+                                        ),
+                                        'chargeAmount': JsonSchema(
+                                            type=JsonSchemaType.NUMBER,
+                                            description='The amount to charge per privilege purchased',
+                                        ),
+                                    },
+                                ),
                             },
                         ),
                     },
@@ -789,10 +873,9 @@ class ApiModel:
             required=[
                 'type',
                 'providerId',
-                'ssn',
                 'givenName',
                 'familyName',
-                'licenseType',
+                'jurisdictionStatus',
                 'status',
                 'compact',
                 'licenseJurisdiction',
@@ -801,7 +884,6 @@ class ApiModel:
                 'homeAddressCity',
                 'homeAddressState',
                 'homeAddressPostalCode',
-                'dateOfBirth',
                 'dateOfUpdate',
                 'dateOfExpiration',
                 'birthMonthDay',
@@ -811,13 +893,11 @@ class ApiModel:
 
     @property
     def _provider_detail_response_schema(self):
-        stack: AppStack = AppStack.of(self.api)
         return JsonSchema(
             type=JsonSchemaType.OBJECT,
             required=[
                 'type',
                 'providerId',
-                'ssn',
                 'givenName',
                 'familyName',
                 'licenseType',
@@ -835,45 +915,100 @@ class ApiModel:
                 'birthMonthDay',
                 'licenses',
                 'privileges',
+                'militaryAffiliations',
             ],
             properties={
                 'licenses': JsonSchema(
                     type=JsonSchemaType.ARRAY,
                     items=JsonSchema(
                         type=JsonSchemaType.OBJECT,
+                        required=[
+                            'type',
+                            'providerId',
+                            'compact',
+                            'jurisdiction',
+                            'dateOfUpdate',
+                            'givenName',
+                            'middleName',
+                            'familyName',
+                            'homeAddressStreet1',
+                            'homeAddressCity',
+                            'homeAddressState',
+                            'homeAddressPostalCode',
+                            'licenseType',
+                            'dateOfIssuance',
+                            'dateOfRenewal',
+                            'dateOfExpiration',
+                            'birthMonthDay',
+                            'jurisdictionStatus',
+                            'status',
+                            'history',
+                        ],
                         properties={
                             'type': JsonSchema(type=JsonSchemaType.STRING, enum=['license-home']),
                             'providerId': JsonSchema(type=JsonSchemaType.STRING, pattern=cc_api.UUID4_FORMAT),
-                            'compact': JsonSchema(type=JsonSchemaType.STRING, enum=stack.node.get_context('compacts')),
+                            'compact': JsonSchema(
+                                type=JsonSchemaType.STRING, enum=self.stack.node.get_context('compacts')
+                            ),
                             'jurisdiction': JsonSchema(
                                 type=JsonSchemaType.STRING,
-                                enum=stack.node.get_context('jurisdictions'),
+                                enum=self.stack.node.get_context('jurisdictions'),
                             ),
+                            'licenseType': JsonSchema(type=JsonSchemaType.STRING, enum=self.stack.license_types),
                             'dateOfUpdate': JsonSchema(
                                 type=JsonSchemaType.STRING,
                                 format='date',
                                 pattern=cc_api.YMD_FORMAT,
                             ),
+                            'jurisdictionStatus': JsonSchema(type=JsonSchemaType.STRING, enum=['active', 'inactive']),
+                            'ssnLastFour': JsonSchema(type=JsonSchemaType.STRING, pattern='^[0-9]{4}$'),
                             'history': JsonSchema(
                                 type=JsonSchemaType.ARRAY,
                                 items=JsonSchema(
                                     type=JsonSchemaType.OBJECT,
+                                    required=[
+                                        'type',
+                                        'updateType',
+                                        'compact',
+                                        'jurisdiction',
+                                        'dateOfUpdate',
+                                        'previous',
+                                    ],
                                     properties={
                                         'type': JsonSchema(type=JsonSchemaType.STRING, enum=['licenseUpdate']),
                                         'updateType': JsonSchema(
                                             type=JsonSchemaType.STRING, enum=['renewal', 'deactivation', 'other']
                                         ),
                                         'compact': JsonSchema(
-                                            type=JsonSchemaType.STRING, enum=stack.node.get_context('compacts')
+                                            type=JsonSchemaType.STRING, enum=self.stack.node.get_context('compacts')
                                         ),
                                         'jurisdiction': JsonSchema(
-                                            type=JsonSchemaType.STRING, enum=stack.node.get_context('jurisdictions')
+                                            type=JsonSchemaType.STRING,
+                                            enum=self.stack.node.get_context('jurisdictions'),
+                                        ),
+                                        'licenseType': JsonSchema(
+                                            type=JsonSchemaType.STRING, enum=self.stack.license_types
                                         ),
                                         'dateOfUpdate': JsonSchema(
                                             type=JsonSchemaType.STRING, format='date', pattern=cc_api.YMD_FORMAT
                                         ),
                                         'previous': JsonSchema(
-                                            type=JsonSchemaType.OBJECT, properties=self._common_license_properties
+                                            type=JsonSchemaType.OBJECT,
+                                            required=[
+                                                'givenName',
+                                                'middleName',
+                                                'familyName',
+                                                'dateOfUpdate',
+                                                'dateOfIssuance',
+                                                'dateOfRenewal',
+                                                'dateOfExpiration',
+                                                'homeAddressStreet1',
+                                                'homeAddressCity',
+                                                'homeAddressState',
+                                                'homeAddressPostalCode',
+                                                'jurisdictionStatus',
+                                            ],
+                                            properties=self._common_license_properties,
                                         ),
                                         'updatedValues': JsonSchema(
                                             type=JsonSchemaType.OBJECT, properties=self._common_license_properties
@@ -895,27 +1030,69 @@ class ApiModel:
                     type=JsonSchemaType.ARRAY,
                     items=JsonSchema(
                         type=JsonSchemaType.OBJECT,
+                        required=[
+                            'type',
+                            'providerId',
+                            'compact',
+                            'jurisdiction',
+                            'dateOfIssuance',
+                            'dateOfRenewal',
+                            'dateOfExpiration',
+                            'dateOfUpdate',
+                            'compactTransactionId',
+                            'privilegeId',
+                            'licenseType',
+                            'licenseJurisdiction',
+                            'persistedStatus',
+                            'status',
+                            'attestations',
+                            'history',
+                        ],
                         properties={
                             'history': JsonSchema(
                                 type=JsonSchemaType.ARRAY,
                                 items=JsonSchema(
                                     type=JsonSchemaType.OBJECT,
+                                    required=[
+                                        'type',
+                                        'updateType',
+                                        'compact',
+                                        'jurisdiction',
+                                        'dateOfUpdate',
+                                        'previous',
+                                    ],
                                     properties={
                                         'type': JsonSchema(type=JsonSchemaType.STRING, enum=['privilegeUpdate']),
                                         'updateType': JsonSchema(
                                             type=JsonSchemaType.STRING, enum=['renewal', 'deactivation', 'other']
                                         ),
                                         'compact': JsonSchema(
-                                            type=JsonSchemaType.STRING, enum=stack.node.get_context('compacts')
+                                            type=JsonSchemaType.STRING, enum=self.stack.node.get_context('compacts')
                                         ),
                                         'jurisdiction': JsonSchema(
-                                            type=JsonSchemaType.STRING, enum=stack.node.get_context('jurisdictions')
+                                            type=JsonSchemaType.STRING,
+                                            enum=self.stack.node.get_context('jurisdictions'),
+                                        ),
+                                        'licenseType': JsonSchema(
+                                            type=JsonSchemaType.STRING, enum=self.stack.license_types
                                         ),
                                         'dateOfUpdate': JsonSchema(
                                             type=JsonSchemaType.STRING, format='date', pattern=cc_api.YMD_FORMAT
                                         ),
                                         'previous': JsonSchema(
-                                            type=JsonSchemaType.OBJECT, properties=self._common_privilege_properties
+                                            type=JsonSchemaType.OBJECT,
+                                            required=[
+                                                'dateOfIssuance',
+                                                'dateOfRenewal',
+                                                'dateOfExpiration',
+                                                'dateOfUpdate',
+                                                'compactTransactionId',
+                                                'privilegeId',
+                                                'licenseJurisdiction',
+                                                'persistedStatus',
+                                                'attestations',
+                                            ],
+                                            properties=self._common_privilege_properties,
                                         ),
                                         'updatedValues': JsonSchema(
                                             type=JsonSchemaType.OBJECT, properties=self._common_privilege_properties
@@ -929,7 +1106,63 @@ class ApiModel:
                                     },
                                 ),
                             ),
+                            'licenseType': JsonSchema(type=JsonSchemaType.STRING, enum=self.stack.license_types),
                             **self._common_privilege_properties,
+                        },
+                    ),
+                ),
+                'homeJurisdictionSelection': JsonSchema(
+                    type=JsonSchemaType.OBJECT,
+                    properties={
+                        'type': JsonSchema(type=JsonSchemaType.STRING, enum=['homeJurisdictionSelection']),
+                        'compact': JsonSchema(type=JsonSchemaType.STRING, enum=self.stack.node.get_context('compacts')),
+                        'providerId': JsonSchema(type=JsonSchemaType.STRING, pattern=cc_api.UUID4_FORMAT),
+                        'jurisdiction': JsonSchema(
+                            type=JsonSchemaType.STRING, enum=self.stack.node.get_context('jurisdictions')
+                        ),
+                        'dateOfSelection': JsonSchema(
+                            type=JsonSchemaType.STRING, format='date', pattern=cc_api.YMD_FORMAT
+                        ),
+                        'dateOfUpdate': JsonSchema(
+                            type=JsonSchemaType.STRING, format='date', pattern=cc_api.YMD_FORMAT
+                        ),
+                    },
+                ),
+                'militaryAffiliations': JsonSchema(
+                    type=JsonSchemaType.ARRAY,
+                    items=JsonSchema(
+                        type=JsonSchemaType.OBJECT,
+                        required=[
+                            'type',
+                            'dateOfUpdate',
+                            'providerId',
+                            'compact',
+                            'fileNames',
+                            'affiliationType',
+                            'dateOfUpload',
+                            'status',
+                        ],
+                        properties={
+                            'type': JsonSchema(type=JsonSchemaType.STRING, enum=['militaryAffiliation']),
+                            'dateOfUpdate': JsonSchema(
+                                type=JsonSchemaType.STRING, format='date', pattern=cc_api.YMD_FORMAT
+                            ),
+                            'providerId': JsonSchema(type=JsonSchemaType.STRING, pattern=cc_api.UUID4_FORMAT),
+                            'compact': JsonSchema(
+                                type=JsonSchemaType.STRING, enum=self.stack.node.get_context('compacts')
+                            ),
+                            'fileNames': JsonSchema(
+                                type=JsonSchemaType.ARRAY,
+                                items=JsonSchema(type=JsonSchemaType.STRING),
+                            ),
+                            'affiliationType': JsonSchema(
+                                type=JsonSchemaType.STRING,
+                                enum=['militaryMember', 'militaryMemberSpouse'],
+                            ),
+                            'dateOfUpload': JsonSchema(
+                                type=JsonSchemaType.STRING, format='date', pattern=cc_api.YMD_FORMAT
+                            ),
+                            'status': JsonSchema(type=JsonSchemaType.STRING, enum=['active', 'inactive']),
                         },
                     ),
                 ),
@@ -939,11 +1172,9 @@ class ApiModel:
 
     @property
     def _common_license_properties(self) -> dict:
-        stack: AppStack = AppStack.of(self.api)
-
         return {
-            'ssn': JsonSchema(type=JsonSchemaType.STRING, pattern=cc_api.SSN_FORMAT),
             'npi': JsonSchema(type=JsonSchemaType.STRING, pattern='^[0-9]{10}$'),
+            'licenseNumber': JsonSchema(type=JsonSchemaType.STRING, min_length=1, max_length=100),
             'givenName': JsonSchema(type=JsonSchemaType.STRING, min_length=1, max_length=100),
             'middleName': JsonSchema(type=JsonSchemaType.STRING, min_length=1, max_length=100),
             'familyName': JsonSchema(type=JsonSchemaType.STRING, min_length=1, max_length=100),
@@ -953,63 +1184,88 @@ class ApiModel:
             'homeAddressCity': JsonSchema(type=JsonSchemaType.STRING, min_length=2, max_length=100),
             'homeAddressState': JsonSchema(type=JsonSchemaType.STRING, min_length=2, max_length=100),
             'homeAddressPostalCode': JsonSchema(type=JsonSchemaType.STRING, min_length=5, max_length=7),
-            'licenseType': JsonSchema(type=JsonSchemaType.STRING, enum=stack.license_types),
             'dateOfIssuance': JsonSchema(type=JsonSchemaType.STRING, format='date', pattern=cc_api.YMD_FORMAT),
             'dateOfRenewal': JsonSchema(type=JsonSchemaType.STRING, format='date', pattern=cc_api.YMD_FORMAT),
             'dateOfExpiration': JsonSchema(type=JsonSchemaType.STRING, format='date', pattern=cc_api.YMD_FORMAT),
             'status': JsonSchema(type=JsonSchemaType.STRING, enum=['active', 'inactive']),
-            'militaryWaiver': JsonSchema(
-                type=JsonSchemaType.BOOLEAN,
-            ),
+            'emailAddress': JsonSchema(type=JsonSchemaType.STRING, format='email', min_length=5, max_length=100),
+            'phoneNumber': JsonSchema(type=JsonSchemaType.STRING, pattern=r'^\+[0-9]{8,15}$'),
+            'suffix': JsonSchema(type=JsonSchemaType.STRING, min_length=1, max_length=100),
         }
 
     @property
     def _common_provider_properties(self) -> dict:
-        stack: AppStack = AppStack.of(self.api)
-
         return {
             'type': JsonSchema(type=JsonSchemaType.STRING, enum=['provider']),
             'providerId': JsonSchema(type=JsonSchemaType.STRING, pattern=cc_api.UUID4_FORMAT),
-            'ssn': JsonSchema(type=JsonSchemaType.STRING, pattern=cc_api.SSN_FORMAT),
+            # Derived from a license record
             'npi': JsonSchema(type=JsonSchemaType.STRING, pattern='^[0-9]{10}$'),
+            'ssnLastFour': JsonSchema(type=JsonSchemaType.STRING, pattern='^[0-9]{4}$'),
             'givenName': JsonSchema(type=JsonSchemaType.STRING, min_length=1, max_length=100),
             'middleName': JsonSchema(type=JsonSchemaType.STRING, min_length=1, max_length=100),
             'familyName': JsonSchema(type=JsonSchemaType.STRING, min_length=1, max_length=100),
-            'licenseType': JsonSchema(type=JsonSchemaType.STRING, enum=stack.license_types),
-            'status': JsonSchema(type=JsonSchemaType.STRING, enum=['active', 'inactive']),
-            'compact': JsonSchema(type=JsonSchemaType.STRING, enum=stack.node.get_context('compacts')),
-            'licenseJurisdiction': JsonSchema(type=JsonSchemaType.STRING, enum=stack.node.get_context('jurisdictions')),
-            'privilegeJurisdictions': JsonSchema(
-                type=JsonSchemaType.ARRAY,
-                items=JsonSchema(type=JsonSchemaType.STRING, enum=stack.node.get_context('jurisdictions')),
-            ),
+            'suffix': JsonSchema(type=JsonSchemaType.STRING, min_length=1, max_length=100),
+            'jurisdictionStatus': JsonSchema(type=JsonSchemaType.STRING, enum=['active', 'inactive']),
+            'compact': JsonSchema(type=JsonSchemaType.STRING, enum=self.stack.node.get_context('compacts')),
+            'emailAddress': JsonSchema(type=JsonSchemaType.STRING, format='email', min_length=5, max_length=100),
+            'phoneNumber': JsonSchema(type=JsonSchemaType.STRING, pattern=cc_api.PHONE_NUMBER_FORMAT),
             'homeAddressStreet1': JsonSchema(type=JsonSchemaType.STRING, min_length=2, max_length=100),
             'homeAddressStreet2': JsonSchema(type=JsonSchemaType.STRING, min_length=1, max_length=100),
             'homeAddressCity': JsonSchema(type=JsonSchemaType.STRING, min_length=2, max_length=100),
             'homeAddressState': JsonSchema(type=JsonSchemaType.STRING, min_length=2, max_length=100),
             'homeAddressPostalCode': JsonSchema(type=JsonSchemaType.STRING, min_length=5, max_length=7),
-            'militaryWaiver': JsonSchema(
-                type=JsonSchemaType.BOOLEAN,
-            ),
             'birthMonthDay': JsonSchema(type=JsonSchemaType.STRING, format='date', pattern=cc_api.MD_FORMAT),
             'dateOfBirth': JsonSchema(type=JsonSchemaType.STRING, format='date', pattern=cc_api.YMD_FORMAT),
-            'dateOfUpdate': JsonSchema(type=JsonSchemaType.STRING, format='date', pattern=cc_api.YMD_FORMAT),
             'dateOfExpiration': JsonSchema(type=JsonSchemaType.STRING, format='date', pattern=cc_api.YMD_FORMAT),
+            'licenseJurisdiction': JsonSchema(
+                type=JsonSchemaType.STRING, enum=self.stack.node.get_context('jurisdictions')
+            ),
+            'status': JsonSchema(type=JsonSchemaType.STRING, enum=['active', 'inactive']),
+            'privilegeJurisdictions': JsonSchema(
+                type=JsonSchemaType.ARRAY,
+                items=JsonSchema(type=JsonSchemaType.STRING, enum=self.stack.node.get_context('jurisdictions')),
+            ),
+            'compactConnectRegisteredEmailAddress': JsonSchema(
+                type=JsonSchemaType.STRING,
+                format='email',
+                min_length=5,
+                max_length=100,
+            ),
+            'cognitoSub': JsonSchema(
+                type=JsonSchemaType.STRING,
+            ),
+            'dateOfUpdate': JsonSchema(type=JsonSchemaType.STRING, format='date', pattern=cc_api.YMD_FORMAT),
         }
 
     @property
     def _common_privilege_properties(self) -> dict:
-        stack: AppStack = AppStack.of(self.api)
-
         return {
             'type': JsonSchema(type=JsonSchemaType.STRING, enum=['privilege']),
             'providerId': JsonSchema(type=JsonSchemaType.STRING, pattern=cc_api.UUID4_FORMAT),
-            'compact': JsonSchema(type=JsonSchemaType.STRING, enum=stack.node.get_context('compacts')),
-            'licenseJurisdiction': JsonSchema(type=JsonSchemaType.STRING, enum=stack.node.get_context('jurisdictions')),
-            'status': JsonSchema(type=JsonSchemaType.STRING, enum=['active', 'inactive']),
+            'compact': JsonSchema(type=JsonSchemaType.STRING, enum=self.stack.node.get_context('compacts')),
+            'jurisdiction': JsonSchema(type=JsonSchemaType.STRING, enum=self.stack.node.get_context('jurisdictions')),
             'dateOfIssuance': JsonSchema(type=JsonSchemaType.STRING, format='date', pattern=cc_api.YMD_FORMAT),
-            'dateOfUpdate': JsonSchema(type=JsonSchemaType.STRING, format='date', pattern=cc_api.YMD_FORMAT),
+            'dateOfRenewal': JsonSchema(type=JsonSchemaType.STRING, format='date', pattern=cc_api.YMD_FORMAT),
             'dateOfExpiration': JsonSchema(type=JsonSchemaType.STRING, format='date', pattern=cc_api.YMD_FORMAT),
+            'dateOfUpdate': JsonSchema(type=JsonSchemaType.STRING, format='date', pattern=cc_api.YMD_FORMAT),
+            'compactTransactionId': JsonSchema(type=JsonSchemaType.STRING),
+            'privilegeId': JsonSchema(type=JsonSchemaType.STRING),
+            'licenseJurisdiction': JsonSchema(
+                type=JsonSchemaType.STRING, enum=self.stack.node.get_context('jurisdictions')
+            ),
+            'persistedStatus': JsonSchema(type=JsonSchemaType.STRING, enum=['active', 'inactive']),
+            'status': JsonSchema(type=JsonSchemaType.STRING, enum=['active', 'inactive']),
+            'attestations': JsonSchema(
+                type=JsonSchemaType.ARRAY,
+                items=JsonSchema(
+                    type=JsonSchemaType.OBJECT,
+                    required=['attestationId', 'version'],
+                    properties={
+                        'attestationId': JsonSchema(type=JsonSchemaType.STRING, max_length=100),
+                        'version': JsonSchema(type=JsonSchemaType.STRING, max_length=100),
+                    },
+                ),
+            ),
         }
 
     @property
@@ -1064,7 +1320,6 @@ class ApiModel:
         if hasattr(self.api, '_v1_get_attestations_response_model'):
             return self.api._v1_get_attestations_response_model
 
-        stack: AppStack = AppStack.of(self.api)
         self.api._v1_get_attestations_response_model = self.api.add_model(
             'V1GetAttestationsResponseModel',
             description='Get attestations response model',
@@ -1073,12 +1328,279 @@ class ApiModel:
                 properties={
                     'type': JsonSchema(type=JsonSchemaType.STRING, enum=['attestation']),
                     'attestationType': JsonSchema(type=JsonSchemaType.STRING),
-                    'compact': JsonSchema(type=JsonSchemaType.STRING, enum=stack.node.get_context('compacts')),
+                    'compact': JsonSchema(type=JsonSchemaType.STRING, enum=self.stack.node.get_context('compacts')),
                     'version': JsonSchema(type=JsonSchemaType.STRING),
                     'dateCreated': JsonSchema(type=JsonSchemaType.STRING, format='date-time'),
                     'text': JsonSchema(type=JsonSchemaType.STRING),
                     'required': JsonSchema(type=JsonSchemaType.BOOLEAN),
+                    'locale': JsonSchema(type=JsonSchemaType.STRING),
                 },
             ),
         )
         return self.api._v1_get_attestations_response_model
+
+    @property
+    def get_provider_ssn_response_model(self) -> Model:
+        """Return the provider SSN response model, which should only be created once per API"""
+        if hasattr(self.api, '_v1_get_provider_ssn_response_model'):
+            return self.api._v1_get_provider_ssn_response_model
+
+        self.api._v1_get_provider_ssn_response_model = self.api.add_model(
+            'V1GetProviderSSNResponseModel',
+            description='Get provider SSN response model',
+            schema=JsonSchema(
+                type=JsonSchemaType.OBJECT,
+                required=['ssn'],
+                properties={
+                    'ssn': JsonSchema(
+                        type=JsonSchemaType.STRING,
+                        description="The provider's social security number",
+                        pattern=cc_api.SSN_FORMAT,
+                    ),
+                },
+            ),
+        )
+        return self.api._v1_get_provider_ssn_response_model
+
+    @property
+    def public_query_providers_response_model(self) -> Model:
+        """Return the public query providers response model, which should only be created once per API"""
+        if hasattr(self.api, '_v1_public_query_providers_response_model'):
+            return self.api._v1_public_query_providers_response_model
+
+        self.api._v1_public_query_providers_response_model = self.api.add_model(
+            'V1PublicQueryProvidersResponseModel',
+            description='Public query providers response model',
+            schema=JsonSchema(
+                type=JsonSchemaType.OBJECT,
+                required=['providers', 'pagination'],
+                properties={
+                    'providers': JsonSchema(
+                        type=JsonSchemaType.ARRAY,
+                        max_length=100,
+                        items=self._public_providers_response_schema,
+                    ),
+                    'pagination': self._pagination_response_schema,
+                    'query': JsonSchema(
+                        type=JsonSchemaType.OBJECT,
+                        properties={
+                            'providerId': JsonSchema(
+                                type=JsonSchemaType.STRING,
+                                description='Internal UUID for the provider',
+                                pattern=cc_api.UUID4_FORMAT,
+                            ),
+                            'jurisdiction': JsonSchema(
+                                type=JsonSchemaType.STRING,
+                                description='Filter for providers with privilege/license in a jurisdiction',
+                                enum=self.api.node.get_context('jurisdictions'),
+                            ),
+                            'givenName': JsonSchema(
+                                type=JsonSchemaType.STRING,
+                                max_length=100,
+                                description='Filter for providers with a given name',
+                            ),
+                            'familyName': JsonSchema(
+                                type=JsonSchemaType.STRING,
+                                max_length=100,
+                                description='Filter for providers with a family name',
+                            ),
+                        },
+                    ),
+                    'sorting': self._sorting_schema,
+                },
+            ),
+        )
+        return self.api._v1_public_query_providers_response_model
+
+    @property
+    def public_provider_response_model(self) -> Model:
+        """Return the public provider response model, which should only be created once per API"""
+        if hasattr(self.api, '_v1_public_provider_response_model'):
+            return self.api._v1_public_provider_response_model
+
+        self.api._v1_public_provider_response_model = self.api.add_model(
+            'V1PublicProviderResponseModel',
+            description='Public provider response model',
+            schema=self._public_provider_detailed_response_schema,
+        )
+        return self.api._v1_public_provider_response_model
+
+    @property
+    def _public_provider_detailed_response_schema(self):
+        """Schema for public provider responses based on ProviderPublicResponseSchema"""
+        return JsonSchema(
+            type=JsonSchemaType.OBJECT,
+            required=[
+                'type',
+                'providerId',
+                'dateOfUpdate',
+                'compact',
+                'licenseJurisdiction',
+                'givenName',
+                'familyName',
+                'status',
+                'privilegeJurisdictions',
+            ],
+            properties={
+                'privileges': JsonSchema(
+                    type=JsonSchemaType.ARRAY,
+                    items=self._public_privilege_response_schema,
+                ),
+                **self._common_public_provider_properties,
+            },
+        )
+
+    @property
+    def _public_privilege_response_schema(self):
+        """Schema for public privilege responses"""
+        stack: AppStack = AppStack.of(self.api)
+        return JsonSchema(
+            type=JsonSchemaType.OBJECT,
+            required=[
+                'type',
+                'providerId',
+                'compact',
+                'jurisdiction',
+                'dateOfIssuance',
+                'dateOfRenewal',
+                'dateOfExpiration',
+                'dateOfUpdate',
+                'status',
+            ],
+            properties={
+                'type': JsonSchema(type=JsonSchemaType.STRING, enum=['privilege']),
+                'providerId': JsonSchema(type=JsonSchemaType.STRING, pattern=cc_api.UUID4_FORMAT),
+                'compact': JsonSchema(type=JsonSchemaType.STRING, enum=stack.node.get_context('compacts')),
+                'jurisdiction': JsonSchema(
+                    type=JsonSchemaType.STRING,
+                    enum=stack.node.get_context('jurisdictions'),
+                ),
+                'dateOfIssuance': JsonSchema(type=JsonSchemaType.STRING, format='date', pattern=cc_api.YMD_FORMAT),
+                'dateOfRenewal': JsonSchema(type=JsonSchemaType.STRING, format='date', pattern=cc_api.YMD_FORMAT),
+                'dateOfExpiration': JsonSchema(type=JsonSchemaType.STRING, format='date', pattern=cc_api.YMD_FORMAT),
+                'dateOfUpdate': JsonSchema(type=JsonSchemaType.STRING, format='date', pattern=cc_api.YMD_FORMAT),
+                'privilegeId': JsonSchema(type=JsonSchemaType.STRING),
+                'persistedStatus': JsonSchema(type=JsonSchemaType.STRING, enum=['active', 'inactive']),
+                'status': JsonSchema(type=JsonSchemaType.STRING, enum=['active', 'inactive']),
+            },
+        )
+
+    @property
+    def provider_registration_request_model(self) -> Model:
+        """Return the provider registration request model, which should only be created once per API"""
+        if hasattr(self.api, '_v1_provider_registration_request_model'):
+            return self.api._v1_provider_registration_request_model
+
+        self.api._v1_provider_registration_request_model = self.api.add_model(
+            'V1ProviderRegistrationRequestModel',
+            description='Provider registration request model',
+            schema=JsonSchema(
+                type=JsonSchemaType.OBJECT,
+                required=[
+                    'givenName',
+                    'familyName',
+                    'email',
+                    'partialSocial',
+                    'dob',
+                    'jurisdiction',
+                    'licenseType',
+                    'compact',
+                    'token',
+                ],
+                properties={
+                    'givenName': JsonSchema(
+                        type=JsonSchemaType.STRING,
+                        description="Provider's given name",
+                        max_length=200,
+                    ),
+                    'familyName': JsonSchema(
+                        type=JsonSchemaType.STRING,
+                        description="Provider's family name",
+                        max_length=200,
+                    ),
+                    'email': JsonSchema(
+                        type=JsonSchemaType.STRING,
+                        description="Provider's email address",
+                        format='email',
+                        min_length=5,
+                        max_length=100,
+                    ),
+                    'partialSocial': JsonSchema(
+                        type=JsonSchemaType.STRING,
+                        description='Last 4 digits of SSN',
+                        min_length=4,
+                        max_length=4,
+                    ),
+                    'dob': JsonSchema(
+                        type=JsonSchemaType.STRING,
+                        description='Date of birth in YYYY-MM-DD format',
+                        pattern=cc_api.YMD_FORMAT,
+                    ),
+                    'jurisdiction': JsonSchema(
+                        type=JsonSchemaType.STRING,
+                        description='Two-letter jurisdiction code',
+                        min_length=2,
+                        max_length=2,
+                        enum=self.api.node.get_context('jurisdictions'),
+                    ),
+                    'licenseType': JsonSchema(
+                        type=JsonSchemaType.STRING,
+                        description='Type of license',
+                        max_length=500,
+                        enum=self.stack.license_types,
+                    ),
+                    'compact': JsonSchema(
+                        type=JsonSchemaType.STRING,
+                        description='Compact name',
+                        # note that here we do not specify the enum with the list of compacts
+                        # this is intentional as we do not want the api to return this list
+                        # from the registration endpoint.
+                        max_length=100,
+                    ),
+                    'token': JsonSchema(
+                        type=JsonSchemaType.STRING,
+                        description='ReCAPTCHA token',
+                    ),
+                },
+            ),
+        )
+        return self.api._v1_provider_registration_request_model
+
+    @property
+    def _public_providers_response_schema(self):
+        return JsonSchema(
+            type=JsonSchemaType.OBJECT,
+            required=[
+                'type',
+                'providerId',
+                'givenName',
+                'familyName',
+                'status',
+                'compact',
+                'licenseJurisdiction',
+                'privilegeJurisdictions',
+            ],
+            properties=self._common_public_provider_properties,
+        )
+
+    @property
+    def _common_public_provider_properties(self) -> dict:
+        stack: AppStack = AppStack.of(self.api)
+
+        return {
+            'type': JsonSchema(type=JsonSchemaType.STRING, enum=['provider']),
+            'providerId': JsonSchema(type=JsonSchemaType.STRING, pattern=cc_api.UUID4_FORMAT),
+            'npi': JsonSchema(type=JsonSchemaType.STRING, pattern='^[0-9]{10}$'),
+            'givenName': JsonSchema(type=JsonSchemaType.STRING, min_length=1, max_length=100),
+            'middleName': JsonSchema(type=JsonSchemaType.STRING, min_length=1, max_length=100),
+            'familyName': JsonSchema(type=JsonSchemaType.STRING, min_length=1, max_length=100),
+            'suffix': JsonSchema(type=JsonSchemaType.STRING, min_length=1, max_length=100),
+            'status': JsonSchema(type=JsonSchemaType.STRING, enum=['active', 'inactive']),
+            'compact': JsonSchema(type=JsonSchemaType.STRING, enum=stack.node.get_context('compacts')),
+            'licenseJurisdiction': JsonSchema(type=JsonSchemaType.STRING, enum=stack.node.get_context('jurisdictions')),
+            'privilegeJurisdictions': JsonSchema(
+                type=JsonSchemaType.ARRAY,
+                items=JsonSchema(type=JsonSchemaType.STRING, enum=stack.node.get_context('jurisdictions')),
+            ),
+            'dateOfUpdate': JsonSchema(type=JsonSchemaType.STRING, format='date', pattern=cc_api.YMD_FORMAT),
+        }

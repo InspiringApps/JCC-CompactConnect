@@ -11,6 +11,8 @@ import {
     LicenseeUserPurchaseSerializer
 } from '@models/LicenseeUser/LicenseeUser.model';
 import { LicenseeSerializer, Licensee } from '@models/Licensee/Licensee.model';
+import { License, LicenseType } from '@models/License/License.model';
+import { AcceptedAttestationToSend } from '@models/AcceptedAttestationToSend/AcceptedAttestationToSend.model';
 import i18n from '@/i18n';
 
 import chaiMatchPattern from 'chai-match-pattern';
@@ -38,7 +40,8 @@ describe('User model', () => {
 
         expect(user).to.be.an.instanceof(LicenseeUser);
         expect(user.id).to.equal(null);
-        expect(user.email).to.equal(null);
+        expect(user.stateProvidedEmail).to.equal(null);
+        expect(user.compactConnectEmail).to.equal(null);
         expect(user.firstName).to.equal(null);
         expect(user.lastName).to.equal(null);
         expect(user.userType).to.equal(null);
@@ -49,7 +52,8 @@ describe('User model', () => {
         const licenseeData = new Licensee({});
         const data = {
             accountStatus: 'active',
-            email: 'hello@hello.com',
+            stateProvidedEmail: 'hello@example.com',
+            compactConnectEmail: 'hello+registered@example.com',
             firstName: 'Faa',
             id: '443df4d8-60e7-4agg-aff4-c5d12ecc1234',
             lastName: 'Foo',
@@ -61,7 +65,8 @@ describe('User model', () => {
 
         expect(user).to.be.an.instanceof(LicenseeUser);
         expect(user.id).to.equal(data.id);
-        expect(user.email).to.equal(data.email);
+        expect(user.stateProvidedEmail).to.equal(data.stateProvidedEmail);
+        expect(user.compactConnectEmail).to.equal(data.compactConnectEmail);
         expect(user.firstName).to.equal(data.firstName);
         expect(user.lastName).to.equal(data.lastName);
         expect(user.userType).to.equal(data.userType);
@@ -88,7 +93,6 @@ describe('User model', () => {
             homeAddressPostalCode: '80302',
             givenName: 'Tyler',
             homeAddressStreet1: '1045 Pearl St',
-            militaryWaiver: true,
             dateOfBirth: '1975-01-01',
             privilegeJurisdictions: [
                 'al'
@@ -105,7 +109,6 @@ describe('User model', () => {
                     jurisdiction: 'co',
                     givenName: 'Tyler',
                     homeAddressStreet1: '1045 Pearl St',
-                    militaryWaiver: true,
                     dateOfBirth: '1975-01-01',
                     type: 'license-home',
                     dateOfIssuance: '2024-08-29',
@@ -122,7 +125,8 @@ describe('User model', () => {
                     status: 'inactive'
                 }
             ],
-            emailAddress: 'asfadfd@slsgfss.com',
+            emailAddress: 'hello@example.com',
+            compactConnectRegisteredEmailAddress: 'hello+registered@example.com',
             dateOfExpiration: '2024-08-29',
             homeAddressState: 'co',
             providerId: '2',
@@ -138,7 +142,8 @@ describe('User model', () => {
 
         expect(user).to.be.an.instanceof(LicenseeUser);
         expect(user.id).to.equal(data.providerId);
-        expect(user.email).to.equal(data.emailAddress);
+        expect(user.stateProvidedEmail).to.equal(data.emailAddress);
+        expect(user.compactConnectEmail).to.equal(data.compactConnectRegisteredEmailAddress);
         expect(user.firstName).to.equal(data.givenName);
         expect(user.lastName).to.equal(data.familyName);
         expect(user.userType).to.equal(AuthTypes.LICENSEE);
@@ -169,7 +174,6 @@ describe('User model', () => {
             homeAddressPostalCode: '80302',
             givenName: 'Tyler',
             homeAddressStreet1: '1045 Pearl St',
-            militaryWaiver: true,
             dateOfBirth: '1975-01-01',
             privilegeJurisdictions: [
                 'al'
@@ -186,7 +190,6 @@ describe('User model', () => {
                     jurisdiction: 'co',
                     givenName: 'Tyler',
                     homeAddressStreet1: '1045 Pearl St',
-                    militaryWaiver: true,
                     dateOfBirth: '1975-01-01',
                     type: 'license-home',
                     dateOfIssuance: '2024-08-29',
@@ -203,7 +206,8 @@ describe('User model', () => {
                     status: 'inactive'
                 }
             ],
-            emailAddress: 'asfadfd@slsgfss.com',
+            emailAddress: 'hello@example.com',
+            compactConnectRegisteredEmailAddress: 'hello+registered@example.com',
             dateOfExpiration: '2024-08-29',
             homeAddressState: 'co',
             providerId: '2',
@@ -218,7 +222,8 @@ describe('User model', () => {
 
         expect(user).to.be.an.instanceof(LicenseeUser);
         expect(user.id).to.equal(data.providerId);
-        expect(user.email).to.equal(data.emailAddress);
+        expect(user.stateProvidedEmail).to.equal(data.emailAddress);
+        expect(user.compactConnectEmail).to.equal(data.compactConnectRegisteredEmailAddress);
         expect(user.firstName).to.equal(data.givenName);
         expect(user.lastName).to.equal(data.familyName);
         expect(user.userType).to.equal(AuthTypes.LICENSEE);
@@ -245,9 +250,31 @@ describe('User model', () => {
 
         const statesSelected = ['ne', 'ky'];
 
-        const requestData = LicenseeUserPurchaseSerializer.toServer({ statesSelected, formValues });
+        const attestationsSelected = [
+            new AcceptedAttestationToSend({
+                attestationId: 'id',
+                version: '1'
+            }),
+            new AcceptedAttestationToSend({
+                attestationId: 'id-2',
+                version: '1'
+            })
+        ];
+
+        const selectedPurchaseLicense = new License({
+            id: 'test-id',
+            licenseType: LicenseType.AUDIOLOGIST,
+        });
+
+        const requestData = LicenseeUserPurchaseSerializer.toServer({
+            statesSelected,
+            formValues,
+            attestationsSelected,
+            selectedPurchaseLicense
+        });
 
         expect(requestData.selectedJurisdictions).to.matchPattern(['ne', 'ky']);
+        expect(requestData.attestations).to.matchPattern(attestationsSelected);
         expect(requestData.orderInformation.card.number).to.equal(formValues.creditCard.replace(/\s+/g, ''));
         expect(requestData.orderInformation.card.expiration).to.equal(`20${formValues.expYear}-${formValues.expMonth}`);
         expect(requestData.orderInformation.card.cvv).to.equal(formValues.cvv);
@@ -257,5 +284,7 @@ describe('User model', () => {
         expect(requestData.orderInformation.billing.streetAddress2).to.equal(formValues.streetAddress2);
         expect(requestData.orderInformation.billing.state).to.equal(formValues.stateSelect.toUpperCase());
         expect(requestData.orderInformation.billing.zip).to.equal(formValues.zip);
+        expect(requestData.licenseType).to.equal(selectedPurchaseLicense.licenseType);
+        expect(requestData.attestations.length).to.equal(2);
     });
 });

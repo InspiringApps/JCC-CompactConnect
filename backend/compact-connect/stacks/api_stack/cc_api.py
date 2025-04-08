@@ -39,6 +39,7 @@ MD_FORMAT = '^[01]{1}[0-9]{1}-[0-3]{1}[0-9]{1}$'
 YMD_FORMAT = '^[12]{1}[0-9]{3}-[01]{1}[0-9]{1}-[0-3]{1}[0-9]{1}$'
 SSN_FORMAT = '^[0-9]{3}-[0-9]{2}-[0-9]{4}$'
 UUID4_FORMAT = '[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab]{1}[0-9a-f]{3}-[0-9a-f]{12}'
+PHONE_NUMBER_FORMAT = r'^\+[0-9]{8,15}$'
 
 
 @jsii.implements(IAspect)
@@ -76,6 +77,7 @@ class CCApi(RestApi):
     ):
         stack: AppStack = AppStack.of(scope)
         # add the ENVIRONMENT_NAME to the common lambda environment variables
+        self.environment_name = environment_name
         stack.common_env_vars['ENVIRONMENT_NAME'] = environment_name
         # For developer convenience, we will allow for the case where there is no domain name configured
         domain_kwargs = {}
@@ -286,7 +288,7 @@ class CCApi(RestApi):
         """
         For each supported compact in the system, return the secret arn for the payment processor credentials.
         The secret arn follows this pattern:
-        compact-connect/env/{environment_name}/compact/{compact_name}/credentials/payment-processor
+        compact-connect/env/{environment_name}/compact/{compact_abbr}/credentials/payment-processor
 
 
         This is used to scope the permissions granted to the lambda to only the secrets it needs to access.

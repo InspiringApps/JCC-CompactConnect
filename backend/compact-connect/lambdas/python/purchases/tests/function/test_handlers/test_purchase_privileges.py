@@ -1,5 +1,4 @@
 import json
-import os
 from datetime import UTC, date, datetime
 from unittest.mock import MagicMock, patch
 
@@ -27,6 +26,11 @@ ALL_ATTESTATION_IDS = [
     'under-investigation-attestation',
 ]
 
+TEST_EMAIL = 'testRegisteredEmail@example.com'
+TEST_COGNITO_SUB = '1234567890'
+
+TEST_LICENSE_TYPE = 'speech-language pathologist'
+
 
 def generate_default_attestation_list():
     return [
@@ -42,8 +46,7 @@ def generate_default_attestation_list():
 
 
 def _generate_test_request_body(
-    selected_jurisdictions: list[str] = None,
-    attestations: list[dict] = None,
+    selected_jurisdictions: list[str] = None, attestations: list[dict] = None, license_type: str = TEST_LICENSE_TYPE
 ):
     if not selected_jurisdictions:
         selected_jurisdictions = ['ky']
@@ -52,6 +55,7 @@ def _generate_test_request_body(
 
     return json.dumps(
         {
+            'licenseType': license_type,
             'selectedJurisdictions': selected_jurisdictions,
             'orderInformation': {
                 'card': {'number': '<card number>', 'expiration': '<expiration date>', 'cvv': '<cvv>'},
@@ -80,9 +84,6 @@ class TestPostPurchasePrivileges(TstFunction):
         from cc_common.data_model.schema.attestation import AttestationRecordSchema
 
         super().setUp()
-        # set the feature flag to enable the attestation validation feature
-        # this should be removed when the feature is enabled by default
-        os.environ.update({'ENFORCE_ATTESTATIONS': 'true'})
         # Load test attestation data
         with open('../common/tests/resources/dynamo/attestation.json') as f:
             test_attestation = json.load(f)
@@ -94,6 +95,14 @@ class TestPostPurchasePrivileges(TstFunction):
                 serialized_data = AttestationRecordSchema().dump(test_attestation)
 
                 self.config.compact_configuration_table.put_item(Item=serialized_data)
+        # register the user in the system
+        self.config.data_client.process_registration_values(
+            compact=TEST_COMPACT,
+            provider_id=TEST_PROVIDER_ID,
+            cognito_sub=TEST_COGNITO_SUB,
+            email_address=TEST_EMAIL,
+            jurisdiction='oh',
+        )
 
     def _load_test_jurisdiction(self):
         with open('../common/tests/resources/dynamo/jurisdiction.json') as f:
@@ -160,7 +169,7 @@ class TestPostPurchasePrivileges(TstFunction):
         self.assertEqual(
             json.loads(event['body'])['orderInformation'], purchase_client_call_kwargs['order_information']
         )
-        self.assertEqual(TEST_COMPACT, purchase_client_call_kwargs['compact_configuration'].compact_name)
+        self.assertEqual(TEST_COMPACT, purchase_client_call_kwargs['compact_configuration'].compact_abbr)
         self.assertEqual(
             ['ky'],
             [
@@ -168,6 +177,7 @@ class TestPostPurchasePrivileges(TstFunction):
                 for jurisdiction in purchase_client_call_kwargs['selected_jurisdictions']
             ],
         )
+        self.assertEqual('slp', purchase_client_call_kwargs['license_type_abbreviation'])
         # in this test, the user had an empty list of military affiliations, so this should be false
         self.assertEqual(False, purchase_client_call_kwargs['user_active_military'])
 
@@ -305,12 +315,13 @@ class TestPostPurchasePrivileges(TstFunction):
         )
 
     @patch('handlers.privileges.PurchaseClient')
-    def test_purchase_privileges_invalid_if_existing_privilege_expiration_matches_license_expiration(
+    def test_purchase_privileges_invalid_if_existing_privilege_expiration_matches_license_expiration_and_is_active(
         self, mock_purchase_client_constructor
     ):
         """
-        In this case, the user is attempting to purchase a privilege in kentucky twice and the license expiration
-        date has not been updated since the last renewal. We reject the request in this case.
+        In this case, the user is attempting to purchase a privilege in kentucky twice, the license expiration
+        date has not been updated since the last renewal and the initial privilege is still active.
+        We reject the request in this case.
         """
         from handlers.privileges import post_purchase_privileges
 
@@ -328,8 +339,97 @@ class TestPostPurchasePrivileges(TstFunction):
         response_body = json.loads(resp['body'])
 
         self.assertEqual(
-            {'message': "Selected privilege jurisdiction 'ky' matches existing privilege jurisdiction"}, response_body
+            {
+                'message': "Selected privilege jurisdiction 'ky' matches existing privilege "
+                'jurisdiction for license type'
+            },
+            response_body,
         )
+
+    @patch('handlers.privileges.PurchaseClient')
+    def test_purchase_privileges_valid_even_if_existing_privilege_for_another_license_type_has_same_expiration(
+        self, mock_purchase_client_constructor
+    ):
+        """
+        This test checks for a rare edge case where a user has two licenses which happen to have the *exact* same
+        expiration date, and the user has a privilege for the first license.
+
+        If the user attempts to buy a privilege for the other license in the same jurisdiction as the privilege of the
+        first license, the handler should allow the purchase, ensuring that we are only checking the existing privileges
+        specific to the license type which the user has selected.
+        """
+        from handlers.privileges import post_purchase_privileges
+
+        self._when_purchase_client_successfully_processes_request(mock_purchase_client_constructor)
+
+        test_license_expiration_date = '2050-01-01'
+        event = self._when_testing_provider_user_event_with_custom_claims(
+            license_expiration_date=test_license_expiration_date
+        )
+        event['body'] = _generate_test_request_body(license_type=TEST_LICENSE_TYPE)
+        # buy a privilege for the first license type
+        resp = post_purchase_privileges(event, self.mock_context)
+        self.assertEqual(200, resp['statusCode'], resp['body'])
+
+        # now make the same call with the same jurisdiction, but for a different license type
+        # a new privilege record should be generated for that specific license type
+        self._load_license_data(expiration_date=test_license_expiration_date, license_type='audiologist')
+        event['body'] = _generate_test_request_body(license_type='audiologist')
+        resp = post_purchase_privileges(event, self.mock_context)
+        self.assertEqual(200, resp['statusCode'])
+
+        # check that the privilege records for ky were created for both license types
+        provider_records = self.config.data_client.get_provider(compact=TEST_COMPACT, provider_id=TEST_PROVIDER_ID)
+
+        privilege_records_license_types = set(
+            [record['licenseType'] for record in provider_records['items'] if record['type'] == 'privilege']
+        )
+        self.assertEqual({'audiologist', 'speech-language pathologist'}, privilege_records_license_types)
+
+    @patch('handlers.privileges.PurchaseClient')
+    @patch('cc_common.config._Config.current_standard_datetime', datetime.fromisoformat('2024-10-05T23:59:59+00:00'))
+    def test_purchase_privileges_allows_existing_privilege_purchase_if_license_expiration_matches_but_is_inactive(
+        self, mock_purchase_client_constructor
+    ):
+        """
+        In this case, the user is attempting to purchase a privilege in kentucky twice with the same expiration date
+        but the status of the first privilege is inactive
+        """
+        from handlers.privileges import post_purchase_privileges
+
+        self._when_purchase_client_successfully_processes_request(mock_purchase_client_constructor)
+        test_expiration_date = date(2026, 10, 8).isoformat()
+        event = self._when_testing_provider_user_event_with_custom_claims(license_expiration_date=test_expiration_date)
+        event['body'] = _generate_test_request_body()
+        test_issuance_date = datetime(2023, 10, 8, hour=5, tzinfo=UTC).isoformat()
+
+        # create an existing privilege record for the kentucky jurisdiction, simulating a previous purchase
+        with open('../common/tests/resources/dynamo/privilege.json') as f:
+            privilege_record = json.load(f)
+            privilege_record['pk'] = f'{TEST_COMPACT}#PROVIDER#{TEST_PROVIDER_ID}'
+            privilege_record['sk'] = f'{TEST_COMPACT}#PROVIDER#privilege/ky/slp#'
+            # in this case, the user is purchasing the privilege for the first time
+            # so the date of renewal is the same as the date of issuance
+            privilege_record['dateOfRenewal'] = test_issuance_date
+            privilege_record['dateOfIssuance'] = test_issuance_date
+            privilege_record['dateOfExpiration'] = test_expiration_date
+            privilege_record['compact'] = TEST_COMPACT
+            privilege_record['jurisdiction'] = 'ky'
+            privilege_record['providerId'] = TEST_PROVIDER_ID
+            privilege_record['persistedStatus'] = 'inactive'
+            self.config.provider_table.put_item(Item=privilege_record)
+
+        # now make the same call with the same jurisdiction
+        resp = post_purchase_privileges(event, self.mock_context)
+        self.assertEqual(200, resp['statusCode'], resp['body'])
+        response_body = json.loads(resp['body'])
+
+        self.assertEqual({'transactionId': MOCK_TRANSACTION_ID}, response_body)
+
+        # ensure the persistent status is now active
+        provider_records = self.config.data_client.get_provider(compact=TEST_COMPACT, provider_id=TEST_PROVIDER_ID)
+        privilege_records = [record for record in provider_records['items'] if record['type'] == 'privilege']
+        self.assertEqual('active', privilege_records[0]['persistedStatus'])
 
     @patch('handlers.privileges.PurchaseClient')
     @patch('cc_common.config._Config.current_standard_datetime', datetime.fromisoformat('2024-10-05T23:59:59+00:00'))
@@ -417,7 +517,26 @@ class TestPostPurchasePrivileges(TstFunction):
         self.assertEqual(400, resp['statusCode'])
         response_body = json.loads(resp['body'])
 
-        self.assertEqual({'message': 'No active license found for this user'}, response_body)
+        self.assertEqual({'message': 'No active license found in selected home state for this user'}, response_body)
+
+    @patch('handlers.privileges.PurchaseClient')
+    def test_post_purchase_privileges_returns_400_if_license_type_does_not_match_any_home_state_license(
+        self, mock_purchase_client_constructor
+    ):
+        from handlers.privileges import post_purchase_privileges
+
+        self._when_purchase_client_successfully_processes_request(mock_purchase_client_constructor)
+
+        event = self._when_testing_provider_user_event_with_custom_claims(license_status='active')
+        event['body'] = _generate_test_request_body(license_type='some-bogus-license-type')
+
+        resp = post_purchase_privileges(event, self.mock_context)
+        self.assertEqual(400, resp['statusCode'])
+        response_body = json.loads(resp['body'])
+
+        self.assertEqual(
+            {'message': 'Specified license type does not match any home state license type.'}, response_body
+        )
 
     @patch('handlers.privileges.PurchaseClient')
     @patch('cc_common.config._Config.current_standard_datetime', datetime.fromisoformat('2024-11-08T23:59:59+00:00'))
@@ -456,6 +575,8 @@ class TestPostPurchasePrivileges(TstFunction):
         self.assertEqual(len(generate_default_attestation_list()), len(privilege_record['attestations']))
         # make sure we are tracking the transaction id
         self.assertEqual(MOCK_TRANSACTION_ID, privilege_record['compactTransactionId'])
+        # verify the privilegeId is formatted correctly
+        self.assertEqual('SLP-KY-1', privilege_record['privilegeId'])
 
     @patch('handlers.privileges.PurchaseClient')
     @patch('handlers.privileges.config.data_client')
@@ -468,7 +589,9 @@ class TestPostPurchasePrivileges(TstFunction):
             mock_purchase_client_constructor
         )
         # set the first two api calls to call the actual implementation
-        mock_data_client.get_privilege_purchase_options = config.data_client.get_privilege_purchase_options
+        mock_data_client.get_privilege_purchase_options = (
+            config.compact_configuration_client.get_privilege_purchase_options
+        )
         mock_data_client.get_provider = config.data_client.get_provider
         # raise an exception when creating the privilege record
         mock_data_client.create_provider_privileges.side_effect = CCAwsServiceException('dynamo down')
@@ -481,7 +604,7 @@ class TestPostPurchasePrivileges(TstFunction):
 
         # verify that the transaction was voided
         mock_purchase_client.void_privilege_purchase_transaction.assert_called_once_with(
-            compact_name=TEST_COMPACT, order_information={'transactionId': MOCK_TRANSACTION_ID}
+            compact_abbr=TEST_COMPACT, order_information={'transactionId': MOCK_TRANSACTION_ID}
         )
 
     @patch('handlers.privileges.PurchaseClient')
@@ -502,7 +625,7 @@ class TestPostPurchasePrivileges(TstFunction):
         response_body = json.loads(resp['body'])
 
         self.assertEqual(
-            {'message': f'Attestation "{attestations[0]['attestationId']}" version 0 is not the latest version (1)'},
+            {'message': f'Attestation "{attestations[0]["attestationId"]}" version 0 is not the latest version (1)'},
             response_body,
         )
         mock_purchase_client_constructor.assert_not_called()
@@ -552,6 +675,26 @@ class TestPostPurchasePrivileges(TstFunction):
         self.assertEqual(generate_default_attestation_list(), privilege_record['attestations'])
 
     @patch('handlers.privileges.PurchaseClient')
+    @patch('cc_common.config._Config.current_standard_datetime', datetime.fromisoformat('2024-11-08T23:59:59+00:00'))
+    def test_post_purchase_privileges_stores_license_type_in_privilege_record(self, mock_purchase_client_constructor):
+        """Test that license type is stored in the privilege record."""
+        from handlers.privileges import post_purchase_privileges
+
+        self._when_purchase_client_successfully_processes_request(mock_purchase_client_constructor)
+
+        event = self._when_testing_provider_user_event_with_custom_claims(license_expiration_date='2050-01-01')
+        event['body'] = _generate_test_request_body()
+
+        resp = post_purchase_privileges(event, self.mock_context)
+        self.assertEqual(200, resp['statusCode'], resp['body'])
+
+        # check that the privilege record for ky was created with the expected license type
+        provider_records = self.config.data_client.get_provider(compact=TEST_COMPACT, provider_id=TEST_PROVIDER_ID)
+        privilege_record = next(record for record in provider_records['items'] if record['type'] == 'privilege')
+
+        self.assertEqual(TEST_LICENSE_TYPE, privilege_record['licenseType'])
+
+    @patch('handlers.privileges.PurchaseClient')
     def test_post_purchase_privileges_validates_investigation_attestations(self, mock_purchase_client_constructor):
         """Test that exactly one investigation attestation must be provided."""
         from handlers.privileges import post_purchase_privileges
@@ -599,25 +742,6 @@ class TestPostPurchasePrivileges(TstFunction):
             {'attestationId': 'military-affiliation-confirmation-attestation', 'version': '1'}
         )
         event['body'] = json.dumps(event_body)
-
-        resp = post_purchase_privileges(event, self.mock_context)
-        self.assertEqual(200, resp['statusCode'], resp['body'])
-
-    # TODO - remove this test once the feature flag is removed # noqa: FIX002
-    @patch('handlers.privileges.PurchaseClient')
-    def test_post_purchase_privileges_should_not_validate_attestations_if_flag_not_set(
-        self, mock_purchase_client_constructor
-    ):
-        """Test that military attestation is required when user has active military affiliation."""
-        from handlers.privileges import post_purchase_privileges
-
-        os.environ.update({'ENFORCE_ATTESTATIONS': 'false'})
-
-        self._when_purchase_client_successfully_processes_request(mock_purchase_client_constructor)
-        self._load_military_affiliation_record_data(status='active')
-
-        event = self._when_testing_provider_user_event_with_custom_claims()
-        event['body'] = _generate_test_request_body(attestations=[])
 
         resp = post_purchase_privileges(event, self.mock_context)
         self.assertEqual(200, resp['statusCode'], resp['body'])

@@ -34,6 +34,9 @@ class TstFunction(TstLambdas):
         self.create_compact_configuration_table()
         self.create_provider_table()
         self.create_transaction_history_table()
+        self._transaction_reports_bucket = boto3.resource('s3').create_bucket(
+            Bucket=os.environ['TRANSACTION_REPORTS_BUCKET_NAME']
+        )
 
     def create_compact_configuration_table(self):
         self._compact_configuration_table = boto3.resource('dynamodb').create_table(
@@ -64,6 +67,7 @@ class TstFunction(TstLambdas):
                 {'AttributeName': 'sk', 'AttributeType': 'S'},
                 {'AttributeName': 'providerFamGivMid', 'AttributeType': 'S'},
                 {'AttributeName': 'providerDateOfUpdate', 'AttributeType': 'S'},
+                {'AttributeName': 'compactTransactionIdGSIPK', 'AttributeType': 'S'},
             ],
             TableName=os.environ['PROVIDER_TABLE_NAME'],
             KeySchema=[{'AttributeName': 'pk', 'KeyType': 'HASH'}, {'AttributeName': 'sk', 'KeyType': 'RANGE'}],
@@ -85,6 +89,24 @@ class TstFunction(TstLambdas):
                     ],
                     'Projection': {'ProjectionType': 'ALL'},
                 },
+                {
+                    'IndexName': os.environ['COMPACT_TRANSACTION_ID_GSI_NAME'],
+                    'KeySchema': [
+                        {'AttributeName': 'compactTransactionIdGSIPK', 'KeyType': 'HASH'},
+                    ],
+                    'Projection': {
+                        'ProjectionType': 'INCLUDE',
+                        'NonKeyAttributes': [
+                            'privilegeId',
+                            'updatedValues',
+                            'previous',
+                            'jurisdiction',
+                            'type',
+                            'compactTransactionId',
+                            'providerId',
+                        ],
+                    },
+                },
             ],
         )
 
@@ -92,6 +114,8 @@ class TstFunction(TstLambdas):
         self._compact_configuration_table.delete()
         self._provider_table.delete()
         self._transaction_history_table.delete()
+        self._transaction_reports_bucket.objects.delete()
+        self._transaction_reports_bucket.delete()
 
     def _load_compact_configuration_data(self):
         """Use the canned test resources to load compact and jurisdiction information into the DB"""
@@ -124,7 +148,7 @@ class TstFunction(TstLambdas):
             logger.debug('Loading resource, %s: %s', resource, str(record))
             self._provider_table.put_item(Item=record)
 
-    def _load_license_data(self, status: str = 'active', expiration_date: str = None):
+    def _load_license_data(self, status: str = 'active', expiration_date: str = None, license_type: str = None):
         """Use the canned test resources to load a basic provider to the DB"""
         license_test_resources = ['../common/tests/resources/dynamo/license.json']
 
@@ -134,6 +158,11 @@ class TstFunction(TstLambdas):
                 record['jurisdictionStatus'] = status
                 if expiration_date:
                     record['dateOfExpiration'] = expiration_date
+                if license_type:
+                    # add the abbreviation to the sk
+                    license_type_abbr = self.config.license_type_abbreviations['aslp'][license_type]
+                    record['sk'] = f'aslp#PROVIDER#license/oh/{license_type_abbr}#'
+                    record['licenseType'] = license_type
 
             logger.debug('Loading resource, %s: %s', resource, str(record))
             self._provider_table.put_item(Item=record)

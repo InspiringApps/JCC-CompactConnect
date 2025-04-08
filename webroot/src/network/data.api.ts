@@ -60,12 +60,31 @@ export class DataApi {
     //                              LICENSE API
     // ========================================================================
     /**
+     * POST Create Licensee Account.
+     * @param  {string}       compact The compact string ID (aslp, ot, counseling).
+     * @param  {object}       data    The user request data.
+     * @return {Promise<any>}         The server response.
+     */
+    public createLicenseeAccount(compact: string, data: object) {
+        return licenseDataApi.createAccount(compact, data);
+    }
+
+    /**
      * GET Licensees.
      * @param  {object}         [params] The request query parameters config.
      * @return {Promise<Array>}          An array of users server response.
      */
     public getLicensees(params) {
         return licenseDataApi.getLicensees(params);
+    }
+
+    /**
+     * GET Licensees (Public).
+     * @param  {object}         [params] The request query parameters config.
+     * @return {Promise<Array>}          An array of users server response.
+     */
+    public getLicenseesPublic(params) {
+        return licenseDataApi.getLicenseesPublic(params);
     }
 
     /**
@@ -76,6 +95,48 @@ export class DataApi {
      */
     public getLicensee(compact, licenseeId) {
         return licenseDataApi.getLicensee(compact, licenseeId);
+    }
+
+    /**
+     * GET Licensee by ID (Public).
+     * @param  {string}          compact    A compact type.
+     * @param  {string}          licenseeId A licensee ID.
+     * @return {Promise<object>}            A licensee server response.
+     */
+    public getLicenseePublic(compact, licenseeId) {
+        return licenseDataApi.getLicenseePublic(compact, licenseeId);
+    }
+
+    /**
+     * GET Attestation by ID.
+     * @param  {string}          compact       A compact type.
+     * @param  {string}          attestationId An attestation ID.
+     * @return {Promise<object>}               A PrivilegeAttestation model instance.
+     */
+    public getAttestation(compact, attestationId) {
+        return licenseDataApi.getAttestation(compact, attestationId);
+    }
+
+    /**
+     * DELETE Privilege for a licensee.
+     * @param  {string}           compact        The compact string ID (aslp, otcp, coun).
+     * @param  {string}           licenseeId     The Licensee ID.
+     * @param  {string}           privilegeState The 2-character state abbreviation for the Privilege.
+     * @param  {string}           licenseType    The license type.
+     * @return {Promise<object>}                 The server response.
+     */
+    public deletePrivilege(compact, licenseeId, privilegeState, licenseType) {
+        return licenseDataApi.deletePrivilege(compact, licenseeId, privilegeState, licenseType);
+    }
+
+    /**
+     * GET Licensee SSN by ID.
+     * @param  {string}          compact    A compact type.
+     * @param  {string}          licenseeId A licensee ID.
+     * @return {Promise<object>}            The server response.
+     */
+    public getLicenseeSsn(compact, licenseeId) {
+        return licenseDataApi.getLicenseeSsn(compact, licenseeId);
     }
 
     // ========================================================================
@@ -119,6 +180,26 @@ export class DataApi {
      */
     public updateUser(compact, userId, data) {
         return userDataApi.updateUser(compact, userId, data);
+    }
+
+    /**
+     * REINVITE User by ID.
+     * @param  {string}          compact A compact type.
+     * @param  {string}          userId  A user ID.
+     * @return {Promise<object>}         The server response.
+     */
+    public reinviteUser(compact, userId) {
+        return userDataApi.reinviteUser(compact, userId);
+    }
+
+    /**
+     * DELETE User by ID.
+     * @param  {string}          compact A compact type.
+     * @param  {string}          userId  A user ID.
+     * @return {Promise<object>}         The server response.
+     */
+    public deleteUser(compact, userId) {
+        return userDataApi.deleteUser(compact, userId);
     }
 
     /**

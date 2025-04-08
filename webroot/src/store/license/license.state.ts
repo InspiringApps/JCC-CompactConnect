@@ -24,9 +24,9 @@ export const state: State = {
     isLoading: false,
     error: null,
     search: {
+        compact: '',
         firstName: '',
         lastName: '',
-        ssn: '',
         state: '',
     },
 };

@@ -10,6 +10,38 @@
     @spacingTablet: 4.8rem;
     @spacingDesktop: 12rem;
 
+    .title-row {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+
+        .title-info {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+
+            .title-text {
+                padding-left: 1rem;
+                font-size: @fontSizeLarger;
+            }
+
+            .license-logo-container {
+                width: 3.2rem;
+                height: 2.8rem;
+            }
+        }
+
+        :deep(.collapse-caret-button) {
+            svg {
+                width: 2.4rem;
+                height: 1.4rem;
+                stroke: @black;
+            }
+        }
+    }
+
     .licensee-header {
         display: flex;
         flex-direction: column;
@@ -84,8 +116,8 @@
                         }
                     }
 
-                    .tag-icon {
-                        width: 100%;
+                    :deep(path) {
+                        fill: @white;
                     }
                 }
             }
@@ -122,55 +154,15 @@
                         font-size: 1.4rem;
                         line-height: 2.1rem;
                     }
-                }
-            }
 
-            .core-info-block {
-                display: flex;
-                flex-direction: column;
-                padding: 1rem;
-                border-radius: 14px;
-                background-color: @white;
-
-                @media @tabletWidth {
-                    padding: 2rem;
+                    .info-item-error {
+                        color: @midRed;
+                    }
                 }
 
-                @media @desktopWidth {
-                    width: 69rem;
-                }
-
-                .info-row {
-                    display: flex;
-                    flex-direction: row;
-                    padding-bottom: 1.2rem;
-                }
-
-                .chunk {
-                    display: flex;
-                    flex-direction: column;
-                    padding: 1.4rem;
-
-                    &.affiliation-type {
-                        @media @tabletWidth {
-                            margin-left: 6rem;
-                        }
-                    }
-
-                    .chunk-title {
-                        color: @darkGrey;
-                        font-weight: @fontWeightBold;
-                        font-size: 1.4rem;
-                    }
-
-                    .chunk-text {
-                        font-size: 1.6rem;
-                    }
-
-                    .prev-doc-table {
-                        min-height: 33vh;
-                        margin-top: 1rem;
-                    }
+                .ssn-reveal-btn {
+                    text-decoration: underline;
+                    cursor: pointer;
                 }
             }
         }
@@ -268,32 +260,5 @@
 
     .no-touch-item {
         margin: 1rem;
-    }
-
-    .title-row {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 1rem;
-
-        .title-info {
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-
-            .title-text {
-                padding-left: 1rem;
-                font-size: @fontSizeLarger;
-            }
-        }
-
-        :deep(.collapse-caret-button) {
-            svg {
-                width: 2.4rem;
-                height: 1.4rem;
-                stroke: @black;
-            }
-        }
     }
 }

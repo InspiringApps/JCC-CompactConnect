@@ -14,13 +14,15 @@ export default {
     getLicenseesRequest: async ({ commit, getters, dispatch }, { params }: any) => {
         commit(MutationTypes.GET_LICENSEES_REQUEST);
 
+        const apiRequest = (params?.isPublic) ? dataApi.getLicenseesPublic : dataApi.getLicensees;
+
         if (params?.getNextPage) {
             params.lastKey = getters.lastKey;
         } else if (params?.getPrevPage) {
             params.lastKey = getters.prevLastKey;
         }
 
-        await dataApi.getLicensees(params).then(async ({ prevLastKey, lastKey, licensees }) => {
+        await apiRequest(params).then(async ({ prevLastKey, lastKey, licensees }) => {
             // Support for limited server paging support
             if (!licensees.length && params?.getNextPage) {
                 throw new PageExhaustError('end of list');
@@ -41,10 +43,12 @@ export default {
         commit(MutationTypes.GET_LICENSEES_FAILURE, error);
     },
     // GET LICENSEE
-    getLicenseeRequest: async ({ commit, dispatch }, { compact, licenseeId }: any) => {
+    getLicenseeRequest: async ({ commit, dispatch }, { compact, licenseeId, isPublic }: any) => {
         commit(MutationTypes.GET_LICENSEE_REQUEST);
 
-        await dataApi.getLicensee(compact, licenseeId).then((licensee) => {
+        const apiRequest = isPublic ? dataApi.getLicenseePublic : dataApi.getLicensee;
+
+        await apiRequest(compact, licenseeId).then((licensee) => {
             dispatch('getLicenseeSuccess', licensee);
         }).catch((error) => {
             dispatch('getLicenseeFailure', error);

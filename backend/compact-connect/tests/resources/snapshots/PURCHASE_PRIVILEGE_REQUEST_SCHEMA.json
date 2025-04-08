@@ -1,5 +1,16 @@
 {
   "properties": {
+    "licenseType": {
+      "description": "The type of license the provider is purchasing a privilege for.",
+      "enum": [
+        "audiologist",
+        "speech-language pathologist",
+        "occupational therapist",
+        "occupational therapy assistant",
+        "licensed professional counselor"
+      ],
+      "type": "string"
+    },
     "selectedJurisdictions": {
       "items": {
         "description": "Jurisdictions a provider has selected to purchase privileges in.",
@@ -173,8 +184,10 @@
     }
   },
   "required": [
+    "licenseType",
     "selectedJurisdictions",
-    "orderInformation"
+    "orderInformation",
+    "attestations"
   ],
   "type": "object",
   "$schema": "http://json-schema.org/draft-04/schema#"

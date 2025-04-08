@@ -8,6 +8,7 @@ from .. import TstFunction
 @mock_aws
 class TestPostUser(TstFunction):
     def test_post_user(self):
+        from cc_common.data_model.schema.common import StaffUserStatus
         from handlers.users import post_user
 
         with open('tests/resources/api-event.json') as f:
@@ -19,9 +20,7 @@ class TestPostUser(TstFunction):
             api_user = json.load(f)
 
         # The user has admin permission for aslp/oh
-        event['requestContext']['authorizer']['claims']['scope'] = (
-            'openid email aslp/admin aslp/aslp.admin aslp/oh.admin'
-        )
+        event['requestContext']['authorizer']['claims']['scope'] = 'openid email aslp/admin oh/aslp.admin'
         event['pathParameters'] = {'compact': 'aslp'}
 
         resp = post_user(event, self.mock_context)
@@ -34,9 +33,13 @@ class TestPostUser(TstFunction):
         del user['userId']
         del user['dateOfUpdate']
 
+        # Add status to the comparison
+        api_user['status'] = StaffUserStatus.INACTIVE.value
+
         self.assertEqual(api_user, user)
 
     def test_post_user_no_compact_perms_round_trip(self):
+        from cc_common.data_model.schema.common import StaffUserStatus
         from handlers.users import get_one_user, post_user
 
         with open('tests/resources/api-event.json') as f:
@@ -49,9 +52,7 @@ class TestPostUser(TstFunction):
         event['body'] = json.dumps(api_user)
 
         # The user has admin permission for aslp admin
-        event['requestContext']['authorizer']['claims']['scope'] = (
-            'openid email aslp/admin aslp/aslp.admin aslp/oh.admin'
-        )
+        event['requestContext']['authorizer']['claims']['scope'] = 'openid email aslp/admin oh/aslp.admin'
         event['pathParameters'] = {'compact': 'aslp'}
 
         resp = post_user(event, self.mock_context)
@@ -63,6 +64,9 @@ class TestPostUser(TstFunction):
         del user['dateOfUpdate']
         # The aslp.actions and aslp.jurisdictions.oh fields should be removed, since they are empty
         api_user['permissions'] = {'aslp': {'jurisdictions': {}}}
+
+        # Add status to the comparison
+        api_user['status'] = StaffUserStatus.INACTIVE.value
 
         self.assertEqual(api_user, user)
 
@@ -90,7 +94,7 @@ class TestPostUser(TstFunction):
 
         # The user has admin permission for nebraska, not oh, which is where the user they are trying to create
         # has permission.
-        event['requestContext']['authorizer']['claims']['scope'] = 'openid email aslp/admin aslp/ne.admin'
+        event['requestContext']['authorizer']['claims']['scope'] = 'openid email ne/aslp.admin'
         event['pathParameters'] = {'compact': 'aslp'}
 
         resp = post_user(event, self.mock_context)

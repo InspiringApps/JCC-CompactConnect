@@ -12,7 +12,7 @@ class TestGetUserScopesFromDB(TstLambdas):
         self._user_sub = str(uuid4())
 
     def test_compact_ed_user(self):
-        from user_scopes import UserScopes
+        from user_data import UserData
 
         # Create a DB record for a typical compact executive director's permissions
         self._table.put_item(
@@ -20,18 +20,25 @@ class TestGetUserScopesFromDB(TstLambdas):
                 'pk': f'USER#{self._user_sub}',
                 'sk': 'COMPACT#aslp',
                 'compact': 'aslp',
-                'permissions': {'actions': {'read', 'admin', 'readPrivate'}, 'jurisdictions': {}},
+                'permissions': {'actions': {'read', 'admin', 'readPrivate', 'readSSN'}, 'jurisdictions': {}},
             }
         )
 
-        scopes = UserScopes(self._user_sub)
+        user_data = UserData(self._user_sub)
 
         self.assertEqual(
-            {'profile', 'aslp/readGeneral', 'aslp/admin', 'aslp/aslp.admin', 'aslp/aslp.readPrivate'}, scopes
+            {
+                'profile',
+                'aslp/admin',
+                'aslp/readGeneral',
+                'aslp/readSSN',
+                'aslp/readPrivate',
+            },
+            user_data.scopes,
         )
 
     def test_board_ed_user(self):
-        from user_scopes import UserScopes
+        from user_data import UserData
 
         # Create a DB record for a typical board executive director's permissions
         self._table.put_item(
@@ -39,23 +46,22 @@ class TestGetUserScopesFromDB(TstLambdas):
                 'pk': f'USER#{self._user_sub}',
                 'sk': 'COMPACT#aslp',
                 'compact': 'aslp',
-                'permissions': {'jurisdictions': {'al': {'write', 'admin', 'readPrivate'}}},
+                'permissions': {'jurisdictions': {'al': {'write', 'admin', 'readPrivate', 'readSSN'}}},
             }
         )
 
-        scopes = UserScopes(self._user_sub)
+        user_data = UserData(self._user_sub)
 
         self.assertEqual(
             {
                 'profile',
                 'aslp/readGeneral',
-                'aslp/admin',
-                'aslp/write',
-                'aslp/al.admin',
-                'aslp/al.write',
-                'aslp/al.readPrivate',
+                'al/aslp.admin',
+                'al/aslp.write',
+                'al/aslp.readPrivate',
+                'al/aslp.readSSN',
             },
-            scopes,
+            user_data.scopes,
         )
 
     def test_board_ed_user_multi_compact(self):
@@ -63,7 +69,7 @@ class TestGetUserScopesFromDB(TstLambdas):
         There is a small number of expected users who will represent multiple compacts within a state.
         We'll specifically verify handling of what their permissions may look like.
         """
-        from user_scopes import UserScopes
+        from user_data import UserData
 
         # Create a DB record for a board executive director's permissions
         self._table.put_item(
@@ -83,27 +89,23 @@ class TestGetUserScopesFromDB(TstLambdas):
             }
         )
 
-        scopes = UserScopes(self._user_sub)
+        user_data = UserData(self._user_sub)
 
         self.assertEqual(
             {
                 'profile',
                 'aslp/readGeneral',
-                'aslp/admin',
-                'aslp/write',
-                'aslp/al.admin',
-                'aslp/al.write',
+                'al/aslp.admin',
+                'al/aslp.write',
                 'octp/readGeneral',
-                'octp/admin',
-                'octp/write',
-                'octp/al.admin',
-                'octp/al.write',
+                'al/octp.admin',
+                'al/octp.write',
             },
-            scopes,
+            user_data.scopes,
         )
 
     def test_board_staff(self):
-        from user_scopes import UserScopes
+        from user_data import UserData
 
         # Create a DB record for a typical board staff user's permissions
         self._table.put_item(
@@ -113,29 +115,29 @@ class TestGetUserScopesFromDB(TstLambdas):
                 'compact': 'aslp',
                 'permissions': {
                     'jurisdictions': {
-                        'al': {'write'}  # should correspond to the 'aslp/al.write' scope
+                        'al': {'write'}  # should correspond to the 'al/aslp.write' scope
                     },
                 },
             }
         )
 
-        scopes = UserScopes(self._user_sub)
+        user_data = UserData(self._user_sub)
 
-        self.assertEqual({'profile', 'aslp/readGeneral', 'aslp/write', 'aslp/al.write'}, scopes)
+        self.assertEqual({'profile', 'aslp/readGeneral', 'al/aslp.write'}, user_data.scopes)
 
     def test_missing_user(self):
-        from user_scopes import UserScopes
+        from user_data import UserData
 
         # We didn't specifically add a user for this test, so they will be missing
         with self.assertRaises(RuntimeError):
-            UserScopes(self._user_sub)
+            UserData(self._user_sub)
 
     def test_disallowed_compact(self):
         """
         If a user's permissions list an invalid compact, we will refuse to give them
         any scopes at all.
         """
-        from user_scopes import UserScopes
+        from user_data import UserData
 
         # Create a DB record with permissions for an unsupported compact
         self._table.put_item(
@@ -156,14 +158,14 @@ class TestGetUserScopesFromDB(TstLambdas):
         )
 
         with self.assertRaises(ValueError):
-            UserScopes(self._user_sub)
+            UserData(self._user_sub)
 
     def test_disallowed_compact_action(self):
         """
         If a user's permissions list an invalid compact, we will refuse to give them
         any scopes at all.
         """
-        from user_scopes import UserScopes
+        from user_data import UserData
 
         # Create a DB record with permissions for an unsupported compact action
         self._table.put_item(
@@ -180,14 +182,14 @@ class TestGetUserScopesFromDB(TstLambdas):
         )
 
         with self.assertRaises(ValueError):
-            UserScopes(self._user_sub)
+            UserData(self._user_sub)
 
     def test_disallowed_jurisdiction(self):
         """
         If a user's permissions list an invalid jurisdiction, we will refuse to give them
         any scopes at all.
         """
-        from user_scopes import UserScopes
+        from user_data import UserData
 
         # Create a DB record with permissions for an unsupported jurisdiction
         self._table.put_item(
@@ -200,14 +202,14 @@ class TestGetUserScopesFromDB(TstLambdas):
         )
 
         with self.assertRaises(ValueError):
-            UserScopes(self._user_sub)
+            UserData(self._user_sub)
 
     def test_disallowed_action(self):
         """
         If a user's permissions list an invalid action, we will refuse to give them
         any scopes at all.
         """
-        from user_scopes import UserScopes
+        from user_data import UserData
 
         # Create a DB record with permissions for an unsupported jurisdiction action
         self._table.put_item(
@@ -220,4 +222,4 @@ class TestGetUserScopesFromDB(TstLambdas):
         )
 
         with self.assertRaises(ValueError):
-            UserScopes(self._user_sub)
+            UserData(self._user_sub)

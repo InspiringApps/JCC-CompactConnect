@@ -1,6 +1,7 @@
 import type { LambdaInterface } from '@aws-lambda-powertools/commons/lib/esm/types';
 import { Logger } from '@aws-lambda-powertools/logger';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { S3Client } from '@aws-sdk/client-s3';
 import { SESClient } from '@aws-sdk/client-ses';
 import { Context } from 'aws-lambda';
 
@@ -8,16 +9,16 @@ import { EnvironmentVariablesService } from '../lib/environment-variables-servic
 import { CompactConfigurationClient } from '../lib/compact-configuration-client';
 import { JurisdictionClient } from '../lib/jurisdiction-client';
 import { IEventBridgeEvent } from '../lib/models/event-bridge-event-detail';
-import { EmailService } from '../lib/email-service';
+import { IngestEventEmailService } from '../lib/email';
 import { EventClient } from '../lib/event-client';
 
 const environmentVariables = new EnvironmentVariablesService();
 const logger = new Logger({ logLevel: environmentVariables.getLogLevel() });
 
-
 interface LambdaProperties {
     dynamoDBClient: DynamoDBClient;
     sesClient: SESClient;
+    s3Client: S3Client;
 }
 
 /*
@@ -26,7 +27,7 @@ interface LambdaProperties {
 export class Lambda implements LambdaInterface {
     private readonly jurisdictionClient: JurisdictionClient;
     private readonly eventClient: EventClient;
-    private readonly emailService: EmailService;
+    private readonly emailService: IngestEventEmailService;
 
     constructor(props: LambdaProperties) {
         this.jurisdictionClient = new JurisdictionClient({
@@ -43,9 +44,10 @@ export class Lambda implements LambdaInterface {
             logger: logger,
             dynamoDBClient: props.dynamoDBClient,
         });
-        this.emailService = new EmailService({
+        this.emailService = new IngestEventEmailService({
             logger: logger,
             sesClient: props.sesClient,
+            s3Client: props.s3Client,
             compactConfigurationClient: compactConfigurationClient,
             jurisdictionClient: this.jurisdictionClient
         });
