@@ -134,7 +134,6 @@ class TestLicenseSchema(TstLambdas):
 
         self.assertEqual(result['status'], 'active')
 
-
     @patch('cc_common.config._Config.current_standard_datetime', datetime.fromisoformat('2024-11-09T04:00:00+00:00'))
     def test_status_is_set_to_inactive_right_at_expiration_for_utc_minus_four_timezone(self):
         from cc_common.data_model.schema.license.record import LicenseRecordSchema
@@ -146,7 +145,6 @@ class TestLicenseSchema(TstLambdas):
         result = LicenseRecordSchema().load(privilege_data)
 
         self.assertEqual(result['status'], 'inactive')
-
 
     def test_license_record_schema_sets_status_to_inactive_if_jurisdiction_status_inactive(self):
         from cc_common.data_model.schema import LicenseRecordSchema
