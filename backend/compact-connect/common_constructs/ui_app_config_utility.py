@@ -1,9 +1,9 @@
 import json
 from typing import Optional
+
 from aws_cdk import Stack
 from aws_cdk.aws_ssm import StringParameter
 from constructs import Construct
-
 
 UI_APP_CONFIGURATION_PARAMETER_NAME = '/deployment/s3/ui_app_configuration'
 
@@ -11,67 +11,67 @@ UI_APP_CONFIGURATION_PARAMETER_NAME = '/deployment/s3/ui_app_configuration'
 class UIAppConfigUtility:
     """
     Utility class for managing UI application configuration in SSM Parameter Store.
-    
+
     This class provides helper methods for generating and storing configuration
     values that need to be shared between the Persistent stack and UI stack.
     """
-    
+
     def __init__(self):
         self._config: dict[str, str] = {}
-        
+
     def set_staff_cognito_values(self, domain_name: str, client_id: str) -> None:
         """
         Set Cognito configuration values for staff users.
-        
+
         :param domain_name: The Cognito domain name for staff users
         :param client_id: The UI client ID for staff users
         """
         self._config['staff_cognito_domain'] = domain_name
         self._config['staff_cognito_client_id'] = client_id
-        
+
     def set_provider_cognito_values(self, domain_name: str, client_id: str) -> None:
         """
         Set Cognito configuration values for provider users.
-        
+
         :param domain_name: The Cognito domain name for provider users
         :param client_id: The UI client ID for provider users
         """
         self._config['provider_cognito_domain'] = domain_name
         self._config['provider_cognito_client_id'] = client_id
-    
+
     def set_domain_names(self, ui_domain_name: str, api_domain_name: str) -> None:
         """
         Set UI and API domain names.
-        
+
         :param ui_domain_name: The domain name for the UI application
         :param api_domain_name: The domain name for the API
         """
         self._config['ui_domain_name'] = ui_domain_name
         self._config['api_domain_name'] = api_domain_name
-    
+
     def get_config_json(self) -> str:
         """
         Generate JSON string representation of the configuration.
-        
+
         :return: A JSON string containing all configuration values
         """
         return json.dumps(self._config)
-    
-    def generate_ssm_parameter(self, scope: Construct, id: str) -> StringParameter:
+
+    def generate_ssm_parameter(self, scope: Construct, resource_id: str) -> StringParameter:
         """
         Create an SSM Parameter with the current configuration.
-        
+
         :param scope: The CDK construct scope
-        :param id: The ID for the SSM Parameter construct
-            
+        :param resource_id: The ID for the SSM Parameter construct
+
         :return: The created StringParameter construct
         """
         return StringParameter(
             scope,
-            id,
+            resource_id,
             parameter_name=UI_APP_CONFIGURATION_PARAMETER_NAME,
             string_value=self.get_config_json(),
-            description="UI application configuration values",
+            description='UI application configuration values',
         )
 
 
@@ -87,10 +87,9 @@ class UIAppConfigValues:
         :param config_json: JSON string containing configuration values
         """
         if not config_json:
-            raise ValueError("UI App Configuration Parameter is required. If this parameter is not found, the UI stack will not be deployed.")
+            raise ValueError('UI App Configuration Parameter is required.')
 
         self._config: dict[str, str] = json.loads(config_json)
-
 
     @staticmethod
     def load_from_ssm_parameter(stack: Stack) -> Optional['UIAppConfigValues']:
@@ -126,7 +125,7 @@ class UIAppConfigValues:
             'provider_cognito_domain': 'test-provider-domain',
             'provider_cognito_client_id': 'test-provider-client-id',
             'ui_domain_name': 'test-ui.example.com',
-            'api_domain_name': 'test-api.example.com'
+            'api_domain_name': 'test-api.example.com',
         }
         return UIAppConfigValues(json.dumps(test_config))
 
@@ -134,27 +133,27 @@ class UIAppConfigValues:
     def staff_cognito_domain(self) -> str:
         """Get the Cognito domain name for staff users."""
         return self._config['staff_cognito_domain']
-    
+
     @property
     def staff_cognito_client_id(self) -> str:
         """Get the UI client ID for staff users."""
         return self._config['staff_cognito_client_id']
-    
+
     @property
     def provider_cognito_domain(self) -> str:
         """Get the Cognito domain name for provider users."""
         return self._config['provider_cognito_domain']
-    
+
     @property
     def provider_cognito_client_id(self) -> str:
         """Get the UI client ID for provider users."""
         return self._config['provider_cognito_client_id']
-    
+
     @property
     def ui_domain_name(self) -> str:
         """Get the domain name for the UI application."""
         return self._config['ui_domain_name']
-    
+
     @property
     def api_domain_name(self) -> str:
         """Get the domain name for the API."""

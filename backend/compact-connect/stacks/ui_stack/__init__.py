@@ -66,10 +66,11 @@ class UIStack(AppStack):
         # needed values.
         if ui_app_config_values is not None:
             self.assets = CompactConnectUIBucketDeployment(
-                self, 'CompactConnectUIDeployment',
+                self,
+                'CompactConnectUIDeployment',
                 ui_bucket=ui_bucket,
                 environment_context=environment_context,
-                ui_app_config_values=ui_app_config_values
+                ui_app_config_values=ui_app_config_values,
             )
 
         self.distribution = UIDistribution(

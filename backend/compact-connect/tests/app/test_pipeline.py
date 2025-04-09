@@ -43,7 +43,10 @@ class TestPipeline(TstAppABC, TestCase):
         ):
             self._check_no_stage_annotations(stage)
 
-        for api_stack in (self.app.test_pipeline_stack.test_stage.api_stack, self.app.prod_pipeline_stack.prod_stage.api_stack):
+        for api_stack in (
+            self.app.test_pipeline_stack.test_stage.api_stack,
+            self.app.prod_pipeline_stack.prod_stage.api_stack,
+        ):
             with self.subTest(api_stack.stack_name):
                 self._inspect_api_stack(api_stack)
 
@@ -56,7 +59,10 @@ class TestPipeline(TstAppABC, TestCase):
             self.app.prod_pipeline_stack.prod_stage.persistent_stack, domain_name='app.compactconnect.org'
         )
 
-        for ui_stack in (self.app.test_pipeline_stack.test_stage.ui_stack, self.app.prod_pipeline_stack.prod_stage.ui_stack):
+        for ui_stack in (
+            self.app.test_pipeline_stack.test_stage.ui_stack,
+            self.app.prod_pipeline_stack.prod_stage.ui_stack,
+        ):
             self._inspect_ui_stack(ui_stack)
 
     def _when_testing_compact_resource_servers(self, persistent_stack, environment_name):
@@ -319,7 +325,7 @@ class TestPipelineVulnerable(TestCase):
     def test_app_refuses_to_synth_with_prod_vulnerable(self):
         with open('cdk.json') as f:
             context = json.load(f)['context']
-        with open('cdk.context.production-example.json') as f:
+        with open('cdk.context.prod-example.json') as f:
             ssm_context = json.load(f)['ssm_context']
 
         # Suppresses lambda bundling for tests

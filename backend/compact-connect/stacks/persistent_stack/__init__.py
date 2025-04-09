@@ -240,30 +240,24 @@ class PersistentStack(AppStack):
 
         # Create and store UI application configuration in SSM Parameter Store for use in the UI stack
         ui_app_config = UIAppConfigUtility()
-        
+
         # Add staff user pool Cognito configuration
         ui_app_config.set_staff_cognito_values(
             domain_name=self.staff_users.user_pool_domain.domain_name,
-            client_id=self.staff_users.ui_client.user_pool_client_id
+            client_id=self.staff_users.ui_client.user_pool_client_id,
         )
-        
+
         # Add provider user pool Cognito configuration
         ui_app_config.set_provider_cognito_values(
             domain_name=self.provider_users.user_pool_domain.domain_name,
-            client_id=self.provider_users.ui_client.user_pool_client_id
+            client_id=self.provider_users.ui_client.user_pool_client_id,
         )
-        
+
         # Add UI and API domain names
-        ui_app_config.set_domain_names(
-            ui_domain_name=self.ui_domain_name,
-            api_domain_name=self.api_domain_name
-        )
-        
+        ui_app_config.set_domain_names(ui_domain_name=self.ui_domain_name, api_domain_name=self.api_domain_name)
+
         # Generate the SSM parameter
-        self.ui_app_config_parameter = ui_app_config.generate_ssm_parameter(
-            self,
-            'UIAppConfigParameter'
-        )
+        self.ui_app_config_parameter = ui_app_config.generate_ssm_parameter(self, 'UIAppConfigParameter')
 
     def _add_data_resources(self, removal_policy: RemovalPolicy):
         # Create the ssn related resources before other resources which are dependent on them

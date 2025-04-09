@@ -7,7 +7,7 @@ from aws_cdk.aws_s3 import IBucket
 from aws_cdk.aws_s3_deployment import BucketDeployment, Source
 from cdk_nag import NagSuppressions
 from common_constructs.ui_app_config_utility import UIAppConfigValues
-from constructs import IConstruct
+from constructs import Construct
 
 HTTPS_PREFIX = 'https://'
 COGNITO_AUTH_DOMAIN_SUFFIX = '.auth.us-east-1.amazoncognito.com'
@@ -16,12 +16,12 @@ COGNITO_AUTH_DOMAIN_SUFFIX = '.auth.us-east-1.amazoncognito.com'
 class CompactConnectUIBucketDeployment(BucketDeployment):
     def __init__(
         self,
-        scope: IConstruct,
-        id: str,
+        scope: Construct,
+        construct_id: str,
         *,
         ui_bucket: IBucket,
         environment_context: dict,
-        ui_app_config_values: UIAppConfigValues
+        ui_app_config_values: UIAppConfigValues,
     ):
         stack = Stack.of(scope)
         # Get environment-specific values from context
@@ -30,7 +30,7 @@ class CompactConnectUIBucketDeployment(BucketDeployment):
 
         super().__init__(
             scope,
-            id,
+            construct_id,
             destination_bucket=ui_bucket,
             # Larger memory reserved for the s3 sync process than the default 128MB
             memory_limit=512,
@@ -38,7 +38,8 @@ class CompactConnectUIBucketDeployment(BucketDeployment):
             sources=[
                 Source.asset(
                     # we need to back up two parent directories to get to root
-                    os.path.join('..', '..', 'webroot') if stack.bundling_required
+                    os.path.join('..', '..', 'webroot')
+                    if stack.bundling_required
                     else os.path.join('tests', 'resources', 'test_ui_directory'),
                     # This will take a long time to run because it installs a bunch of packages
                     # into a docker container before building the UI, every time
