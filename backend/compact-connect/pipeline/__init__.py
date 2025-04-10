@@ -265,7 +265,8 @@ class BetaPipelineStack(BasePipelineStack):
             github_repo_string=self.github_repo_string,
             cdk_path=cdk_path,
             connection_arn=self.connection_arn,
-            trigger_branch='development',
+            # TODO - update this to 'main' branch after testing
+            trigger_branch='feat/add-beta-environment',
             encryption_key=pipeline_shared_encryption_key,
             alarm_topic=pipeline_alarm_topic,
             access_logs_bucket=self.access_logs_bucket,
@@ -291,7 +292,8 @@ class BetaPipelineStack(BasePipelineStack):
             github_repo_string=self.github_repo_string,
             cdk_path=cdk_path,
             connection_arn=self.connection_arn,
-            trigger_branch='main',
+            # TODO - update this to 'main' branch after testing
+            trigger_branch='feat/add-beta-environment',
             encryption_key=pipeline_shared_encryption_key,
             alarm_topic=pipeline_alarm_topic,
             access_logs_bucket=self.access_logs_bucket,
@@ -316,7 +318,8 @@ class BetaPipelineStack(BasePipelineStack):
                 ShellStep(
                     'TriggerFrontendPipeline',
                     commands=[
-                        f'aws codepipeline start-pipeline-execution --name {self.beta_pipeline.pipeline.pipeline_name}'
+                        f'aws codepipeline start-pipeline-execution --name '
+                        f'{self.beta_frontend_pipeline.pipeline.pipeline_name}'
                     ]
                 )
             ]
