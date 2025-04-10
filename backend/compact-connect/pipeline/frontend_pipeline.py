@@ -14,6 +14,8 @@ from cdk_nag import NagSuppressions
 from common_constructs.bucket import Bucket
 from constructs import Construct
 
+FRONTEND_PIPELINE_TYPE = 'frontend'
+
 
 class FrontendPipeline(CdkCodePipeline):
     """
@@ -23,11 +25,13 @@ class FrontendPipeline(CdkCodePipeline):
     it is not triggered by push events to GitHub. It is intended to be triggered by
     the backend pipeline after the backend resources have deployed successfully.
     """
+
     def __init__(
         self,
         scope: Construct,
         construct_id: str,
         *,
+        pipeline_name: str,
         github_repo_string: str,
         cdk_path: str,
         connection_arn: str,
@@ -36,6 +40,7 @@ class FrontendPipeline(CdkCodePipeline):
         encryption_key: IKey,
         alarm_topic: ITopic,
         ssm_parameter: IParameter,
+        stacks_to_synth: list[str],
         environment_context: dict,
         removal_policy: RemovalPolicy,
         **kwargs,
@@ -64,6 +69,7 @@ class FrontendPipeline(CdkCodePipeline):
         super().__init__(
             scope,
             construct_id,
+            pipeline_name=pipeline_name,
             artifact_bucket=artifact_bucket,
             synth=ShellStep(
                 'Synth',
@@ -80,6 +86,7 @@ class FrontendPipeline(CdkCodePipeline):
                 env={
                     'CDK_DEFAULT_ACCOUNT': environment_context['account_id'],
                     'CDK_DEFAULT_REGION': environment_context['region'],
+                    'CC_PIPELINE_TYPE': FRONTEND_PIPELINE_TYPE,
                 },
                 primary_output_directory=os.path.join(cdk_path, 'cdk.out'),
                 commands=[
@@ -87,7 +94,7 @@ class FrontendPipeline(CdkCodePipeline):
                     'npm install -g aws-cdk',
                     'python -m pip install -r requirements.txt',
                     '( cd lambdas/nodejs; yarn install --frozen-lockfile )',
-                    'cdk synth',
+                    f'cdk synth {" ".join(stacks_to_synth)}',
                 ],
             ),
             synth_code_build_defaults=CodeBuildOptions(
