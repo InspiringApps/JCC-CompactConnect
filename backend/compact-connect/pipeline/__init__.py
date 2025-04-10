@@ -6,6 +6,7 @@ from aws_cdk.aws_kms import IKey, Key
 from aws_cdk.aws_sns import ITopic
 from aws_cdk.aws_ssm import StringParameter
 from aws_cdk.pipelines import CodePipeline as CdkCodePipeline
+from aws_cdk.pipelines import ShellStep
 from common_constructs.access_logs_bucket import AccessLogsBucket
 from common_constructs.alarm_topic import AlarmTopic
 from common_constructs.stack import Stack
@@ -121,7 +122,7 @@ class BasePipelineStack(Stack):
             auto_delete_objects=self.removal_policy == RemovalPolicy.DESTROY,
         )
 
-    def _add_pipeline_role_policy(self, pipeline: CdkCodePipeline):
+    def _add_pipeline_cdk_assume_role_policy(self, pipeline: CdkCodePipeline):
         pipeline.synth_project.add_to_role_policy(
             PolicyStatement(
                 effect=Effect.ALLOW,
@@ -160,37 +161,8 @@ class TestPipelineStack(BasePipelineStack):
             removal_policy=RemovalPolicy.DESTROY,
             **kwargs,
         )
-
         # Allows us to override the default branching scheme for the test environment, via context variable
         pre_prod_trigger_branch = self.pipeline_environment_context.get('pre_prod_trigger_branch', 'development')
-
-        self.pre_prod_pipeline = BackendPipeline(
-            self,
-            'TestBackendPipeline',
-            github_repo_string=self.github_repo_string,
-            cdk_path=cdk_path,
-            connection_arn=self.connection_arn,
-            trigger_branch=pre_prod_trigger_branch,
-            encryption_key=pipeline_shared_encryption_key,
-            alarm_topic=pipeline_alarm_topic,
-            access_logs_bucket=self.access_logs_bucket,
-            ssm_parameter=self.parameter,
-            environment_context=self.pipeline_environment_context,
-            self_mutation=True,
-            removal_policy=self.removal_policy,
-        )
-
-        self.test_stage = BackendStage(
-            self,
-            'Test',
-            app_name=self.app_name,
-            environment_name=TEST_ENVIRONMENT_NAME,
-            environment_context=self.ssm_context['environments'][TEST_ENVIRONMENT_NAME],
-        )
-
-        self.pre_prod_pipeline.add_stage(self.test_stage)
-        self.pre_prod_pipeline.build_pipeline()
-        self._add_pipeline_role_policy(self.pre_prod_pipeline)
 
         self.pre_prod_frontend_pipeline = FrontendPipeline(
             self,
@@ -217,7 +189,57 @@ class TestPipelineStack(BasePipelineStack):
 
         self.pre_prod_frontend_pipeline.add_stage(self.pre_prod_frontend_stage)
         self.pre_prod_frontend_pipeline.build_pipeline()
-        self._add_pipeline_role_policy(self.pre_prod_frontend_pipeline)
+        self._add_pipeline_cdk_assume_role_policy(self.pre_prod_frontend_pipeline)
+
+
+        self.pre_prod_pipeline = BackendPipeline(
+            self,
+            'TestBackendPipeline',
+            github_repo_string=self.github_repo_string,
+            cdk_path=cdk_path,
+            connection_arn=self.connection_arn,
+            trigger_branch=pre_prod_trigger_branch,
+            encryption_key=pipeline_shared_encryption_key,
+            alarm_topic=pipeline_alarm_topic,
+            access_logs_bucket=self.access_logs_bucket,
+            ssm_parameter=self.parameter,
+            environment_context=self.pipeline_environment_context,
+            self_mutation=True,
+            removal_policy=self.removal_policy,
+        )
+
+        self.test_stage = BackendStage(
+            self,
+            'Test',
+            app_name=self.app_name,
+            environment_name=TEST_ENVIRONMENT_NAME,
+            environment_context=self.ssm_context['environments'][TEST_ENVIRONMENT_NAME],
+        )
+
+        # Add a post step to trigger the frontend pipeline
+        self.pre_prod_pipeline.add_stage(
+            self.test_stage,
+            post=[
+                ShellStep(
+                    'TriggerFrontendPipeline',
+                    commands=[
+                        f'aws codepipeline start-pipeline-execution --name '
+                        f'{self.pre_prod_frontend_pipeline.pipeline.pipeline_name}'
+                    ]
+                )
+            ]
+        )
+        self.pre_prod_pipeline.build_pipeline()
+        self._add_pipeline_cdk_assume_role_policy(self.pre_prod_pipeline)
+
+        # Add policy to allow the pipeline to trigger other pipelines
+        self.pre_prod_pipeline.pipeline.add_to_role_policy(
+            PolicyStatement(
+                effect=Effect.ALLOW,
+                actions=['codepipeline:StartPipelineExecution'],
+                resources=[self.pre_prod_frontend_pipeline.pipeline.pipeline_arn],
+            ),
+        )
 
 
 class BetaPipelineStack(BasePipelineStack):
@@ -236,6 +258,32 @@ class BetaPipelineStack(BasePipelineStack):
         super().__init__(
             scope, construct_id, environment_name=BETA_ENVIRONMENT_NAME, removal_policy=RemovalPolicy.RETAIN, **kwargs
         )
+
+        self.beta_frontend_pipeline = FrontendPipeline(
+            self,
+            'BetaFrontendPipeline',
+            github_repo_string=self.github_repo_string,
+            cdk_path=cdk_path,
+            connection_arn=self.connection_arn,
+            trigger_branch='development',
+            encryption_key=pipeline_shared_encryption_key,
+            alarm_topic=pipeline_alarm_topic,
+            access_logs_bucket=self.access_logs_bucket,
+            ssm_parameter=self.parameter,
+            environment_context=self.pipeline_environment_context,
+            self_mutation=True,
+            removal_policy=self.removal_policy,
+        )
+        self.beta_frontend_stage = FrontendStage(
+            self,
+            'BetaFrontendStage',
+            environment_name=BETA_ENVIRONMENT_NAME,
+            environment_context=self.ssm_context['environments'][BETA_ENVIRONMENT_NAME],
+        )
+
+        self.beta_frontend_pipeline.add_stage(self.beta_frontend_stage)
+        self.beta_frontend_pipeline.build_pipeline()
+        self._add_pipeline_cdk_assume_role_policy(self.beta_frontend_pipeline)
 
         self.beta_pipeline = BackendPipeline(
             self,
@@ -261,35 +309,29 @@ class BetaPipelineStack(BasePipelineStack):
             environment_context=self.ssm_context['environments'][BETA_ENVIRONMENT_NAME],
         )
 
-        self.beta_pipeline.add_stage(self.beta_stage)
+        # Add a post step to trigger the frontend pipeline
+        self.beta_pipeline.add_stage(
+            self.beta_stage,
+            post=[
+                ShellStep(
+                    'TriggerFrontendPipeline',
+                    commands=[
+                        f'aws codepipeline start-pipeline-execution --name {self.beta_pipeline.pipeline.pipeline_name}'
+                    ]
+                )
+            ]
+        )
         self.beta_pipeline.build_pipeline()
-        self._add_pipeline_role_policy(self.beta_pipeline)
+        self._add_pipeline_cdk_assume_role_policy(self.beta_pipeline)
 
-        self.beta_frontend_pipeline = FrontendPipeline(
-            self,
-            'BetaFrontendPipeline',
-            github_repo_string=self.github_repo_string,
-            cdk_path=cdk_path,
-            connection_arn=self.connection_arn,
-            trigger_branch='main',
-            encryption_key=pipeline_shared_encryption_key,
-            alarm_topic=pipeline_alarm_topic,
-            access_logs_bucket=self.access_logs_bucket,
-            ssm_parameter=self.parameter,
-            environment_context=self.pipeline_environment_context,
-            self_mutation=True,
-            removal_policy=self.removal_policy,
+        # Add policy to allow the pipeline to trigger other pipelines
+        self.beta_pipeline.pipeline.add_to_role_policy(
+            PolicyStatement(
+                effect=Effect.ALLOW,
+                actions=['codepipeline:StartPipelineExecution'],
+                resources=[self.beta_frontend_pipeline.pipeline.pipeline_arn],
+            ),
         )
-        self.beta_frontend_stage = FrontendStage(
-            self,
-            'BetaFrontendStage',
-            environment_name=BETA_ENVIRONMENT_NAME,
-            environment_context=self.ssm_context['environments'][BETA_ENVIRONMENT_NAME],
-        )
-
-        self.beta_frontend_pipeline.add_stage(self.beta_frontend_stage)
-        self.beta_frontend_pipeline.build_pipeline()
-        self._add_pipeline_role_policy(self.beta_frontend_pipeline)
 
 
 class ProdPipelineStack(BasePipelineStack):
@@ -308,34 +350,6 @@ class ProdPipelineStack(BasePipelineStack):
         super().__init__(
             scope, construct_id, environment_name=PROD_ENVIRONMENT_NAME, removal_policy=RemovalPolicy.RETAIN, **kwargs
         )
-
-        self.prod_pipeline = BackendPipeline(
-            self,
-            'ProdBackendPipeline',
-            github_repo_string=self.github_repo_string,
-            cdk_path=cdk_path,
-            connection_arn=self.connection_arn,
-            trigger_branch='main',
-            encryption_key=pipeline_shared_encryption_key,
-            alarm_topic=pipeline_alarm_topic,
-            access_logs_bucket=self.access_logs_bucket,
-            ssm_parameter=self.parameter,
-            environment_context=self.pipeline_environment_context,
-            self_mutation=True,
-            removal_policy=self.removal_policy,
-        )
-
-        self.prod_stage = BackendStage(
-            self,
-            'Prod',
-            app_name=self.app_name,
-            environment_name=PROD_ENVIRONMENT_NAME,
-            environment_context=self.ssm_context['environments'][PROD_ENVIRONMENT_NAME],
-        )
-
-        self.prod_pipeline.add_stage(self.prod_stage)
-        self.prod_pipeline.build_pipeline()
-        self._add_pipeline_role_policy(self.prod_pipeline)
 
         self.prod_frontend_pipeline = FrontendPipeline(
             self,
@@ -362,4 +376,53 @@ class ProdPipelineStack(BasePipelineStack):
 
         self.prod_frontend_pipeline.add_stage(self.prod_frontend_stage)
         self.prod_frontend_pipeline.build_pipeline()
-        self._add_pipeline_role_policy(self.prod_frontend_pipeline)
+        self._add_pipeline_cdk_assume_role_policy(self.prod_frontend_pipeline)
+
+        self.prod_pipeline = BackendPipeline(
+            self,
+            'ProdBackendPipeline',
+            github_repo_string=self.github_repo_string,
+            cdk_path=cdk_path,
+            connection_arn=self.connection_arn,
+            trigger_branch='main',
+            encryption_key=pipeline_shared_encryption_key,
+            alarm_topic=pipeline_alarm_topic,
+            access_logs_bucket=self.access_logs_bucket,
+            ssm_parameter=self.parameter,
+            environment_context=self.pipeline_environment_context,
+            self_mutation=True,
+            removal_policy=self.removal_policy,
+        )
+
+        self.prod_stage = BackendStage(
+            self,
+            'Prod',
+            app_name=self.app_name,
+            environment_name=PROD_ENVIRONMENT_NAME,
+            environment_context=self.ssm_context['environments'][PROD_ENVIRONMENT_NAME],
+        )
+
+        # Add a post step to trigger the frontend pipeline
+        self.prod_pipeline.add_stage(
+            self.prod_stage,
+            post=[
+                ShellStep(
+                    'TriggerFrontendPipeline',
+                    commands=[
+                        f'aws codepipeline start-pipeline-execution --name '
+                        f'{self.prod_frontend_pipeline.pipeline.pipeline_name}'
+                    ]
+                )
+            ]
+        )
+        self.prod_pipeline.build_pipeline()
+        self._add_pipeline_cdk_assume_role_policy(self.prod_pipeline)
+
+        # Add policy to allow the pipeline to trigger other pipelines
+        self.prod_pipeline.pipeline.add_to_role_policy(
+            PolicyStatement(
+                effect=Effect.ALLOW,
+                actions=['codepipeline:StartPipelineExecution'],
+                resources=[self.prod_frontend_pipeline.pipeline.pipeline_arn],
+            ),
+        )
