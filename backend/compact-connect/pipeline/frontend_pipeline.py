@@ -14,10 +14,18 @@ from cdk_nag import NagSuppressions
 from common_constructs.bucket import Bucket
 from constructs import Construct
 
-BACKEND_PIPELINE_TYPE = 'backend'
+FRONTEND_PIPELINE_TYPE = 'frontend'
 
 
-class BackendPipeline(CdkCodePipeline):
+class FrontendPipeline(CdkCodePipeline):
+    """
+    Stack for creating the Frontend CodePipeline resources.
+
+    This is very similar to the BackendPipeline construct, the main difference being
+    it is not triggered by push events to GitHub. It is intended to be triggered by
+    the backend pipeline after the backend resources have deployed successfully.
+    """
+
     def __init__(
         self,
         scope: Construct,
@@ -68,7 +76,9 @@ class BackendPipeline(CdkCodePipeline):
                 input=CodePipelineSource.connection(
                     repo_string=github_repo_string,
                     branch=trigger_branch,
-                    trigger_on_push=True,
+                    # This pipeline is triggered by the backend pipeline, so we don't
+                    # want push events to trigger it
+                    trigger_on_push=False,
                     # Arn format:
                     # arn:aws:codeconnections:us-east-1:111122223333:connection/<uuid>
                     connection_arn=connection_arn,
@@ -76,7 +86,7 @@ class BackendPipeline(CdkCodePipeline):
                 env={
                     'CDK_DEFAULT_ACCOUNT': environment_context['account_id'],
                     'CDK_DEFAULT_REGION': environment_context['region'],
-                    'CC_PIPELINE_TYPE': BACKEND_PIPELINE_TYPE,
+                    'CC_PIPELINE_TYPE': FRONTEND_PIPELINE_TYPE,
                 },
                 primary_output_directory=os.path.join(cdk_path, 'cdk.out'),
                 commands=[

@@ -178,7 +178,8 @@ its environment:
    type of authentication you use to login to your account. See the [AWS CLI Configuration Guide](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-quickstart.html).
 7) Complete the [Google reCAPTCHA Setup](#google-recaptcha-setup) steps for your sandbox environment.
 8) Run `cdk bootstrap` to add some base CDK support infrastructure to your AWS account.
-9) Run `cdk deploy 'Sandbox/*'` to get the initial stack resources deployed.
+9) Run `cdk deploy 'Sandbox/*'` to get the initial backend stack resources deployed.
+10) *Optional:* Once the backend stacks have successfully deployed, deploy the frontend UI by setting the 'deploy_sandbox_ui' context field to `true` and run `cdk deploy 'SandboxUI/*'`
 
 ### Subsequent sandbox deploys:
 For any future deploys, everything is set up so a simple `cdk deploy 'Sandbox/*'` should update all your infrastructure
@@ -203,41 +204,42 @@ authentication is working as expected.
 ### First deploy to the production environment
 The production environment requires a few steps to fully set up before deploys can be automated. Refer to the
 [README.md](../multi-account/README.md) for details on setting up a full multi-account architecture environment. Once
-that is done, perform the following steps to deploy the CI/CD pipeline into the appropriate AWS account:
-- Complete the [Google reCAPTCHA Setup](#google-recaptcha-setup) steps for each environment you will be deploying to (test, prod, etc.). Use the appropriate domain name for the environment (`app.test.compactconnect.org` for test environment, `app.compactconnect.org` for production). For the production environment, make sure to complete the billing setup steps as well.
+that is done, perform the following steps to deploy the CI/CD pipelines into the appropriate AWS account:
+- Complete the [Google reCAPTCHA Setup](#google-recaptcha-setup) steps for each environment you will be deploying to (test, beta, prod). Use the appropriate domain name for the environment (`app.test.compactconnect.org` for test environment, `app.beta.compactconnect.org` for beta environment, `app.compactconnect.org` for production). For the production environment, make sure to complete the billing setup steps as well.
 - Have someone with suitable permissions in the GitHub organization that hosts this code navigate to the AWS Console
   for the Deploy account, go to the
   [AWS CodeStar Connections](https://us-east-1.console.aws.amazon.com/codesuite/settings/connections) page and create a
   connection that grants AWS permission to receive GitHub events. Note the ARN of the resulting connection for
   the next step.
-- Create a new Route53 hosted zone for the domain name you plan to use for the app in each of the production AWS
-  account and the test AWS account. See [About Route53 hosted zones](#about-route53-hosted-zones) below for more detail.
+- Create a new Route53 hosted zone for the domain name you plan to use for the app in each of the production, beta, and test AWS
+  accounts. See [About Route53 hosted zones](#about-route53-hosted-zones) below for more detail.
 - Request AWS to remove your account from the SES sandbox and wait for them to complete this request.
   See [SES Sandbox](https://docs.aws.amazon.com/ses/latest/dg/request-production-access.html).
-- Copy the `cdk.context.production-example.json` file to `cdk.context.json` and update accounts and other identifiers,
-  including the Code Star connection you just had created to match the identifiers for your actual accounts and
-  resources.
+- With the [aws-cli](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html), set up your local machine to authenticate against the Deploy account as an administrator.
+- For every environment, copy the appropriate example context file (`cdk.context.deploy-example.json`, `cdk.context.test-example.json`, `cdk.context.beta-example.json`, or `cdk.context.prod-example.json`) to `cdk.context.json` and update accounts and other identifiers, including the Code Star connection you just had created to match the identifiers for your actual accounts and resources. You will then need to run the `bin/put_ssm_context.sh <environment>` script to push relevant content from your `cdk.context.json` script into an SSM Parameter in your Deploy account. Replace `<environment>` with the target environment. For example, to set up for the test environment: `bin/put_ssm_context.sh test`.
+  For example, to set up for the test environment: `bin/put_ssm_context.sh test`. 
 - Optional: If a Slack integration is desired for operational support, have someone with permission to install Slack
-  apps in your workspace and Admin access to each of the Test, Prod, and Deploy accounts log into the Test AWS account
+  apps in your workspace and Admin access to each of the Test, Beta, Prod, and Deploy accounts log into each AWS account
   and go to the Chatbot service. Select 'Slack' under the **Configure a chat client** box and click **Configure
   client**, then follow the Slack authorization prompts. This will authorize AWS to integrate with the channels you
-  identify in your `cdk.context.json` file. Repeat this process for the Prod and Deploy accounts as well. For each
-  Slack channel you want to integrate, be sure to invite your new AWS app to those channels. Update the
+  identify in your `cdk.context.json` file. For each Slack channel you want to integrate, be sure to invite your new AWS app to those channels. Update the
   `notifications.slack` sections of the `cdk.context.json` file with the details for your Slack workspace and channels.
   If you opt not to integrate with Slack, remove the `slack` fields from the file.
-- With the [aws-cli](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html), set up your local
-  machine to authenticate against the Deploy account as an administrator.
-- Run the `bin/put_ssm_context.sh` script to push relevant content from your `cdk.context.json` script into an SSM
-  Parameter Store in your Deploy account.
 - Set cli-environment variables `CDK_DEFAULT_ACCOUNT` and `CDK_DEFAULT_REGION` to your deploy account id and
   `us-east-1`, respectively.
-- Run the command `cdk deploy PipelineStack` to get the pipeline initial stack resources deployed.
+- Deploy the specific pipeline stack you want to set up:
+  - For the test environment pipeline: `cdk deploy TestPipelineStack`
+  - For the beta environment pipeline: `cdk deploy BetaPipelineStack`
+  - For the production environment pipeline: `cdk deploy ProdPipelineStack`
+  - To deploy all pipelines at once: `cdk deploy TestPipelineStack BetaPipelineStack ProdPipelineStack`
+  
+
+  **Note that deploying a pipeline stack will trigger an automatic deployment from the configured branch in your GitHub repo.**
 
 ### Subsequent production deploys
 
-Once the pipeline is established with the above steps, deploys will automatically execute to the test and production
-environments whenever changes are pushed to the `development` or `main` branches of the repository named in your
-`cdk.context.json` file.
+Once the pipelines are established with the above steps, deploys will automatically execute to the test environment whenever changes are pushed to the `development` branch of the repository named in your
+`cdk.context.json` file. Likewise, changes pushed to the `main` branch will execute deployments to the beta and production environments.
 
 ### Useful commands
 
@@ -280,7 +282,7 @@ ns-6.awsdns-16.org.
 
 Copy those name server values and, back in your production hosted zone, create a new NS record that matches the test
 one, with the same value (i.e. Record Name: `test.compcatconnect.org`, Type: `NS`, Value: `<same as above>`). Once that
-is done, your test hosted zone is ready for use by the app.
+is done, your test hosted zone is ready for use by the app. You will need to perform this action for your beta environment as well, should you choose to deploy one.
 
 ## More Info
 [Back to top](#compact-connect---backend-developer-documentation)

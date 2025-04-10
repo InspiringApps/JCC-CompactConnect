@@ -3,8 +3,9 @@ import os
 
 from aws_cdk import App, Environment
 from common_constructs.stack import StandardTags
-from pipeline import PipelineStack
+from pipeline import BetaPipelineStack, DeploymentResourcesStack, ProdPipelineStack, TestPipelineStack
 from pipeline.backend_stage import BackendStage
+from pipeline.frontend_stage import FrontendStage
 
 
 class CompactConnectApp(App):
@@ -20,23 +21,63 @@ class CompactConnectApp(App):
             environment_context = ssm_context['environments'][environment_name]
             app_name = ssm_context['app_name']
 
-            self.sandbox_stage = BackendStage(
+            self.sandbox_backend_stage = BackendStage(
                 self,
                 'Sandbox',
                 app_name=app_name,
                 environment_name=environment_name,
                 environment_context=environment_context,
-                github_repo_string=ssm_context['github_repo_string'],
             )
+            # NOTE: for first-time sandbox deployments, ensure you deploy the backend stage successfully first
+            # by running `cdk deploy 'Sandbox/*'`, then if you want to deploy the UI for your sandbox environment, set
+            # the 'deploy_sandbox_ui' field to true and deploy this stack by running `cdk deploy 'SandboxUI/*'. This
+            # ensures the user pool values are configured to be bundled with the UI build artifact.
+            if environment_context['deploy_sandbox_ui']:
+                self.sandbox_frontend_stage = FrontendStage(
+                    self,
+                    'SandboxUI',
+                    environment_name=environment_name,
+                    environment_context=environment_context,
+                )
         else:
             tags = self.node.get_context('tags')
             environment = Environment(
                 account=os.environ['CDK_DEFAULT_ACCOUNT'],
                 region=os.environ['CDK_DEFAULT_REGION'],
             )
-            self.pipeline_stack = PipelineStack(
+
+            self.deployment_resources_stack = DeploymentResourcesStack(
                 self,
-                'PipelineStack',
+                'DeploymentResourcesStack',
+                env=environment,
+                standard_tags=StandardTags(**tags, environment='deploy'),
+            )
+
+            self.test_pipeline_stack = TestPipelineStack(
+                self,
+                'TestPipelineStack',
+                pipeline_shared_encryption_key=self.deployment_resources_stack.pipeline_shared_encryption_key,
+                pipeline_alarm_topic=self.deployment_resources_stack.pipeline_alarm_topic,
+                env=environment,
+                standard_tags=StandardTags(**tags, environment='pipeline'),
+                cdk_path='backend/compact-connect',
+            )
+
+            self.prod_pipeline_stack = ProdPipelineStack(
+                self,
+                'ProdPipelineStack',
+                pipeline_shared_encryption_key=self.deployment_resources_stack.pipeline_shared_encryption_key,
+                pipeline_alarm_topic=self.deployment_resources_stack.pipeline_alarm_topic,
+                env=environment,
+                standard_tags=StandardTags(**tags, environment='pipeline'),
+                cdk_path='backend/compact-connect',
+            )
+
+            self.beta_pipeline_stack = BetaPipelineStack(
+                self,
+                'BetaPipelineStack',
+                pipeline_shared_encryption_key=self.deployment_resources_stack.pipeline_shared_encryption_key,
+                pipeline_alarm_topic=self.deployment_resources_stack.pipeline_alarm_topic,
                 env=environment,
                 standard_tags=StandardTags(**tags, environment='pipeline'),
                 cdk_path='backend/compact-connect',

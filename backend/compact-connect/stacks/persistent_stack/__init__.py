@@ -12,6 +12,7 @@ from cdk_nag import NagSuppressions
 from common_constructs.access_logs_bucket import AccessLogsBucket
 from common_constructs.alarm_topic import AlarmTopic
 from common_constructs.data_migration import DataMigration
+from common_constructs.frontend_app_config_utility import PersistentStackFrontendAppConfigUtility
 from common_constructs.nodejs_function import NodejsFunction
 from common_constructs.python_function import COMMON_PYTHON_LAMBDA_LAYER_SSM_PARAMETER_NAME
 from common_constructs.security_profile import SecurityProfile
@@ -236,6 +237,29 @@ class PersistentStack(AppStack):
             self.provider_users_deprecated.node.add_dependency(
                 self.user_email_notifications.verification_custom_resource
             )
+
+        # Create and store UI application configuration in SSM Parameter Store for use in the UI stack
+        frontend_app_config = PersistentStackFrontendAppConfigUtility()
+
+        # Add staff user pool Cognito configuration
+        frontend_app_config.set_staff_cognito_values(
+            domain_name=self.staff_users.user_pool_domain.domain_name,
+            client_id=self.staff_users.ui_client.user_pool_client_id,
+        )
+
+        # Add provider user pool Cognito configuration
+        frontend_app_config.set_provider_cognito_values(
+            domain_name=self.provider_users.user_pool_domain.domain_name,
+            client_id=self.provider_users.ui_client.user_pool_client_id,
+        )
+
+        # Add UI and API domain names
+        frontend_app_config.set_domain_names(ui_domain_name=self.ui_domain_name, api_domain_name=self.api_domain_name)
+
+        # Generate the SSM parameter
+        self.frontend_app_config_parameter = frontend_app_config.generate_ssm_parameter(
+            self, 'FrontendAppConfigParameter'
+        )
 
     def _add_data_resources(self, removal_policy: RemovalPolicy):
         # Create the ssn related resources before other resources which are dependent on them
