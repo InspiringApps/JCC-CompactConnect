@@ -165,7 +165,6 @@ class TestPipelineStack(BasePipelineStack):
             app_name=self.app_name,
             environment_name=TEST_ENVIRONMENT_NAME,
             environment_context=self.ssm_context['environments'][TEST_ENVIRONMENT_NAME],
-            github_repo_string=self.github_repo_string,
         )
 
         self.pre_prod_pipeline.add_stage(self.test_stage)
@@ -227,7 +226,6 @@ class BetaPipelineStack(BasePipelineStack):
             app_name=self.app_name,
             environment_name=BETA_ENVIRONMENT_NAME,
             environment_context=self.ssm_context['environments'][BETA_ENVIRONMENT_NAME],
-            github_repo_string=self.github_repo_string,
         )
 
         self.beta_pipeline.add_stage(self.beta_stage)
@@ -289,7 +287,6 @@ class ProdPipelineStack(BasePipelineStack):
             app_name=self.app_name,
             environment_name=PROD_ENVIRONMENT_NAME,
             environment_context=self.ssm_context['environments'][PROD_ENVIRONMENT_NAME],
-            github_repo_string=self.github_repo_string,
         )
 
         self.prod_pipeline.add_stage(self.prod_stage)
