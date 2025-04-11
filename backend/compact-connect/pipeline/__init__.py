@@ -106,7 +106,7 @@ class DeploymentResourcesStack(Stack):
             email_subscriptions=notifications.get('email', []),
             slack_subscriptions=notifications.get('slack', []),
         )
-        
+
         self.pipeline_access_logs_bucket = AccessLogsBucket(
             self,
             'AccessLogsBucket',
@@ -216,25 +216,25 @@ class BaseBackendPipelineStack(BasePipelineStack):
         **kwargs,
     ):
         super().__init__(
-            scope, 
-            construct_id, 
-            environment_name=environment_name, 
+            scope,
+            construct_id,
+            environment_name=environment_name,
             env=env,
             removal_policy=removal_policy,
             pipeline_access_logs_bucket=pipeline_access_logs_bucket,
-            **kwargs
+            **kwargs,
         )
 
     def _generate_frontend_pipeline_trigger_step(self):
         """
         Creates a CodeBuild step that triggers the frontend pipeline after backend deployment completes.
-        
+
         This is a critical part of the deployment orchestration:
         1. The backend pipeline creates necessary infrastructure
         2. This step executes after successful backend deployment
         3. It uses AWS CLI to trigger the frontend pipeline
         4. The frontend pipeline then deploys UI components that depend on backend resources
-        
+
         The step uses a dedicated IAM role with permission to start the frontend pipeline execution.
         Pipeline names are determined through convention rather than direct CDK references to
         avoid circular dependencies during synthesis.
@@ -296,13 +296,13 @@ class BaseFrontendPipelineStack(BasePipelineStack):
         **kwargs,
     ):
         super().__init__(
-            scope, 
-            construct_id, 
-            environment_name=environment_name, 
+            scope,
+            construct_id,
+            environment_name=environment_name,
             env=env,
             removal_policy=removal_policy,
             pipeline_access_logs_bucket=pipeline_access_logs_bucket,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -438,12 +438,12 @@ class BetaBackendPipelineStack(BaseBackendPipelineStack):
         **kwargs,
     ):
         super().__init__(
-            scope, 
-            construct_id, 
-            environment_name=BETA_ENVIRONMENT_NAME, 
+            scope,
+            construct_id,
+            environment_name=BETA_ENVIRONMENT_NAME,
             removal_policy=RemovalPolicy.RETAIN,
             pipeline_access_logs_bucket=pipeline_access_logs_bucket,
-            **kwargs
+            **kwargs,
         )
 
         self.beta_backend_pipeline = BackendPipeline(
@@ -453,7 +453,8 @@ class BetaBackendPipelineStack(BaseBackendPipelineStack):
             github_repo_string=self.github_repo_string,
             cdk_path=cdk_path,
             connection_arn=self.connection_arn,
-            trigger_branch='main',
+            # TODO - change to main after done testing
+            trigger_branch='feat/add-beta-environment',
             encryption_key=pipeline_shared_encryption_key,
             alarm_topic=pipeline_alarm_topic,
             access_logs_bucket=self.access_logs_bucket,
@@ -496,12 +497,12 @@ class BetaFrontendPipelineStack(BaseFrontendPipelineStack):
         **kwargs,
     ):
         super().__init__(
-            scope, 
-            construct_id, 
-            environment_name=BETA_ENVIRONMENT_NAME, 
+            scope,
+            construct_id,
+            environment_name=BETA_ENVIRONMENT_NAME,
             removal_policy=RemovalPolicy.RETAIN,
             pipeline_access_logs_bucket=pipeline_access_logs_bucket,
-            **kwargs
+            **kwargs,
         )
 
         self.beta_frontend_pipeline = FrontendPipeline(
@@ -511,7 +512,8 @@ class BetaFrontendPipelineStack(BaseFrontendPipelineStack):
             github_repo_string=self.github_repo_string,
             cdk_path=cdk_path,
             connection_arn=self.connection_arn,
-            trigger_branch='main',
+            # TODO - change to main after done testing
+            trigger_branch='feat/add-beta-environment',
             encryption_key=pipeline_shared_encryption_key,
             alarm_topic=pipeline_alarm_topic,
             access_logs_bucket=self.access_logs_bucket,
@@ -521,7 +523,7 @@ class BetaFrontendPipelineStack(BaseFrontendPipelineStack):
             self_mutation=True,
             removal_policy=self.removal_policy,
         )
-        
+
         self.beta_frontend_stage = FrontendStage(
             self,
             'BetaFrontend',
@@ -549,12 +551,12 @@ class ProdBackendPipelineStack(BaseBackendPipelineStack):
         **kwargs,
     ):
         super().__init__(
-            scope, 
-            construct_id, 
-            environment_name=PROD_ENVIRONMENT_NAME, 
+            scope,
+            construct_id,
+            environment_name=PROD_ENVIRONMENT_NAME,
             removal_policy=RemovalPolicy.RETAIN,
             pipeline_access_logs_bucket=pipeline_access_logs_bucket,
-            **kwargs
+            **kwargs,
         )
 
         self.prod_pipeline = BackendPipeline(
@@ -601,18 +603,18 @@ class ProdFrontendPipelineStack(BaseFrontendPipelineStack):
         construct_id: str,
         *,
         pipeline_shared_encryption_key: IKey,
-        pipeline_alarm_topic: ITopic, 
+        pipeline_alarm_topic: ITopic,
         pipeline_access_logs_bucket: IBucket,
         cdk_path: str,
         **kwargs,
     ):
         super().__init__(
-            scope, 
-            construct_id, 
-            environment_name=PROD_ENVIRONMENT_NAME, 
+            scope,
+            construct_id,
+            environment_name=PROD_ENVIRONMENT_NAME,
             removal_policy=RemovalPolicy.RETAIN,
             pipeline_access_logs_bucket=pipeline_access_logs_bucket,
-            **kwargs
+            **kwargs,
         )
 
         self.prod_frontend_pipeline = FrontendPipeline(

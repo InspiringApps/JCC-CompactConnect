@@ -34,6 +34,7 @@ class CompactConnectApp(App):
 
     Each pipeline type is in its own dedicated stack to avoid self-mutation conflicts.
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         sandbox_environment = self.node.try_get_context('sandbox')
@@ -89,7 +90,7 @@ class CompactConnectApp(App):
                 standard_tags=StandardTags(**tags, environment='pipeline'),
                 cdk_path='backend/compact-connect',
             )
-            
+
             self.test_frontend_pipeline_stack = TestFrontendPipelineStack(
                 self,
                 'TestFrontendPipelineStack',
@@ -112,7 +113,7 @@ class CompactConnectApp(App):
                 standard_tags=StandardTags(**tags, environment='pipeline'),
                 cdk_path='backend/compact-connect',
             )
-            
+
             self.prod_frontend_pipeline_stack = ProdFrontendPipelineStack(
                 self,
                 'ProdFrontendPipelineStack',
@@ -135,7 +136,7 @@ class CompactConnectApp(App):
                 standard_tags=StandardTags(**tags, environment='pipeline'),
                 cdk_path='backend/compact-connect',
             )
-            
+
             self.beta_frontend_pipeline_stack = BetaFrontendPipelineStack(
                 self,
                 'BetaFrontendPipelineStack',

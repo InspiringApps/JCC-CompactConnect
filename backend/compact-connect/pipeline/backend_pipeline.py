@@ -20,15 +20,16 @@ BACKEND_PIPELINE_TYPE = 'backend'
 class BackendPipeline(CdkCodePipeline):
     """
     Stack for creating the Backend CodePipeline resources.
-    
+
     This pipeline is part of a two-pipeline architecture where:
     1. This Backend Pipeline deploys infrastructure and creates required resources
     2. The Frontend Pipeline then deploys the frontend application using those resources
-    
+
     Deployment Flow:
     - IS triggered by GitHub pushes (trigger_on_push=True)
     - Triggers the Frontend Pipeline after successful deployment
     """
+
     def __init__(
         self,
         scope: Construct,
