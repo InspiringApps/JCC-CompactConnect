@@ -18,6 +18,17 @@ BACKEND_PIPELINE_TYPE = 'backend'
 
 
 class BackendPipeline(CdkCodePipeline):
+    """
+    Stack for creating the Backend CodePipeline resources.
+    
+    This pipeline is part of a two-pipeline architecture where:
+    1. This Backend Pipeline deploys infrastructure and creates required resources
+    2. The Frontend Pipeline then deploys the frontend application using those resources
+    
+    Deployment Flow:
+    - IS triggered by GitHub pushes (trigger_on_push=True)
+    - Triggers the Frontend Pipeline after successful deployment
+    """
     def __init__(
         self,
         scope: Construct,
@@ -76,7 +87,6 @@ class BackendPipeline(CdkCodePipeline):
                 env={
                     'CDK_DEFAULT_ACCOUNT': environment_context['account_id'],
                     'CDK_DEFAULT_REGION': environment_context['region'],
-                    'CC_PIPELINE_TYPE': BACKEND_PIPELINE_TYPE,
                 },
                 primary_output_directory=os.path.join(cdk_path, 'cdk.out'),
                 commands=[
@@ -84,6 +94,7 @@ class BackendPipeline(CdkCodePipeline):
                     'npm install -g aws-cdk',
                     'python -m pip install -r requirements.txt',
                     '( cd lambdas/nodejs; yarn install --frozen-lockfile )',
+                    # Only synthesize the specific stacks needed
                     f'cdk synth {" ".join(stacks_to_synth)}',
                 ],
             ),

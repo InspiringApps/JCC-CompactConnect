@@ -21,9 +21,16 @@ class FrontendPipeline(CdkCodePipeline):
     """
     Stack for creating the Frontend CodePipeline resources.
 
-    This is very similar to the BackendPipeline construct, the main difference being
-    it is not triggered by push events to GitHub. It is intended to be triggered by
-    the backend pipeline after the backend resources have deployed successfully.
+    This pipeline is part of a two-pipeline architecture where:
+    1. The Backend Pipeline deploys infrastructure and creates required resources
+    2. This Frontend Pipeline then deploys the frontend application using those resources
+
+    Deployment Flow:
+    1. Backend Pipeline completes deployment of infrastructure resources
+    2. Backend Pipeline triggers this Frontend Pipeline via AWS CLI command
+    3. This pipeline pulls the same source code but synthesizes only frontend resources
+    4. Frontend application deploys using configuration values created by the Backend Pipeline
+    and stored in SSM Parameter Store
     """
 
     def __init__(
@@ -77,7 +84,8 @@ class FrontendPipeline(CdkCodePipeline):
                     repo_string=github_repo_string,
                     branch=trigger_branch,
                     # This pipeline is triggered by the backend pipeline, so we don't
-                    # want push events to trigger it
+                    # want push events to trigger it. This prevents duplicate deployments
+                    # since both pipelines use the same source code.
                     trigger_on_push=False,
                     # Arn format:
                     # arn:aws:codeconnections:us-east-1:111122223333:connection/<uuid>
@@ -86,7 +94,6 @@ class FrontendPipeline(CdkCodePipeline):
                 env={
                     'CDK_DEFAULT_ACCOUNT': environment_context['account_id'],
                     'CDK_DEFAULT_REGION': environment_context['region'],
-                    'CC_PIPELINE_TYPE': FRONTEND_PIPELINE_TYPE,
                 },
                 primary_output_directory=os.path.join(cdk_path, 'cdk.out'),
                 commands=[
@@ -94,6 +101,7 @@ class FrontendPipeline(CdkCodePipeline):
                     'npm install -g aws-cdk',
                     'python -m pip install -r requirements.txt',
                     '( cd lambdas/nodejs; yarn install --frozen-lockfile )',
+                    # Only synthesize the specific stacks needed
                     f'cdk synth {" ".join(stacks_to_synth)}',
                 ],
             ),
