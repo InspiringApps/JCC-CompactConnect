@@ -124,6 +124,9 @@ class CalculatedStatusRecordSchema(BaseRecordSchema):
             if (
                 in_data['jurisdictionUploadedLicenseStatus'] == ActiveInactiveStatus.ACTIVE
                 and date.fromisoformat(in_data['dateOfExpiration']) >= config.expiration_resolution_date
+                # in the case of providers, we set this value if the provider moved to a jurisdiction where they do
+                # not have a valid license within the compact member states.
+                and in_data.get('homeJurisdictionChangeDeactivationStatus', None) is None
             )
             else ActiveInactiveStatus.INACTIVE
         )
@@ -141,6 +144,9 @@ class CalculatedStatusRecordSchema(BaseRecordSchema):
                 and in_data['licenseStatus'] == ActiveInactiveStatus.ACTIVE
                 and in_data.get('encumberedStatus', LicenseEncumberedStatusEnum.UNENCUMBERED)
                 == LicenseEncumberedStatusEnum.UNENCUMBERED
+                # in the case of providers, we set this value if the provider moved to a jurisdiction where they do
+                # not have a valid license within the compact member states.
+                and in_data.get('homeJurisdictionChangeDeactivationStatus', None) is None
             )
             else CompactEligibilityStatus.INELIGIBLE
         )
