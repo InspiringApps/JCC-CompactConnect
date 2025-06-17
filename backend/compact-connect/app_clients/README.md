@@ -13,7 +13,7 @@ Before creating a new app client, ensure you have:
 - AWS CLI permissions to create app clients for the Staff Users user pool in the needed AWS accounts
 
 ### 2. Update Registry
-Add a new app client yaml file to `/app_clients` following the schema of the example app client.
+Add a new app client yaml file to `/app_clients` under the respective environment directory following the schema of the example app client.
 
 #### **Scope Configuration**
    Scopes are the permissions that the app client will have. There are two tiers of scopes:
@@ -43,8 +43,41 @@ Add a new app client yaml file to `/app_clients` following the schema of the exa
 
    Currently, the most common scope needed by app clients is the `{jurisdiction}/{compact}.write` scope. This scope allows the app client to upload license data for a jurisdiction/compact combination.
 
-### 3. Create App Client in AWS Using CLI
-   To create an app client with the needed OAuth scopes configured, you will use the AWS CLI. After logging into the correct AWS account for the us-east-1 region, run the following cli command (for the OAuth scopes, you will put whatever scopes are documented in the yaml file, the following is an example of the format used to define the scopes):
+### 3. Create App Client in AWS Using Python Script (Recommended)
+   **For streamlined app client creation, use the provided Python script:**
+
+   ```bash
+   python3 create_app_client.py -e <environment> -u <user_pool_id> -f <yaml_file>
+   ```
+
+   **Prerequisites:**
+   - Install required dependencies: `pip install PyYAML boto3`
+   - Configure AWS credentials (using `aws configure` or environment variables)
+   - Have access to the appropriate AWS account for the target environment
+
+   **Examples:**
+   ```bash
+   # Create app client in beta environment
+   python3 create_app_client.py -e beta -u us-east-1_HfpAkFs0X -f example_app_client.yml
+   
+   # Create app client in production environment  
+   python3 create_app_client.py -e prod -u us-east-1_ProductionID -f example_app_client.yml
+   ```
+
+   **Script Features:**
+   - Automatically reads YAML configuration from the appropriate environment directory
+   - Uses boto3 for reliable AWS API calls
+   - Validates configuration before creating the app client
+   - Outputs credentials in secure JSON format for easy copy/paste
+   - No persistent credential files stored on disk
+
+   **Environment Directories:**
+   - `test`: Uses `cc_test_app_clients/` directory
+   - `beta`: Uses `cc_beta_app_clients/` directory  
+   - `prod`: Uses `cc_prod_app_clients/` directory
+
+### 3. Alternative: Create App Client Using AWS CLI (Manual Method)
+   If you prefer to use the AWS CLI directly, you can run the following command (for the OAuth scopes, you will put whatever scopes are documented in the yaml file, the following is an example of the format used to define the scopes):
    ```
    aws cognito-idp create-user-pool-client --user-pool-id '<staff users's user pool id>' \
    --client-name '<name of client you set in the yaml file, it should include a version suffix for rotation, e.g. "example-ky-app-client-v1">'\
@@ -66,7 +99,20 @@ Add a new app client yaml file to `/app_clients` following the schema of the exa
 
 
 ### 4. **Send Credentials to Consuming Team**
-   - The client_id and client_secret will be needed by the consuming team to authenticate with the API. This information is returned in the response of the cli command.
+   **When using the Python script (recommended):**
+   The script will output the credentials in the correct JSON format for sending to the consuming team:
+   ```
+   APP CLIENT CREDENTIALS
+
+   {
+     "clientId": "6g34example89j",
+     "clientSecret": "1234example567890"
+   }
+
+   ```
+
+   **When using AWS CLI:**
+   Extract the credentials from the CLI response and format them for the consuming team:
    ```
    {
    "UserPoolClient": {
@@ -77,7 +123,7 @@ Add a new app client yaml file to `/app_clients` following the schema of the exa
    }
    ```
 
-These credentials should be securely transmitted to the consuming team via an encrypted channel (i.e., a one-time use link) in the following format:
+   **Important:** These credentials should be securely transmitted to the consuming team via an encrypted channel (i.e., a one-time use link) in the following format:
    ```json
    {
    "clientId": "<client id>",
@@ -94,7 +140,7 @@ Unfortunately, AWS Cognito does not support rotating app client credentials for 
 
 ### 1. Pre-rotation Tasks
 - Contact consuming team to schedule rotation
-- Follow "Creating a New App Client" steps above, you will increment clientName version suffix by 1 (e.g. "example-ky-app-client-v1" -> "example-ky-app-client-v2")
+- Follow "Creating a New App Client" steps above using either the Python script (recommended) or AWS CLI, you will increment clientName version suffix by 1 (e.g. "example-ky-app-client-v1" -> "example-ky-app-client-v2")
 - Update yaml file with new clientId, clientName, and createdDate
 
 ### 2. Migration

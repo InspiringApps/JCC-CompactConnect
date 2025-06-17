@@ -1,0 +1,9 @@
+clientName: "la-ot-beta-app-client-v1"
+description: "App Client for Louisiana Automated License Data Management in beta environment."
+createdDate: "2025-06-17"
+ownerContact: "TBD"
+environments:
+  - "beta"
+scopes:
+  - "octp/readGeneral"
+  - "la/octp.write"
