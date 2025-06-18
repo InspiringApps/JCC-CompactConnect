@@ -32,6 +32,7 @@ class EventListenerStack(AppStack):
         data_event_bus = SSMParameterUtility.load_data_event_bus_from_ssm_parameter(self)
         self._add_license_encumbrance_listener(persistent_stack, data_event_bus)
         self._add_lifting_license_encumbrance_listener(persistent_stack, data_event_bus)
+        self._add_license_deactivation_listener(persistent_stack, data_event_bus)
 
     def _add_license_encumbrance_listener(self, persistent_stack: ps.PersistentStack, data_event_bus: EventBus):
         """Add the license encumbrance listener lambda, queues, and event rules."""
@@ -44,7 +45,7 @@ class EventListenerStack(AppStack):
             lambda_dir='data-events',
             index=os.path.join('handlers', 'encumbrance_events.py'),
             handler='license_encumbrance_listener',
-            timeout=Duration.minutes(1),
+            timeout=Duration.minutes(15),
             environment={
                 'PROVIDER_TABLE_NAME': persistent_stack.provider_table.table_name,
                 'EMAIL_NOTIFICATION_SERVICE_LAMBDA_NAME': persistent_stack.email_notification_service_lambda.function_name,  # noqa: E501 line-too-long
@@ -92,7 +93,7 @@ class EventListenerStack(AppStack):
             lambda_dir='data-events',
             index=os.path.join('handlers', 'encumbrance_events.py'),
             handler='license_encumbrance_lifted_listener',
-            timeout=Duration.minutes(1),
+            timeout=Duration.minutes(15),
             environment={
                 'PROVIDER_TABLE_NAME': persistent_stack.provider_table.table_name,
                 **self.common_env_vars,
@@ -124,5 +125,50 @@ class EventListenerStack(AppStack):
             data_event_bus=data_event_bus,
             listener_function=lifting_license_encumbrance_listener_handler,
             listener_detail_type='license.encumbranceLifted',
+            persistent_stack=persistent_stack,
+        )
+
+    def _add_license_deactivation_listener(self, persistent_stack: ps.PersistentStack, data_event_bus: EventBus):
+        """Add the license deactivation listener lambda, queues, and event rules."""
+        # Create the Lambda function handler that listens for license deactivation events
+        construct_id_prefix = 'LicenseDeactivationListener'
+        license_deactivation_listener_handler = PythonFunction(
+            self,
+            f'{construct_id_prefix}Handler',
+            description='License Deactivation Listener Handler',
+            lambda_dir='data-events',
+            index=os.path.join('handlers', 'license_deactivation_events.py'),
+            handler='license_deactivation_listener',
+            timeout=Duration.minutes(15),
+            environment={
+                'PROVIDER_TABLE_NAME': persistent_stack.provider_table.table_name,
+                **self.common_env_vars,
+            },
+            alarm_topic=persistent_stack.alarm_topic,
+        )
+
+        # Grant necessary permissions
+        persistent_stack.provider_table.grant_read_write_data(license_deactivation_listener_handler)
+
+        NagSuppressions.add_resource_suppressions_by_path(
+            self,
+            f'{license_deactivation_listener_handler.node.path}/ServiceRole/DefaultPolicy/Resource',
+            suppressions=[
+                {
+                    'id': 'AwsSolutions-IAM5',
+                    'reason': """
+                    This policy contains wild-carded actions and resources but they are scoped to the
+                    specific actions, KMS key and Table that this lambda specifically needs access to.
+                    """,
+                },
+            ],
+        )
+
+        self.license_deactivation_event_listener = QueueEventListener(
+            self,
+            construct_id=construct_id_prefix,
+            data_event_bus=data_event_bus,
+            listener_function=license_deactivation_listener_handler,
+            listener_detail_type='license.deactivation',
             persistent_stack=persistent_stack,
         )
