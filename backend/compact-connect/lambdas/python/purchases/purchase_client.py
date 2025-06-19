@@ -321,7 +321,8 @@ class AuthorizeNetPaymentProcessorClient(PaymentProcessorClient):
                     f'Failed to void transaction. Error code: {error_code}, Error message: {error_message}'
                 )
 
-        self._handle_api_error(response)  # noqa: RET503 this branch raises an exception
+        self._handle_api_error(response)
+        return {}  # noqa: RET503 this branch raises an exception, but the linter is not smart enough to detect that
 
     def process_charge_on_credit_card_for_privilege_purchase(
         self,
@@ -508,7 +509,8 @@ class AuthorizeNetPaymentProcessorClient(PaymentProcessorClient):
                         f'Failed to process transaction. Error code: {error_code}, Error message: {error_message}'
                     )
         # API request wasn't successful
-        self._handle_api_error(response)  # noqa: RET503 this branch raises an exception
+        self._handle_api_error(response)
+        return {}  # noqa: RET503 this branch raises an exception, but the linter is not smart enough to detect that
 
     def validate_credentials(self) -> dict:
         """
