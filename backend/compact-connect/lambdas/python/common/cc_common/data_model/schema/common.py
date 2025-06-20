@@ -263,6 +263,7 @@ class UpdateCategory(CCEnum):
     HOME_JURISDICTION_CHANGE = 'homeJurisdictionChange'
     REGISTRATION = 'registration'
     LIFTING_ENCUMBRANCE = 'lifting_encumbrance'
+    EMAIL_CHANGE = 'emailChange'
 
 
 class ActiveInactiveStatus(CCEnum):
