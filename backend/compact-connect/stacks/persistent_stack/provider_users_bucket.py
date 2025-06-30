@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 
 from aws_cdk import Duration
+from aws_cdk.aws_backup import BackupResource
 from aws_cdk.aws_cloudwatch import Alarm, ComparisonOperator, Stats, TreatMissingData
 from aws_cdk.aws_cloudwatch_actions import SnsAction
 from aws_cdk.aws_dynamodb import Table
@@ -12,7 +13,7 @@ from aws_cdk.aws_s3 import BucketEncryption, CorsRule, EventType, HttpMethods
 from aws_cdk.aws_s3_notifications import LambdaDestination
 from cdk_nag import NagSuppressions
 from common_constructs.access_logs_bucket import AccessLogsBucket
-from common_constructs.backup_plan import BucketBackupPlan
+from common_constructs.backup_plan import CCBackupPlan
 from common_constructs.bucket import Bucket
 from common_constructs.python_function import PythonFunction
 from constructs import Construct
@@ -59,10 +60,11 @@ class ProviderUsersBucket(Bucket):
 
         # Set up backup plan for document storage if backup infrastructure is provided
         if backup_infrastructure_stack and environment_context:
-            self.backup_plan = BucketBackupPlan(
+            self.backup_plan = CCBackupPlan(
                 self,
                 'ProviderUsersBucketBackup',
-                bucket=self,
+                backup_plan_name_prefix=self.bucket_name,
+                backup_resources=[BackupResource.from_arn(self.bucket_arn)],
                 backup_vault=backup_infrastructure_stack.local_backup_vault,
                 backup_service_role=backup_infrastructure_stack.backup_service_role,
                 cross_account_backup_vault=backup_infrastructure_stack.cross_account_backup_vault,

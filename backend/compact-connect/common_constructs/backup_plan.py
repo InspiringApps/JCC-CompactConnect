@@ -15,9 +15,13 @@ from aws_cdk.aws_s3 import IBucket
 from constructs import Construct
 
 
-class TableBackupPlan(Construct):
+class CCBackupPlan(Construct):
     """
-    Common construct for creating backup plans for DynamoDB tables with cross-account replication.
+    Common construct for creating backup plans for CompactConnect resources with cross-account replication.
+    
+    This consolidated backup plan construct can be used for any AWS resource type that supports
+    AWS Backup (DynamoDB tables, S3 buckets, etc.) by accepting a list of backup resources
+    and a name prefix.
     """
 
     def __init__(
@@ -25,7 +29,8 @@ class TableBackupPlan(Construct):
         scope: Construct,
         construct_id: str,
         *,
-        table: ITable,
+        backup_plan_name_prefix: str,
+        backup_resources: list[BackupResource],
         backup_vault: BackupVault,
         backup_service_role: IRole,
         cross_account_backup_vault: IBackupVault,
@@ -38,10 +43,10 @@ class TableBackupPlan(Construct):
         self.backup_plan = BackupPlan(
             self,
             "BackupPlan",
-            backup_plan_name=f"{table.table_name}-BackupPlan",
+            backup_plan_name=f"{backup_plan_name_prefix}-BackupPlan",
             backup_plan_rules=[
                 BackupPlanRule(
-                    rule_name=f"{table.table_name}-DailyBackup",
+                    rule_name=f"{backup_plan_name_prefix}-Backup",
                     backup_vault=backup_vault,
                     schedule_expression=Schedule.expression(backup_policy["schedule"]),
                     delete_after=Duration.days(backup_policy["delete_after_days"]),
@@ -57,65 +62,12 @@ class TableBackupPlan(Construct):
             ],
         )
 
-        # Create backup selection to include the table
+        # Create backup selection to include the resources
         self.backup_selection = BackupSelection(
             self,
             "BackupSelection",
             backup_plan=self.backup_plan,
-            resources=[BackupResource.from_dynamo_db_table(table)],
-            backup_selection_name=f"{table.table_name}-Selection",
-            role=backup_service_role,
-        )
-
-
-class BucketBackupPlan(Construct):
-    """
-    Common construct for creating backup plans for S3 buckets with cross-account replication.
-    """
-
-    def __init__(
-        self,
-        scope: Construct,
-        construct_id: str,
-        *,
-        bucket: IBucket,
-        backup_vault: BackupVault,
-        backup_service_role: IRole,
-        cross_account_backup_vault: IBackupVault,
-        backup_policy: dict,
-        **kwargs,
-    ):
-        super().__init__(scope, construct_id, **kwargs)
-
-        # Create backup plan
-        self.backup_plan = BackupPlan(
-            self,
-            "BackupPlan",
-            backup_plan_name=f"{bucket.bucket_name}-BackupPlan",
-            backup_plan_rules=[
-                BackupPlanRule(
-                    rule_name=f"{bucket.bucket_name}-DailyBackup",
-                    backup_vault=backup_vault,
-                    schedule_expression=Schedule.expression(backup_policy["schedule"]),
-                    delete_after=Duration.days(backup_policy["delete_after_days"]),
-                    move_to_cold_storage_after=Duration.days(backup_policy["cold_storage_after_days"]),
-                    copy_actions=[
-                        BackupPlanCopyActionProps(
-                            destination_backup_vault=cross_account_backup_vault,
-                            delete_after=Duration.days(backup_policy["delete_after_days"]),
-                            move_to_cold_storage_after=Duration.days(backup_policy["cold_storage_after_days"]),
-                        )
-                    ],
-                )
-            ],
-        )
-
-        # Create backup selection to include the bucket
-        self.backup_selection = BackupSelection(
-            self,
-            "BackupSelection",
-            backup_plan=self.backup_plan,
-            resources=[BackupResource.from_arn(bucket.bucket_arn)],
-            backup_selection_name=f"{bucket.bucket_name}-Selection",
+            resources=backup_resources,
+            backup_selection_name=f"{backup_plan_name_prefix}-Selection",
             role=backup_service_role,
         ) 

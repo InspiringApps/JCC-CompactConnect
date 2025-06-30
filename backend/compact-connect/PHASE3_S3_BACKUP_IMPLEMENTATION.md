@@ -27,20 +27,27 @@ Added `document_storage` backup policy to all CDK context files:
 - 7-year retention (2555 days) for document storage compliance
 - 90-day cold storage transition for cost optimization
 
-### 2. BucketBackupPlan Construct
+### 2. Consolidated Backup Plan Construct
 
-Created `BucketBackupPlan` in `common_constructs/backup_plan.py`:
+Consolidated the previous separate `TableBackupPlan` and `BucketBackupPlan` classes into a single `CCBackupPlan` in `common_constructs/backup_plan.py`:
 
 ```python
-class BucketBackupPlan(Construct):
+class CCBackupPlan(Construct):
     """
-    Common construct for creating backup plans for S3 buckets with cross-account replication.
+    Common construct for creating backup plans for CompactConnect resources with cross-account replication.
+    
+    This consolidated backup plan construct can be used for any AWS resource type that supports
+    AWS Backup (DynamoDB tables, S3 buckets, etc.) by accepting a list of backup resources
+    and a name prefix.
     """
 ```
 
 **Features:**
-- Follows same pattern as existing `TableBackupPlan`
-- Uses `BackupResource.from_arn(bucket.bucket_arn)` for S3 integration
+- Generic design that works with both DynamoDB tables and S3 buckets
+- Accepts `backup_plan_name_prefix` instead of specific resource types
+- Takes `backup_resources` list for flexibility with multiple resources
+- Uses appropriate `BackupResource.from_*()` methods for each resource type
+- Removes assumptions about backup frequency from rule names
 - Includes cross-account copy actions for disaster recovery
 - Configurable backup policies from CDK context
 
@@ -51,15 +58,32 @@ Updated `ProviderUsersBucket` to include backup functionality:
 ```python
 # Set up backup plan for document storage if backup infrastructure is provided
 if backup_infrastructure_stack and environment_context:
-    self.backup_plan = BucketBackupPlan(
+    self.backup_plan = CCBackupPlan(
         self,
         'ProviderUsersBucketBackup',
-        bucket=self,
+        backup_plan_name_prefix=self.bucket_name,
+        backup_resources=[BackupResource.from_arn(self.bucket_arn)],
         backup_vault=backup_infrastructure_stack.local_backup_vault,
         backup_service_role=backup_infrastructure_stack.backup_service_role,
         cross_account_backup_vault=backup_infrastructure_stack.cross_account_backup_vault,
         backup_policy=environment_context['backup_policies']['document_storage'],
     )
+```
+
+Similarly, DynamoDB tables now use the same consolidated approach:
+
+```python
+# DynamoDB table backup example
+self.backup_plan = CCBackupPlan(
+    self,
+    'ProviderTableBackup',
+    backup_plan_name_prefix=self.table_name,
+    backup_resources=[BackupResource.from_dynamo_db_table(self)],
+    backup_vault=backup_infrastructure_stack.local_backup_vault,
+    backup_service_role=backup_infrastructure_stack.backup_service_role,
+    cross_account_backup_vault=backup_infrastructure_stack.cross_account_backup_vault,
+    backup_policy=environment_context['backup_policies']['general_data'],
+)
 ```
 
 **Benefits:**
@@ -114,8 +138,31 @@ Created comprehensive validation script (`validate_s3_backup.py`) that checks:
 | Primary data bucket inclusion | `ProviderUsersBucket` with backup plan | ✅ Complete |
 | Transitory data bucket exclusion | No backup for `BulkUploadsBucket`, `TransactionReportsBucket` | ✅ Complete |
 | Cross-account replication | Copy actions to backup account vault | ✅ Complete |
-| Common backup construct usage | `BucketBackupPlan` follows `TableBackupPlan` pattern | ✅ Complete |
+| Common backup construct usage | `CCBackupPlan` consolidates both table and bucket patterns | ✅ Complete |
 | Test coverage | Updated tests validate S3 backup resources | ✅ Complete |
+
+## Backup Plan Consolidation Refactoring
+
+After completing the initial S3 backup implementation, the backup plan constructs were refactored for improved maintainability:
+
+### Before Refactoring
+- Separate `TableBackupPlan` and `BucketBackupPlan` classes
+- Code duplication between the two classes
+- Resource-specific parameters (`table` vs `bucket`)
+- Hardcoded "DailyBackup" rule names
+
+### After Refactoring  
+- Single consolidated `CCBackupPlan` class
+- Generic design accepting `backup_plan_name_prefix` and `backup_resources`
+- Resource-agnostic approach supporting any AWS Backup-compatible resource
+- Flexible rule naming without frequency assumptions
+
+### Benefits of Consolidation
+- **Reduced Code Duplication**: Single class instead of two near-identical classes
+- **Improved Maintainability**: Changes only need to be made in one place
+- **Better Extensibility**: Easy to add support for new resource types
+- **Cleaner API**: More intuitive parameters that describe what they do
+- **Future-Proof**: No assumptions about backup frequency or resource types
 
 ## Next Steps
 
@@ -125,5 +172,6 @@ Phase 3 is now complete and ready for Phase 4 (Cognito User Pool Custom Backup).
 - **Disaster Recovery**: Cross-account replication for business continuity  
 - **Cost Optimization**: Cold storage lifecycle for long-term retention
 - **Operational Consistency**: Same monitoring and management as DynamoDB backups
+- **Maintainable Code**: Consolidated backup plan construct for all resource types
 
 The implementation maintains the distributed backup architecture principles while extending protection to critical document storage resources.
