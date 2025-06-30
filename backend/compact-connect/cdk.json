@@ -19,6 +19,27 @@
       "project": "compact-connect",
       "service": "license-data"
     },
+    "backup_config": {
+      "backup_account_id": null,
+      "backup_region": "us-west-2"
+    },
+    "backup_policies": {
+      "document_storage": {
+        "schedule": "cron(0 2 * * ? *)",
+        "retention_days": 90,
+        "cross_account_copy": true
+      },
+      "critical_data": {
+        "schedule": "cron(0 2 * * ? *)",
+        "retention_days": 2555,
+        "cross_account_copy": true
+      },
+      "configuration_data": {
+        "schedule": "cron(0 2 * * ? *)",
+        "retention_days": 1095,
+        "cross_account_copy": true
+      }
+    },
     "jurisdictions": [
       "al", "ak", "az", "ar", "ca", "co", "ct", "de", "dc", "fl",
       "ga", "hi", "id", "il", "in", "ia", "ks", "ky", "la", "me",

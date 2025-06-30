@@ -12,6 +12,7 @@ from aws_cdk.aws_s3 import BucketEncryption, CorsRule, EventType, HttpMethods
 from aws_cdk.aws_s3_notifications import LambdaDestination
 from cdk_nag import NagSuppressions
 from common_constructs.access_logs_bucket import AccessLogsBucket
+from common_constructs.backup_plan import BackupPlanConstruct
 from common_constructs.bucket import Bucket
 from common_constructs.python_function import PythonFunction
 from constructs import Construct
@@ -22,6 +23,9 @@ import stacks.persistent_stack as ps
 class ProviderUsersBucket(Bucket):
     """
     S3 bucket to house provider documents such as military affiliation records.
+    
+    This bucket contains primary provider data and implements backup protection
+    according to Phase 3 of the data retention implementation plan.
     """
 
     def __init__(
@@ -53,6 +57,7 @@ class ProviderUsersBucket(Bucket):
         self.log_groups = []
 
         self._add_v1_object_events(provider_table, encryption_key)
+        self._implement_backup()
 
         QueryDefinition(
             self,
@@ -66,15 +71,41 @@ class ProviderUsersBucket(Bucket):
             log_groups=self.log_groups,
         )
 
+        # Update NAG suppression to reflect backup implementation
         NagSuppressions.add_resource_suppressions(
             self,
             suppressions=[
                 {
                     'id': 'HIPAA.Security-S3BucketReplicationEnabled',
-                    'reason': 'TODO - determine if this bucket should be replicated',
+                    'reason': 'This bucket uses AWS Backup with cross-account replication for data protection',
                 },
             ],
         )
+
+    def _implement_backup(self):
+        """
+        Implement backup for this S3 bucket according to Phase 3 specifications.
+        
+        This bucket contains primary provider documents and uses the document_storage
+        backup category with daily backups and cross-account replication.
+        """
+        # Get backup infrastructure from the stack
+        stack: ps.PersistentStack = ps.PersistentStack.of(self)
+        
+        # Check if backup infrastructure is available
+        if hasattr(stack, 'backup_infrastructure'):
+            backup_infra = stack.backup_infrastructure
+            
+            # Implement backup plan for this bucket
+            self.backup_plan = BackupPlanConstruct(
+                self,
+                'BackupPlan',
+                resource_arn=self.bucket_arn,
+                backup_category='document_storage',
+                local_backup_vault=backup_infra.backup_vault,
+                backup_service_role=backup_infra.backup_service_role,
+                cross_account_vault_arn=backup_infra.cross_account_vault_arn,
+            )
 
     def _add_v1_object_events(self, provider_table: Table, encryption_key: IKey):
         """Read any objects that get uploaded and trigger update events"""

@@ -50,11 +50,16 @@ class PersistentStack(AppStack):
         app_name: str,
         environment_name: str,
         environment_context: dict,
+        backup_infrastructure=None,
         **kwargs,
     ) -> None:
         super().__init__(
             scope, construct_id, environment_context=environment_context, environment_name=environment_name, **kwargs
         )
+        
+        # Store backup infrastructure for use by resources that need backup
+        self.backup_infrastructure = backup_infrastructure
+        
         # If we delete this stack, retain the resource (orphan but prevent data loss) or destroy it (clean up)?
         removal_policy = RemovalPolicy.RETAIN if environment_name == 'prod' else RemovalPolicy.DESTROY
 

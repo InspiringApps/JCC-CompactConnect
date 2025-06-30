@@ -2,6 +2,7 @@ from aws_cdk import Environment, Stage
 from common_constructs.stack import StandardTags
 from constructs import Construct
 from stacks.api_stack import ApiStack
+from stacks.backup_infrastructure_stack import BackupInfrastructureStack
 from stacks.event_listener_stack import EventListenerStack
 from stacks.ingest_stack import IngestStack
 from stacks.managed_login_stack import ManagedLoginStack
@@ -29,6 +30,14 @@ class BackendStage(Stage):
 
         environment = Environment(account=environment_context['account_id'], region=environment_context['region'])
 
+        # Create backup infrastructure first as other stacks may depend on it
+        self.backup_infrastructure_stack = BackupInfrastructureStack(
+            self,
+            'BackupInfrastructureStack',
+            env=environment,
+            standard_tags=standard_tags,
+        )
+
         self.persistent_stack = PersistentStack(
             self,
             'PersistentStack',
@@ -37,6 +46,7 @@ class BackendStage(Stage):
             standard_tags=standard_tags,
             app_name=app_name,
             environment_name=environment_name,
+            backup_infrastructure=self.backup_infrastructure_stack,
         )
 
         self.provider_users_stack = ProviderUsersStack(
