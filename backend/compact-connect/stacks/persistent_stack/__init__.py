@@ -359,6 +359,8 @@ class PersistentStack(AppStack):
             encryption_key=self.shared_encryption_key,
             provider_table=self.provider_table,
             removal_policy=removal_policy,
+            backup_infrastructure_stack=backup_infrastructure_stack,
+            environment_context=self.environment_context,
         )
 
     def _add_migrations(self):
