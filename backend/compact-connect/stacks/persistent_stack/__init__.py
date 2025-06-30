@@ -119,6 +119,9 @@ class PersistentStack(AppStack):
             environment_name=environment_name,
             backup_config=backup_config,
             alarm_topic=self.alarm_topic,
+            # Pass user pool IDs after they are created below
+            staff_user_pool_id=None,  # Will be set after staff users are created
+            provider_user_pool_id=None,  # Will be set after provider users are created
         )
 
         self.access_logs_bucket = AccessLogsBucket(
@@ -249,6 +252,12 @@ class PersistentStack(AppStack):
 
         # This parameter is used to store the frontend app config values for use in the frontend deployment stack
         self._create_frontend_app_config_parameter()
+
+        # Now that user pools are created, enable Cognito backup functionality
+        self.backup_infrastructure_stack.set_user_pool_ids(
+            staff_user_pool_id=self.staff_users.user_pool_id,
+            provider_user_pool_id=self.provider_users_deprecated.user_pool_id,
+        )
 
     def _add_data_resources(
         self, removal_policy: RemovalPolicy, backup_infrastructure_stack: BackupInfrastructureStack
