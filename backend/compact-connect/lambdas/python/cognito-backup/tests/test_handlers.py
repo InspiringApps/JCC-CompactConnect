@@ -1,4 +1,4 @@
-"""
+THIS SHOULD BE A LINTER ERROR"""
 Unit tests for the Cognito backup handlers.
 
 This module tests the handler functions and classes in isolation
