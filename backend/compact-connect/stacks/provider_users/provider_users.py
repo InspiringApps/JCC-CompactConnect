@@ -18,7 +18,6 @@ from common_constructs.user_pool import UserPool
 from constructs import Construct
 
 from stacks import persistent_stack as ps
-from stacks.backup_infrastructure_stack import BackupInfrastructureStack
 
 
 class ProviderUsers(UserPool):

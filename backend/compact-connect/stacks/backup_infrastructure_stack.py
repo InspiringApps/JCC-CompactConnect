@@ -77,8 +77,6 @@ class BackupInfrastructureStack(NestedStack):
         # Add CDK NAG suppressions for expected AWS managed policies in backup service roles
         self._add_cdk_nag_suppressions()
 
-
-
     def _create_local_backup_encryption_key(self) -> None:
         """Create a local KMS key for general backup encryption."""
         self.local_backup_key = Key(
@@ -501,8 +499,6 @@ class BackupInfrastructureStack(NestedStack):
             ),
             targets=[SnsTopic(self.alarm_topic)],
         )
-
-
 
     def _add_cdk_nag_suppressions(self) -> None:
         """Add CDK NAG suppressions for expected patterns in backup infrastructure."""

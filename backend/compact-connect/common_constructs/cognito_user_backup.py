@@ -19,13 +19,13 @@ from aws_cdk.aws_kms import IKey
 from aws_cdk.aws_s3 import BucketEncryption
 from aws_cdk.aws_sns import ITopic
 from cdk_nag import NagSuppressions
+from constructs import Construct
+from stacks.backup_infrastructure_stack import BackupInfrastructureStack
+
 from common_constructs.access_logs_bucket import AccessLogsBucket
 from common_constructs.backup_plan import CCBackupPlan
 from common_constructs.bucket import Bucket
 from common_constructs.python_function import PythonFunction
-from constructs import Construct
-
-from stacks.backup_infrastructure_stack import BackupInfrastructureStack
 
 
 class CognitoUserBackup(Construct):
@@ -66,7 +66,7 @@ class CognitoUserBackup(Construct):
         )
 
         # Create the export Lambda function
-        self.export_lambda = self._create_export_lambda(backup_infrastructure_stack, environment_context)
+        self.export_lambda = self._create_export_lambda()
 
         # Create the EventBridge rule for daily scheduling
         self.backup_rule = self._create_backup_rule()
@@ -111,17 +111,15 @@ class CognitoUserBackup(Construct):
             suppressions=[
                 {
                     'id': 'HIPAA.Security-S3BucketReplicationEnabled',
-                    'reason': 'This bucket stores Cognito user exports that are backed up to cross-account vault via AWS Backup. '
-                    'Replication is handled by the backup infrastructure rather than S3 replication.',
+                    'reason': 'This bucket stores Cognito user exports that are backed up to cross-account vault via '
+                             'AWS Backup. Replication is handled by backup infrastructure rather than S3 replication.',
                 },
             ],
         )
 
         return bucket
 
-    def _create_export_lambda(
-        self, backup_infrastructure_stack: BackupInfrastructureStack, environment_context: dict
-    ) -> PythonFunction:
+    def _create_export_lambda(self) -> PythonFunction:
         """Create Lambda function for exporting user data."""
         # Get parent stack to access common environment variables
         from common_constructs.stack import Stack
@@ -181,9 +179,9 @@ class CognitoUserBackup(Construct):
         """Create EventBridge rule for daily execution."""
         # Schedule at 2 AM UTC to avoid conflicts with other backup operations
         # Pass the required parameters as part of the event
-        rule = Rule(
+        return Rule(
             self,
-            'BackupRule',
+            'DailyExportRule',
             description=f'Daily schedule for {self.user_pool_type} user pool backup export',
             schedule=Schedule.cron(hour='2', minute='0', month='*', year='*', week_day='*'),
             targets=[
@@ -197,8 +195,6 @@ class CognitoUserBackup(Construct):
                 )
             ],
         )
-
-        return rule
 
     def _create_failure_alarm(self, alarm_topic: ITopic) -> Alarm:
         """Create CloudWatch alarm for backup failures."""

@@ -4,6 +4,7 @@ Integration tests for Cognito backup functionality in the CDK app.
 This module tests the CDK constructs and integration for the Cognito backup system
 including the backup bucket, Lambda function, EventBridge scheduling, and backup plans.
 """
+
 import json
 from unittest import TestCase
 
@@ -47,26 +48,22 @@ class TestCognitoBackup(TstAppABC, TestCase):
         # Should have Cognito backup buckets for both user pools
         cognito_buckets = persistent_stack_template.find_resources(
             CfnBucket.CFN_RESOURCE_TYPE_NAME,
-            props=Match.object_like({
-                'Properties': {
-                    'BucketEncryption': {
-                        'ServerSideEncryptionConfiguration': [
-                            {
-                                'ServerSideEncryptionByDefault': {
-                                    'SSEAlgorithm': 'aws:kms'
-                                }
-                            }
-                        ]
-                    },
-                    'VersioningConfiguration': {
-                        'Status': 'Enabled'
+            props=Match.object_like(
+                {
+                    'Properties': {
+                        'BucketEncryption': {
+                            'ServerSideEncryptionConfiguration': [
+                                {'ServerSideEncryptionByDefault': {'SSEAlgorithm': 'aws:kms'}}
+                            ]
+                        },
+                        'VersioningConfiguration': {'Status': 'Enabled'},
                     }
                 }
-            })
+            ),
         )
 
         # Should find Cognito backup buckets (at least 2 for staff and provider user pools)
-        self.assertGreaterEqual(len(cognito_buckets), 2, "Cognito backup buckets should be created for both user pools")
+        self.assertGreaterEqual(len(cognito_buckets), 2, 'Cognito backup buckets should be created for both user pools')
 
     def test_cognito_backup_lambdas_created(self):
         """Test that Cognito backup Lambda functions are created for both user pools."""
@@ -75,7 +72,7 @@ class TestCognitoBackup(TstAppABC, TestCase):
         # Verify staff users backup lambda exists
         self.assertTrue(hasattr(persistent_stack.staff_users.backup_system, 'export_lambda'))
 
-        # Verify provider users backup lambda exists  
+        # Verify provider users backup lambda exists
         self.assertTrue(hasattr(persistent_stack.provider_users_deprecated.backup_system, 'export_lambda'))
 
         # Get the template from the persistent stack
@@ -86,12 +83,12 @@ class TestCognitoBackup(TstAppABC, TestCase):
 
         # Count Cognito backup lambdas (should have at least 2)
         cognito_backup_lambdas = []
-        for lambda_id, lambda_resource in lambda_functions.items():
+        for _lambda_id, lambda_resource in lambda_functions.items():
             description = lambda_resource.get('Properties', {}).get('Description', '')
             if 'user pool data for backup purposes' in description:
                 cognito_backup_lambdas.append(lambda_resource)
 
-        self.assertGreaterEqual(len(cognito_backup_lambdas), 2, "Should have backup lambdas for both user pools")
+        self.assertGreaterEqual(len(cognito_backup_lambdas), 2, 'Should have backup lambdas for both user pools')
 
         # Verify configuration of one of the lambdas
         if cognito_backup_lambdas:
@@ -122,15 +119,19 @@ class TestCognitoBackup(TstAppABC, TestCase):
         # Find EventBridge rules for Cognito backup
         cognito_backup_rules = persistent_stack_template.find_resources(
             CfnRule.CFN_RESOURCE_TYPE_NAME,
-            props=Match.object_like({
-                'Properties': {
-                    'ScheduleExpression': 'cron(0 2 * * ? *)',  # Daily at 2 AM UTC
-                    'State': 'ENABLED'
+            props=Match.object_like(
+                {
+                    'Properties': {
+                        'ScheduleExpression': 'cron(0 2 * * ? *)',  # Daily at 2 AM UTC
+                        'State': 'ENABLED',
+                    }
                 }
-            })
+            ),
         )
 
-        self.assertGreaterEqual(len(cognito_backup_rules), 2, "Cognito backup EventBridge rules should be created for both user pools")
+        self.assertGreaterEqual(
+            len(cognito_backup_rules), 2, 'Cognito backup EventBridge rules should be created for both user pools'
+        )
 
         # Verify at least one rule has correct target configuration
         if cognito_backup_rules:
@@ -153,7 +154,7 @@ class TestCognitoBackup(TstAppABC, TestCase):
         # Verify staff users backup bucket has backup plan
         self.assertTrue(hasattr(persistent_stack.staff_users.backup_system.backup_bucket, 'backup_plan'))
 
-        # Verify provider users backup bucket has backup plan  
+        # Verify provider users backup bucket has backup plan
         self.assertTrue(hasattr(persistent_stack.provider_users_deprecated.backup_system.backup_bucket, 'backup_plan'))
 
         persistent_stack_template = Template.from_stack(persistent_stack)
@@ -162,18 +163,22 @@ class TestCognitoBackup(TstAppABC, TestCase):
         backup_plans = persistent_stack_template.find_resources(CfnBackupPlan.CFN_RESOURCE_TYPE_NAME)
 
         # Should have multiple backup plans (DynamoDB tables + S3 buckets + Cognito backup buckets)
-        self.assertGreaterEqual(len(backup_plans), 7, "Should have backup plans for tables and S3 buckets including Cognito backup buckets")
+        self.assertGreaterEqual(
+            len(backup_plans), 7, 'Should have backup plans for tables and S3 buckets including Cognito backup buckets'
+        )
 
         # Find backup plans for Cognito backup buckets
         cognito_backup_plans = []
-        for plan_id, plan in backup_plans.items():
+        for _plan_id, plan in backup_plans.items():
             plan_name = plan['Properties']['BackupPlan']['BackupPlanName']
             if 'staff' in plan_name.lower() or 'provider' in plan_name.lower():
                 # Check if this looks like a backup bucket plan (not user table plan)
                 if 'bucket' in plan_name.lower() or len(plan_name.split('-')) > 2:
                     cognito_backup_plans.append(plan)
 
-        self.assertGreaterEqual(len(cognito_backup_plans), 2, "Should have backup plans for both Cognito backup buckets")
+        self.assertGreaterEqual(
+            len(cognito_backup_plans), 2, 'Should have backup plans for both Cognito backup buckets'
+        )
 
         # Verify backup plan configuration for at least one plan
         if cognito_backup_plans:
@@ -202,18 +207,24 @@ class TestCognitoBackup(TstAppABC, TestCase):
         backup_selections = persistent_stack_template.find_resources(CfnBackupSelection.CFN_RESOURCE_TYPE_NAME)
 
         # Should have multiple backup selections (tables + S3 buckets + Cognito backup buckets)
-        self.assertGreaterEqual(len(backup_selections), 7, "Should have backup selections for tables and S3 buckets including Cognito backup buckets")
+        self.assertGreaterEqual(
+            len(backup_selections),
+            7,
+            'Should have backup selections for tables and S3 buckets including Cognito backup buckets',
+        )
 
         # Find backup selections for Cognito backup buckets
         cognito_backup_selections = []
-        for selection_id, selection in backup_selections.items():
+        for _selection_id, selection in backup_selections.items():
             selection_name = selection['Properties']['BackupSelection']['SelectionName']
             if 'staff' in selection_name.lower() or 'provider' in selection_name.lower():
                 # Check if this looks like a backup bucket selection (not user table selection)
                 if 'bucket' in selection_name.lower() or len(selection_name.split('-')) > 2:
                     cognito_backup_selections.append(selection)
 
-        self.assertGreaterEqual(len(cognito_backup_selections), 2, "Should have backup selections for both Cognito backup buckets")
+        self.assertGreaterEqual(
+            len(cognito_backup_selections), 2, 'Should have backup selections for both Cognito backup buckets'
+        )
 
         # Verify backup selection targets S3 resources
         if cognito_backup_selections:
@@ -234,15 +245,15 @@ class TestCognitoBackup(TstAppABC, TestCase):
         persistent_stack_template = Template.from_stack(persistent_stack)
 
         # Find the role and policies
-        from aws_cdk.aws_iam import CfnRole, CfnPolicy
-        roles = persistent_stack_template.find_resources(CfnRole.CFN_RESOURCE_TYPE_NAME)
+        from aws_cdk.aws_iam import CfnPolicy
+
         policies = persistent_stack_template.find_resources(CfnPolicy.CFN_RESOURCE_TYPE_NAME)
 
         # Should have policies that grant Cognito and S3 permissions
         found_cognito_policy = False
         found_s3_policy = False
 
-        for policy_id, policy in policies.items():
+        for _policy_id, policy in policies.items():
             policy_doc = policy['Properties']['PolicyDocument']
             statements = policy_doc.get('Statement', [])
 
@@ -257,8 +268,8 @@ class TestCognitoBackup(TstAppABC, TestCase):
                 if any('s3:PutObject' in str(action) for action in actions):
                     found_s3_policy = True
 
-        self.assertTrue(found_cognito_policy, "Lambdas should have Cognito permissions")
-        self.assertTrue(found_s3_policy, "Lambdas should have S3 permissions")
+        self.assertTrue(found_cognito_policy, 'Lambdas should have Cognito permissions')
+        self.assertTrue(found_s3_policy, 'Lambdas should have S3 permissions')
 
     def test_cognito_backup_alarms_created(self):
         """Test that CloudWatch alarms are created for Cognito backup failures."""
@@ -274,16 +285,19 @@ class TestCognitoBackup(TstAppABC, TestCase):
 
         # Find CloudWatch alarms
         from aws_cdk.aws_cloudwatch import CfnAlarm
+
         alarms = persistent_stack_template.find_resources(CfnAlarm.CFN_RESOURCE_TYPE_NAME)
 
         # Find Cognito backup failure alarms
         cognito_backup_alarms = []
-        for alarm_id, alarm in alarms.items():
+        for _alarm_id, alarm in alarms.items():
             alarm_desc = alarm['Properties'].get('AlarmDescription', '')
             if 'user pool backup export Lambda has failed' in alarm_desc:
                 cognito_backup_alarms.append(alarm)
 
-        self.assertGreaterEqual(len(cognito_backup_alarms), 2, "Cognito backup failure alarms should be created for both user pools")
+        self.assertGreaterEqual(
+            len(cognito_backup_alarms), 2, 'Cognito backup failure alarms should be created for both user pools'
+        )
 
         # Verify alarm configuration for at least one alarm
         if cognito_backup_alarms:
@@ -333,12 +347,11 @@ class TestCognitoBackup(TstAppABC, TestCase):
 
         # Verify the backup systems are configured with the correct user pool IDs
         self.assertEqual(
-            persistent_stack.staff_users.backup_system.user_pool_id,
-            persistent_stack.staff_users.user_pool_id
+            persistent_stack.staff_users.backup_system.user_pool_id, persistent_stack.staff_users.user_pool_id
         )
         self.assertEqual(
             persistent_stack.provider_users_deprecated.backup_system.user_pool_id,
-            persistent_stack.provider_users_deprecated.user_pool_id
+            persistent_stack.provider_users_deprecated.user_pool_id,
         )
 
         # Verify the backup systems have the correct user pool types

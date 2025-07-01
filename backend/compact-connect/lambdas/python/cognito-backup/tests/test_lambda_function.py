@@ -4,11 +4,12 @@ Unit tests for the Cognito backup Lambda function.
 This module tests the CognitoBackupExporter class and lambda_handler function
 to ensure proper export of user pool data to S3.
 """
+
 import json
 import os
 from datetime import datetime
-from unittest.mock import MagicMock, patch
 from unittest import TestCase
+from unittest.mock import MagicMock, patch
 
 from botocore.exceptions import ClientError
 
@@ -20,6 +21,7 @@ class TestCognitoBackupExporter(TestCase):
         """Set up test fixtures."""
         # Import after setting environment variables
         from lambda_function import CognitoBackupExporter
+
         self.CognitoBackupExporter = CognitoBackupExporter
 
     def tearDown(self):
@@ -65,7 +67,7 @@ class TestCognitoBackupExporter(TestCase):
                     'Attributes': [
                         {'Name': 'email', 'Value': 'staff1@example.com'},
                         {'Name': 'email_verified', 'Value': 'true'},
-                    ]
+                    ],
                 }
             ]
             # No PaginationToken - single page
@@ -95,14 +97,11 @@ class TestCognitoBackupExporter(TestCase):
 
         # Mock paginated response
         mock_cognito.list_users.side_effect = [
-            {
-                'Users': [{'Username': 'user1', 'Attributes': []}],
-                'PaginationToken': 'token123'
-            },
+            {'Users': [{'Username': 'user1', 'Attributes': []}], 'PaginationToken': 'token123'},
             {
                 'Users': [{'Username': 'user2', 'Attributes': []}]
                 # No PaginationToken - last page
-            }
+            },
         ]
 
         exporter = self.CognitoBackupExporter('test-pool-id', 'test-bucket', 'test')
@@ -136,7 +135,7 @@ class TestCognitoBackupExporter(TestCase):
                 {'Name': 'email', 'Value': 'test@example.com'},
                 {'Name': 'given_name', 'Value': 'Test'},
                 {'Name': 'family_name', 'Value': 'User'},
-            ]
+            ],
         }
 
         exporter = self.CognitoBackupExporter('us-east-1_testpool', 'test-cognito-backup-bucket', 'staff')
@@ -154,7 +153,7 @@ class TestCognitoBackupExporter(TestCase):
         expected_metadata = {
             'export-timestamp': '2023-01-01T00:00:00',
             'user-pool-type': 'staff',
-            'username': 'test-user'
+            'username': 'test-user',
         }
         self.assertEqual(call_args[1]['Metadata'], expected_metadata)
 
@@ -178,11 +177,7 @@ class TestCognitoBackupExporter(TestCase):
         self.assertEqual(user_export['user_last_modified_date'], '2023-01-02T12:00:00')
 
         # Verify attributes conversion
-        expected_attributes = {
-            'email': 'test@example.com',
-            'given_name': 'Test',
-            'family_name': 'User'
-        }
+        expected_attributes = {'email': 'test@example.com', 'given_name': 'Test', 'family_name': 'User'}
         self.assertEqual(user_export['attributes'], expected_attributes)
 
     @patch('lambda_function.boto3.client')
@@ -194,7 +189,7 @@ class TestCognitoBackupExporter(TestCase):
 
         user_data = {
             'UserStatus': 'CONFIRMED',
-            'Attributes': []
+            'Attributes': [],
             # Missing Username
         }
 
@@ -218,7 +213,7 @@ class TestCognitoBackupExporter(TestCase):
             'Enabled': True,
             'UserCreateDate': None,
             'UserLastModifiedDate': None,
-            'Attributes': []
+            'Attributes': [],
         }
 
         exporter = self.CognitoBackupExporter('us-east-1_testpool', 'test-bucket', 'staff')
@@ -256,7 +251,7 @@ class TestCognitoBackupExporter(TestCase):
             'email': 'test@example.com',
             'given_name': 'Test',
             'family_name': 'User',
-            'custom:providerId': 'prov123'
+            'custom:providerId': 'prov123',
         }
         self.assertEqual(result, expected)
 
@@ -269,8 +264,7 @@ class TestCognitoBackupExporter(TestCase):
 
         # Mock Cognito error
         mock_cognito.list_users.side_effect = ClientError(
-            {'Error': {'Code': 'InvalidParameterException', 'Message': 'Invalid user pool'}},
-            'ListUsers'
+            {'Error': {'Code': 'InvalidParameterException', 'Message': 'Invalid user pool'}}, 'ListUsers'
         )
 
         exporter = self.CognitoBackupExporter('invalid-pool-id', 'test-bucket', 'staff')
@@ -287,15 +281,10 @@ class TestCognitoBackupExporter(TestCase):
 
         # Mock S3 error
         mock_s3.put_object.side_effect = ClientError(
-            {'Error': {'Code': 'NoSuchBucket', 'Message': 'Bucket does not exist'}},
-            'PutObject'
+            {'Error': {'Code': 'NoSuchBucket', 'Message': 'Bucket does not exist'}}, 'PutObject'
         )
 
-        user_data = {
-            'Username': 'test-user',
-            'UserStatus': 'CONFIRMED',
-            'Attributes': []
-        }
+        user_data = {'Username': 'test-user', 'UserStatus': 'CONFIRMED', 'Attributes': []}
 
         exporter = self.CognitoBackupExporter('us-east-1_testpool', 'test-bucket', 'staff')
 
@@ -308,11 +297,9 @@ class TestLambdaHandler(TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        pass
 
     def tearDown(self):
         """Clean up test fixtures."""
-        pass
 
     @patch('lambda_function.CognitoBackupExporter')
     def test_lambda_handler_success(self, mock_exporter_class):
@@ -322,7 +309,7 @@ class TestLambdaHandler(TestCase):
         mock_exporter.export_user_pool.return_value = {
             'users_exported': 5,
             'user_pool_type': 'staff',
-            'user_pool_id': 'us-east-1_testpool'
+            'user_pool_id': 'us-east-1_testpool',
         }
         mock_exporter_class.return_value = mock_exporter
 
@@ -332,7 +319,7 @@ class TestLambdaHandler(TestCase):
         event = {
             'user_pool_id': 'us-east-1_testpool',
             'backup_bucket_name': 'test-backup-bucket',
-            'user_pool_type': 'staff'
+            'user_pool_type': 'staff',
         }
         context = MagicMock()
         context.aws_request_id = 'test-request-id'
@@ -343,11 +330,7 @@ class TestLambdaHandler(TestCase):
         expected_response = {
             'statusCode': 200,
             'message': 'Cognito backup export completed successfully for staff user pool',
-            'results': {
-                'users_exported': 5,
-                'user_pool_type': 'staff',
-                'user_pool_id': 'us-east-1_testpool'
-            }
+            'results': {'users_exported': 5, 'user_pool_type': 'staff', 'user_pool_id': 'us-east-1_testpool'},
         }
         self.assertEqual(result, expected_response)
 
@@ -368,7 +351,7 @@ class TestLambdaHandler(TestCase):
         event = {
             'user_pool_id': 'us-east-1_testpool',
             'backup_bucket_name': 'test-backup-bucket',
-            'user_pool_type': 'staff'
+            'user_pool_type': 'staff',
         }
         context = MagicMock()
 

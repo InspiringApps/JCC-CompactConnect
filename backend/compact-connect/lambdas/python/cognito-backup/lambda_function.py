@@ -13,9 +13,8 @@ The function expects an event with:
 
 import json
 import logging
-import os
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any
 
 import boto3
 from botocore.exceptions import ClientError
@@ -50,15 +49,15 @@ class CognitoBackupExporter:
         self.cognito_client = boto3.client('cognito-idp')
         self.s3_client = boto3.client('s3')
 
-        logger.info(f"Initialized Cognito backup exporter for {user_pool_type} user pool {user_pool_id}")
+        logger.info(f'Initialized Cognito backup exporter for {user_pool_type} user pool {user_pool_id}')
 
-    def export_user_pool(self) -> Dict[str, Any]:
+    def export_user_pool(self) -> dict[str, Any]:
         """
         Export all users from the specified user pool to S3.
 
         :return: Dictionary containing export results and metadata
         """
-        logger.info(f"Starting export of {self.user_pool_type} user pool {self.user_pool_id}")
+        logger.info(f'Starting export of {self.user_pool_type} user pool {self.user_pool_id}')
 
         export_timestamp = datetime.utcnow().isoformat()
         users_exported = 0
@@ -67,7 +66,7 @@ class CognitoBackupExporter:
             # Export all users from the user pool
             users_exported = self._export_user_pool(export_timestamp)
 
-            logger.info(f"Successfully exported {users_exported} users from {self.user_pool_type} user pool")
+            logger.info(f'Successfully exported {users_exported} users from {self.user_pool_type} user pool')
 
             return {
                 'user_pool_id': self.user_pool_id,
@@ -75,11 +74,11 @@ class CognitoBackupExporter:
                 'users_exported': users_exported,
                 'export_timestamp': export_timestamp,
                 'backup_bucket': self.backup_bucket_name,
-                'status': 'success'
+                'status': 'success',
             }
 
         except Exception as e:
-            logger.error(f"Failed to export {self.user_pool_type} user pool: {str(e)}")
+            logger.error(f'Failed to export {self.user_pool_type} user pool: {str(e)}')
             raise
 
     def _export_user_pool(self, export_timestamp: str) -> int:
@@ -96,7 +95,7 @@ class CognitoBackupExporter:
             # List users with pagination
             list_params = {
                 'UserPoolId': self.user_pool_id,
-                'Limit': 60  # Maximum allowed by Cognito
+                'Limit': 60,  # Maximum allowed by Cognito
             }
 
             if pagination_token:
@@ -112,7 +111,7 @@ class CognitoBackupExporter:
                         self._export_single_user(user, export_timestamp)
                         users_exported += 1
                     except Exception as e:
-                        logger.error(f"Failed to export user {user.get('Username', 'unknown')}: {str(e)}")
+                        logger.error(f'Failed to export user {user.get("Username", "unknown")}: {str(e)}')
                         # Continue with other users even if one fails
 
                 # Check for more pages
@@ -121,12 +120,12 @@ class CognitoBackupExporter:
                     break
 
             except ClientError as e:
-                logger.error(f"Cognito API error: {str(e)}")
+                logger.error(f'Cognito API error: {str(e)}')
                 raise
 
         return users_exported
 
-    def _export_single_user(self, user_data: Dict[str, Any], export_timestamp: str) -> None:
+    def _export_single_user(self, user_data: dict[str, Any], export_timestamp: str) -> None:
         """
         Export a single user to S3 as a JSON file.
 
@@ -135,11 +134,11 @@ class CognitoBackupExporter:
         """
         username = user_data.get('Username')
         if not username:
-            logger.warning("Skipping user without username")
+            logger.warning('Skipping user without username')
             return
 
         # Create object key based on username
-        object_key = f"cognito-exports/{self.user_pool_type}/{username}.json"
+        object_key = f'cognito-exports/{self.user_pool_type}/{username}.json'
 
         # Prepare export data
         export_data = {
@@ -147,7 +146,7 @@ class CognitoBackupExporter:
                 'export_timestamp': export_timestamp,
                 'user_pool_id': self.user_pool_id,
                 'user_pool_type': self.user_pool_type,
-                'export_version': '1.0'
+                'export_version': '1.0',
             },
             'user_data': {
                 'username': username,
@@ -156,8 +155,8 @@ class CognitoBackupExporter:
                 'user_create_date': self._format_datetime(user_data.get('UserCreateDate')),
                 'user_last_modified_date': self._format_datetime(user_data.get('UserLastModifiedDate')),
                 'mfa_options': user_data.get('MFAOptions', []),
-                'attributes': self._extract_user_attributes(user_data.get('Attributes', []))
-            }
+                'attributes': self._extract_user_attributes(user_data.get('Attributes', [])),
+            },
         }
 
         # Upload to S3
@@ -170,17 +169,17 @@ class CognitoBackupExporter:
                 Metadata={
                     'export-timestamp': export_timestamp,
                     'user-pool-type': self.user_pool_type,
-                    'username': username
-                }
+                    'username': username,
+                },
             )
 
-            logger.debug(f"Exported user {username} to {object_key}")
+            logger.debug(f'Exported user {username} to {object_key}')
 
         except ClientError as e:
-            logger.error(f"Failed to upload user {username} to S3: {str(e)}")
+            logger.error(f'Failed to upload user {username} to S3: {str(e)}')
             raise
 
-    def _extract_user_attributes(self, attributes: List[Dict[str, str]]) -> Dict[str, str]:
+    def _extract_user_attributes(self, attributes: list[dict[str, str]]) -> dict[str, str]:
         """
         Extract user attributes from Cognito format to a simple key-value dictionary.
 
@@ -209,7 +208,7 @@ class CognitoBackupExporter:
         return str(dt)
 
 
-def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
+def lambda_handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     """
     Lambda handler for Cognito user pool backup export.
 
@@ -224,7 +223,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     :param context: Lambda context
     :return: Response with export results
     """
-    logger.info(f"Received event: {json.dumps(event)}")
+    logger.info(f'Received event: {json.dumps(event)}')
 
     try:
         # Extract parameters from event
@@ -233,20 +232,20 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         user_pool_type = event.get('user_pool_type')
 
         if not all([user_pool_id, backup_bucket_name, user_pool_type]):
-            raise ValueError("Missing required parameters: user_pool_id, backup_bucket_name, user_pool_type")
+            raise ValueError('Missing required parameters: user_pool_id, backup_bucket_name, user_pool_type')
 
         # Create exporter and run export
         exporter = CognitoBackupExporter(user_pool_id, backup_bucket_name, user_pool_type)
         results = exporter.export_user_pool()
 
-        logger.info(f"Export completed successfully: {json.dumps(results)}")
+        logger.info(f'Export completed successfully: {json.dumps(results)}')
 
         return {
             'statusCode': 200,
             'message': f'Cognito backup export completed successfully for {user_pool_type} user pool',
-            'results': results
+            'results': results,
         }
 
     except Exception as e:
-        logger.error(f"Export failed: {str(e)}")
+        logger.error(f'Export failed: {str(e)}')
         raise
