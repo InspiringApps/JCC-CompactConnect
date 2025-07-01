@@ -293,13 +293,13 @@ class TstAppABC(ABC):
         """Validate that backup resources are created for tables and buckets with backup plans."""
         from aws_cdk.aws_backup import CfnBackupPlan, CfnBackupSelection
 
-        # Should have 7 backup plans (provider, SSN, compact config, transaction history,
-        # data event, staff users, provider users bucket)
-        persistent_stack_template.resource_count_is(CfnBackupPlan.CFN_RESOURCE_TYPE_NAME, 7)
+        # Should have 9 backup plans (provider, SSN, compact config, transaction history,
+        # data event, staff users, provider users bucket, staff cognito backup, provider cognito backup)
+        persistent_stack_template.resource_count_is(CfnBackupPlan.CFN_RESOURCE_TYPE_NAME, 9)
 
-        # Should have 7 backup selections (provider, SSN, compact config, transaction history,
-        # data event, staff users, provider users bucket)
-        persistent_stack_template.resource_count_is(CfnBackupSelection.CFN_RESOURCE_TYPE_NAME, 7)
+        # Should have 9 backup selections (provider, SSN, compact config, transaction history,
+        # data event, staff users, provider users bucket, staff cognito backup, provider cognito backup)
+        persistent_stack_template.resource_count_is(CfnBackupSelection.CFN_RESOURCE_TYPE_NAME, 9)
 
         # Validate provider table backup plan exists
         provider_backup_plan_logical_id = persistent_stack.get_logical_id(
