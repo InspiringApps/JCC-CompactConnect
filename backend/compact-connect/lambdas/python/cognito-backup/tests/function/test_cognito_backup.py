@@ -1,0 +1,281 @@
+"""
+Functional tests for the Cognito backup Lambda function.
+
+This module tests the complete backup functionality with mocked AWS services
+using moto to verify the end-to-end behavior.
+"""
+
+import json
+
+from moto import mock_aws
+
+from . import TstFunction
+
+
+@mock_aws
+class TestCognitoBackupFunctional(TstFunction):
+    """Functional tests for Cognito backup export functionality."""
+
+    def test_lambda_handler_success(self):
+        """Test successful lambda handler execution with real AWS service mocks."""
+        from lambda_function import lambda_handler
+
+        event = self.get_test_event('staff')
+        result = lambda_handler(event, self.mock_context)
+
+        # Verify response structure
+        self.assertEqual(result['statusCode'], 200)
+        self.assertIn('message', result)
+        self.assertIn('results', result)
+        self.assertIn('Cognito backup export completed successfully for staff user pool', result['message'])
+
+        # Verify results
+        results = result['results']
+        self.assertEqual(results['user_pool_id'], self.user_pool_id)
+        self.assertEqual(results['user_pool_type'], 'staff')
+        self.assertEqual(results['users_exported'], 2)  # We created 2 test users
+        self.assertEqual(results['backup_bucket'], self.bucket_name)
+        self.assertEqual(results['status'], 'success')
+        self.assertIn('export_timestamp', results)
+
+    def test_cognito_backup_exports_all_users(self):
+        """Test that all users in the user pool are exported to S3."""
+        from handlers.cognito_backup import CognitoBackupExporter
+
+        exporter = CognitoBackupExporter(self.user_pool_id, self.bucket_name, 'staff')
+        results = exporter.export_user_pool()
+
+        # Verify export results
+        self.assertEqual(results['users_exported'], 2)
+        self.assertEqual(results['user_pool_type'], 'staff')
+
+        # Verify S3 objects were created
+        s3_objects = self.s3_client.list_objects_v2(Bucket=self.bucket_name)
+        self.assertIn('Contents', s3_objects)
+        self.assertEqual(len(s3_objects['Contents']), 2)
+
+        # Verify object keys
+        object_keys = [obj['Key'] for obj in s3_objects['Contents']]
+        expected_keys = [
+            'cognito-exports/staff/test-user-1.json',
+            'cognito-exports/staff/test-user-2.json',
+        ]
+        self.assertEqual(sorted(object_keys), sorted(expected_keys))
+
+    def test_exported_user_data_structure(self):
+        """Test the structure and content of exported user data."""
+        from handlers.cognito_backup import CognitoBackupExporter
+
+        exporter = CognitoBackupExporter(self.user_pool_id, self.bucket_name, 'provider')
+        exporter.export_user_pool()
+
+        # Get exported data from S3
+        s3_objects = self.s3_client.list_objects_v2(Bucket=self.bucket_name)
+        first_object_key = s3_objects['Contents'][0]['Key']
+
+        obj_response = self.s3_client.get_object(Bucket=self.bucket_name, Key=first_object_key)
+        export_data = json.loads(obj_response['Body'].read().decode('utf-8'))
+
+        # Verify top-level structure
+        self.assertIn('export_metadata', export_data)
+        self.assertIn('user_data', export_data)
+
+        # Verify export metadata
+        metadata = export_data['export_metadata']
+        self.assertEqual(metadata['user_pool_id'], self.user_pool_id)
+        self.assertEqual(metadata['user_pool_type'], 'provider')
+        self.assertEqual(metadata['export_version'], '1.0')
+        self.assertIn('export_timestamp', metadata)
+
+        # Verify user data structure
+        user_data = export_data['user_data']
+        required_fields = [
+            'username',
+            'user_status',
+            'enabled',
+            'user_create_date',
+            'user_last_modified_date',
+            'mfa_options',
+            'attributes',
+        ]
+        for field in required_fields:
+            self.assertIn(field, user_data)
+
+        # Verify attributes were properly extracted
+        self.assertIsInstance(user_data['attributes'], dict)
+        self.assertIn('email', user_data['attributes'])
+
+    def test_s3_object_metadata(self):
+        """Test that S3 objects have correct metadata."""
+        from handlers.cognito_backup import CognitoBackupExporter
+
+        exporter = CognitoBackupExporter(self.user_pool_id, self.bucket_name, 'staff')
+        exporter.export_user_pool()
+
+        # Get object metadata
+        s3_objects = self.s3_client.list_objects_v2(Bucket=self.bucket_name)
+        first_object_key = s3_objects['Contents'][0]['Key']
+
+        head_response = self.s3_client.head_object(Bucket=self.bucket_name, Key=first_object_key)
+        metadata = head_response['Metadata']
+
+        # Verify metadata fields
+        self.assertIn('export-timestamp', metadata)
+        self.assertEqual(metadata['user-pool-type'], 'staff')
+        self.assertIn('username', metadata)
+
+        # Verify content type
+        self.assertEqual(head_response['ContentType'], 'application/json')
+
+    def test_provider_user_pool_type(self):
+        """Test export with provider user pool type."""
+        from handlers.cognito_backup import CognitoBackupExporter
+
+        exporter = CognitoBackupExporter(self.user_pool_id, self.bucket_name, 'provider')
+        results = exporter.export_user_pool()
+
+        # Verify results
+        self.assertEqual(results['user_pool_type'], 'provider')
+
+        # Verify S3 object paths use correct type
+        s3_objects = self.s3_client.list_objects_v2(Bucket=self.bucket_name)
+        object_keys = [obj['Key'] for obj in s3_objects['Contents']]
+
+        for key in object_keys:
+            self.assertTrue(key.startswith('cognito-exports/provider/'))
+
+    def test_empty_user_pool(self):
+        """Test export of an empty user pool."""
+        from handlers.cognito_backup import CognitoBackupExporter
+
+        # Create an empty user pool
+        empty_pool_response = self.cognito_client.create_user_pool(PoolName='empty-test-pool')
+        empty_pool_id = empty_pool_response['UserPool']['Id']
+
+        exporter = CognitoBackupExporter(empty_pool_id, self.bucket_name, 'empty')
+        results = exporter.export_user_pool()
+
+        # Verify results
+        self.assertEqual(results['users_exported'], 0)
+        self.assertEqual(results['status'], 'success')
+
+        # Verify no S3 objects were created
+        s3_objects = self.s3_client.list_objects_v2(Bucket=self.bucket_name)
+        self.assertNotIn('Contents', s3_objects)
+
+    def test_user_with_custom_attributes(self):
+        """Test export of user with custom attributes."""
+        from handlers.cognito_backup import CognitoBackupExporter
+
+        # The second test user has a custom attribute
+        exporter = CognitoBackupExporter(self.user_pool_id, self.bucket_name, 'staff')
+        exporter.export_user_pool()
+
+        # Find and verify the user with custom attributes
+        s3_objects = self.s3_client.list_objects_v2(Bucket=self.bucket_name)
+
+        for obj in s3_objects['Contents']:
+            if 'test-user-2' in obj['Key']:
+                obj_response = self.s3_client.get_object(Bucket=self.bucket_name, Key=obj['Key'])
+                export_data = json.loads(obj_response['Body'].read().decode('utf-8'))
+
+                attributes = export_data['user_data']['attributes']
+                self.assertIn('custom:providerId', attributes)
+                self.assertEqual(attributes['custom:providerId'], 'provider123')
+                break
+        else:
+            self.fail('Could not find test-user-2 export')
+
+    def test_pagination_handling(self):
+        """Test that pagination is handled correctly for large user pools."""
+        from handlers.cognito_backup import CognitoBackupExporter
+
+        # Create many users to test pagination (moto may not enforce the 60 limit, but we can test the logic)
+        for i in range(5):
+            self.cognito_client.admin_create_user(
+                UserPoolId=self.user_pool_id,
+                Username=f'pagination-user-{i}',
+                Attributes=[
+                    {'Name': 'email', 'Value': f'paguser{i}@example.com'},
+                ],
+                MessageAction='SUPPRESS',
+                TemporaryPassword='TempPass123!',
+            )
+
+        exporter = CognitoBackupExporter(self.user_pool_id, self.bucket_name, 'staff')
+        results = exporter.export_user_pool()
+
+        # Verify all users were exported (2 original + 5 new = 7 total)
+        self.assertEqual(results['users_exported'], 7)
+
+        # Verify all users are in S3
+        s3_objects = self.s3_client.list_objects_v2(Bucket=self.bucket_name)
+        self.assertEqual(len(s3_objects['Contents']), 7)
+
+    def test_lambda_handler_with_different_user_pool_types(self):
+        """Test lambda handler with different user pool types."""
+        from lambda_function import lambda_handler
+
+        test_cases = ['staff', 'provider', 'admin']
+
+        for pool_type in test_cases:
+            with self.subTest(pool_type=pool_type):
+                # Clear bucket between tests
+                s3_objects = self.s3_client.list_objects_v2(Bucket=self.bucket_name)
+                if 'Contents' in s3_objects:
+                    for obj in s3_objects['Contents']:
+                        self.s3_client.delete_object(Bucket=self.bucket_name, Key=obj['Key'])
+
+                event = self.get_test_event(pool_type)
+                result = lambda_handler(event, self.mock_context)
+
+                # Verify response
+                self.assertEqual(result['statusCode'], 200)
+                self.assertEqual(result['results']['user_pool_type'], pool_type)
+
+                # Verify S3 paths
+                s3_objects = self.s3_client.list_objects_v2(Bucket=self.bucket_name)
+                if 'Contents' in s3_objects:
+                    for obj in s3_objects['Contents']:
+                        self.assertTrue(obj['Key'].startswith(f'cognito-exports/{pool_type}/'))
+
+
+@mock_aws
+class TestCognitoBackupErrorHandling(TstFunction):
+    """Test error handling in Cognito backup functionality."""
+
+    def test_invalid_user_pool_id(self):
+        """Test handling of invalid user pool ID."""
+        from botocore.exceptions import ClientError
+        from handlers.cognito_backup import CognitoBackupExporter
+
+        exporter = CognitoBackupExporter('invalid-pool-id', self.bucket_name, 'staff')
+
+        with self.assertRaises(ClientError):
+            exporter.export_user_pool()
+
+    def test_invalid_bucket_name(self):
+        """Test handling of invalid S3 bucket."""
+        from botocore.exceptions import ClientError
+        from handlers.cognito_backup import CognitoBackupExporter
+
+        exporter = CognitoBackupExporter(self.user_pool_id, 'invalid-bucket-name', 'staff')
+
+        with self.assertRaises(ClientError):
+            exporter.export_user_pool()
+
+    def test_lambda_handler_invalid_event(self):
+        """Test lambda handler with invalid event parameters."""
+        from lambda_function import lambda_handler
+
+        invalid_events = [
+            {},  # Empty event
+            {'user_pool_id': 'test'},  # Missing other params
+            {'backup_bucket_name': 'test'},  # Missing other params
+            {'user_pool_type': 'test'},  # Missing other params
+        ]
+
+        for event in invalid_events:
+            with self.subTest(event=event):
+                with self.assertRaises(ValueError):
+                    lambda_handler(event, self.mock_context)

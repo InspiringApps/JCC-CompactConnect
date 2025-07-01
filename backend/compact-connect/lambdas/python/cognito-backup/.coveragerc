@@ -1,0 +1,11 @@
+[run]
+omit = 
+    .venv/*
+    tests/*
+    # Omit the lambda_function.py since it's just a thin wrapper
+    lambda_function.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    def __repr__
