@@ -11,11 +11,13 @@ from aws_cdk.aws_cognito import (
     UserPoolOperation,
 )
 from aws_cdk.aws_kms import IKey
+from common_constructs.cognito_user_backup import CognitoUserBackup
 from common_constructs.nodejs_function import NodejsFunction
 from common_constructs.user_pool import UserPool
 from constructs import Construct
 
 from stacks import persistent_stack as ps
+from stacks.backup_infrastructure_stack import BackupInfrastructureStack
 
 
 class ProviderUsers(UserPool):
@@ -35,6 +37,7 @@ class ProviderUsers(UserPool):
         sign_in_aliases: SignInAliases,
         user_pool_email: UserPoolEmail,
         removal_policy,
+        backup_infrastructure_stack: BackupInfrastructureStack,
         **kwargs,
     ):
         super().__init__(
@@ -70,6 +73,20 @@ class ProviderUsers(UserPool):
             write_attributes=ClientAttributes().with_standard_attributes(email=True, given_name=True, family_name=True),
         )
         self._add_custom_message_lambda(stack=stack, environment_name=environment_name)
+
+        # Set up Cognito backup system for this user pool
+        self.backup_system = CognitoUserBackup(
+            self,
+            'ProviderUserBackup',
+            user_pool_id=self.user_pool_id,
+            user_pool_type='provider',
+            access_logs_bucket=stack.access_logs_bucket,
+            encryption_key=encryption_key,
+            removal_policy=removal_policy,
+            backup_infrastructure_stack=backup_infrastructure_stack,
+            environment_context=environment_context,
+            alarm_topic=stack.alarm_topic,
+        )
 
     @staticmethod
     def _configure_user_pool_standard_attributes() -> StandardAttributes:

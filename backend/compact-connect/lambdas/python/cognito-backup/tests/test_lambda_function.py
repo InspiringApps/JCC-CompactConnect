@@ -18,98 +18,73 @@ class TestCognitoBackupExporter(TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        # Set required environment variables
-        os.environ['BACKUP_BUCKET_NAME'] = 'test-cognito-backup-bucket'
-        os.environ['STAFF_USER_POOL_ID'] = 'us-east-1_staffpool'
-        os.environ['PROVIDER_USER_POOL_ID'] = 'us-east-1_providerpo'
-
         # Import after setting environment variables
         from lambda_function import CognitoBackupExporter
         self.CognitoBackupExporter = CognitoBackupExporter
 
     def tearDown(self):
         """Clean up test fixtures."""
-        # Clean up environment variables
-        for key in ['BACKUP_BUCKET_NAME', 'STAFF_USER_POOL_ID', 'PROVIDER_USER_POOL_ID']:
+        # Clean up environment variables that may be set by tests
+        for key in ['BACKUP_BUCKET_NAME', 'USER_POOL_ID', 'USER_POOL_TYPE']:
             if key in os.environ:
                 del os.environ[key]
 
     @patch('lambda_function.boto3.client')
     def test_init(self, mock_boto3_client):
         """Test CognitoBackupExporter initialization."""
-        exporter = self.CognitoBackupExporter()
+        exporter = self.CognitoBackupExporter('us-east-1_testpool', 'test-backup-bucket', 'staff')
 
         # Verify boto3 clients are created
         self.assertEqual(mock_boto3_client.call_count, 2)
         mock_boto3_client.assert_any_call('cognito-idp')
         mock_boto3_client.assert_any_call('s3')
 
-        # Verify environment variables are set correctly
-        self.assertEqual(exporter.bucket_name, 'test-cognito-backup-bucket')
-        self.assertEqual(exporter.staff_user_pool_id, 'us-east-1_staffpool')
-        self.assertEqual(exporter.provider_user_pool_id, 'us-east-1_providerpo')
+        # Verify parameters are set correctly
+        self.assertEqual(exporter.user_pool_id, 'us-east-1_testpool')
+        self.assertEqual(exporter.backup_bucket_name, 'test-backup-bucket')
+        self.assertEqual(exporter.user_pool_type, 'staff')
 
     @patch('lambda_function.boto3.client')
-    def test_export_user_pools_success(self, mock_boto3_client):
-        """Test successful export of both user pools."""
+    def test_export_user_pool_success(self, mock_boto3_client):
+        """Test successful export of a single user pool."""
         # Mock Cognito client
         mock_cognito = MagicMock()
         mock_s3 = MagicMock()
         mock_boto3_client.side_effect = [mock_cognito, mock_s3]
 
-        # Mock Cognito list_users responses
-        mock_cognito.list_users.side_effect = [
-            {
-                'Users': [
-                    {
-                        'Username': 'staff-user1',
-                        'UserStatus': 'CONFIRMED',
-                        'Enabled': True,
-                        'UserCreateDate': datetime(2023, 1, 1, 12, 0, 0),
-                        'UserLastModifiedDate': datetime(2023, 1, 2, 12, 0, 0),
-                        'MFAOptions': [],
-                        'Attributes': [
-                            {'Name': 'email', 'Value': 'staff1@example.com'},
-                            {'Name': 'email_verified', 'Value': 'true'},
-                        ]
-                    }
-                ]
-                # No PaginationToken - single page
-            },
-            {
-                'Users': [
-                    {
-                        'Username': 'provider-user1',
-                        'UserStatus': 'CONFIRMED',
-                        'Enabled': True,
-                        'UserCreateDate': datetime(2023, 1, 1, 12, 0, 0),
-                        'UserLastModifiedDate': datetime(2023, 1, 2, 12, 0, 0),
-                        'MFAOptions': [],
-                        'Attributes': [
-                            {'Name': 'email', 'Value': 'provider1@example.com'},
-                            {'Name': 'custom:providerId', 'Value': 'prov123'},
-                            {'Name': 'custom:compact', 'Value': 'aslp'},
-                        ]
-                    }
-                ]
-                # No PaginationToken - single page
-            }
-        ]
+        # Mock Cognito list_users response
+        mock_cognito.list_users.return_value = {
+            'Users': [
+                {
+                    'Username': 'staff-user1',
+                    'UserStatus': 'CONFIRMED',
+                    'Enabled': True,
+                    'UserCreateDate': datetime(2023, 1, 1, 12, 0, 0),
+                    'UserLastModifiedDate': datetime(2023, 1, 2, 12, 0, 0),
+                    'MFAOptions': [],
+                    'Attributes': [
+                        {'Name': 'email', 'Value': 'staff1@example.com'},
+                        {'Name': 'email_verified', 'Value': 'true'},
+                    ]
+                }
+            ]
+            # No PaginationToken - single page
+        }
 
-        exporter = self.CognitoBackupExporter()
-        results = exporter.export_user_pools()
+        exporter = self.CognitoBackupExporter('us-east-1_testpool', 'test-backup-bucket', 'staff')
+        results = exporter.export_user_pool()
 
         # Verify results
-        self.assertEqual(results['staff_users_exported'], 1)
-        self.assertEqual(results['provider_users_exported'], 1)
+        self.assertEqual(results['users_exported'], 1)
+        self.assertEqual(results['user_pool_type'], 'staff')
+        self.assertEqual(results['user_pool_id'], 'us-east-1_testpool')
 
         # Verify Cognito calls
-        self.assertEqual(mock_cognito.list_users.call_count, 2)
-        mock_cognito.list_users.assert_any_call(UserPoolId='us-east-1_staffpool', Limit=60)
-        mock_cognito.list_users.assert_any_call(UserPoolId='us-east-1_providerpo', Limit=60)
+        self.assertEqual(mock_cognito.list_users.call_count, 1)
+        mock_cognito.list_users.assert_called_with(UserPoolId='us-east-1_testpool', Limit=60)
 
         # Verify S3 put_object calls
-        self.assertEqual(mock_s3.put_object.call_count, 2)
+        self.assertEqual(mock_s3.put_object.call_count, 1)
 
     @patch('lambda_function.boto3.client')
     def test_export_user_pool_pagination(self, mock_boto3_client):
@@ -130,8 +105,8 @@ class TestCognitoBackupExporter(TestCase):
             }
         ]
 
-        exporter = self.CognitoBackupExporter()
-        result = exporter._export_user_pool('test-pool-id', 'test', '2023-01-01T00:00:00')
+        exporter = self.CognitoBackupExporter('test-pool-id', 'test-bucket', 'test')
+        result = exporter._export_user_pool('2023-01-01T00:00:00')
 
         # Verify pagination was handled
         self.assertEqual(result, 2)
@@ -164,8 +139,8 @@ class TestCognitoBackupExporter(TestCase):
             ]
         }
 
-        exporter = self.CognitoBackupExporter()
-        exporter._export_single_user(user_data, 'staff', '2023-01-01T00:00:00')
+        exporter = self.CognitoBackupExporter('us-east-1_testpool', 'test-cognito-backup-bucket', 'staff')
+        exporter._export_single_user(user_data, '2023-01-01T00:00:00')
 
         # Verify S3 put_object was called with correct data
         mock_s3.put_object.assert_called_once()
@@ -223,9 +198,9 @@ class TestCognitoBackupExporter(TestCase):
             # Missing Username
         }
 
-        exporter = self.CognitoBackupExporter()
+        exporter = self.CognitoBackupExporter('us-east-1_testpool', 'test-bucket', 'staff')
         # Should not raise an exception
-        exporter._export_single_user(user_data, 'staff', '2023-01-01T00:00:00')
+        exporter._export_single_user(user_data, '2023-01-01T00:00:00')
 
         # Should not call S3 put_object for invalid users
         mock_s3.put_object.assert_not_called()
@@ -246,8 +221,8 @@ class TestCognitoBackupExporter(TestCase):
             'Attributes': []
         }
 
-        exporter = self.CognitoBackupExporter()
-        exporter._export_single_user(user_data, 'staff', '2023-01-01T00:00:00')
+        exporter = self.CognitoBackupExporter('us-east-1_testpool', 'test-bucket', 'staff')
+        exporter._export_single_user(user_data, '2023-01-01T00:00:00')
 
         # Verify S3 call was made
         mock_s3.put_object.assert_called_once()
@@ -274,7 +249,7 @@ class TestCognitoBackupExporter(TestCase):
             {'Name': 'custom:providerId', 'Value': 'prov123'},
         ]
 
-        exporter = self.CognitoBackupExporter()
+        exporter = self.CognitoBackupExporter('us-east-1_testpool', 'test-bucket', 'staff')
         result = exporter._extract_user_attributes(attributes)
 
         expected = {
@@ -298,10 +273,10 @@ class TestCognitoBackupExporter(TestCase):
             'ListUsers'
         )
 
-        exporter = self.CognitoBackupExporter()
+        exporter = self.CognitoBackupExporter('invalid-pool-id', 'test-bucket', 'staff')
 
         with self.assertRaises(ClientError):
-            exporter._export_user_pool('invalid-pool-id', 'staff', '2023-01-01T00:00:00')
+            exporter._export_user_pool('2023-01-01T00:00:00')
 
     @patch('lambda_function.boto3.client')
     def test_s3_client_error(self, mock_boto3_client):
@@ -322,10 +297,10 @@ class TestCognitoBackupExporter(TestCase):
             'Attributes': []
         }
 
-        exporter = self.CognitoBackupExporter()
+        exporter = self.CognitoBackupExporter('us-east-1_testpool', 'test-bucket', 'staff')
 
         with self.assertRaises(ClientError):
-            exporter._export_single_user(user_data, 'staff', '2023-01-01T00:00:00')
+            exporter._export_single_user(user_data, '2023-01-01T00:00:00')
 
 
 class TestLambdaHandler(TestCase):
@@ -333,33 +308,32 @@ class TestLambdaHandler(TestCase):
 
     def setUp(self):
         """Set up test fixtures."""
-        # Set required environment variables
-        os.environ['BACKUP_BUCKET_NAME'] = 'test-cognito-backup-bucket'
-        os.environ['STAFF_USER_POOL_ID'] = 'us-east-1_staffpool'
-        os.environ['PROVIDER_USER_POOL_ID'] = 'us-east-1_providerpo'
+        pass
 
     def tearDown(self):
         """Clean up test fixtures."""
-        # Clean up environment variables
-        for key in ['BACKUP_BUCKET_NAME', 'STAFF_USER_POOL_ID', 'PROVIDER_USER_POOL_ID']:
-            if key in os.environ:
-                del os.environ[key]
+        pass
 
     @patch('lambda_function.CognitoBackupExporter')
     def test_lambda_handler_success(self, mock_exporter_class):
         """Test successful lambda handler execution."""
         # Mock the exporter
         mock_exporter = MagicMock()
-        mock_exporter.export_user_pools.return_value = {
-            'staff_users_exported': 5,
-            'provider_users_exported': 10
+        mock_exporter.export_user_pool.return_value = {
+            'users_exported': 5,
+            'user_pool_type': 'staff',
+            'user_pool_id': 'us-east-1_testpool'
         }
         mock_exporter_class.return_value = mock_exporter
 
         from lambda_function import lambda_handler
 
         # Test event and context
-        event = {'source': 'aws.events'}
+        event = {
+            'user_pool_id': 'us-east-1_testpool',
+            'backup_bucket_name': 'test-backup-bucket',
+            'user_pool_type': 'staff'
+        }
         context = MagicMock()
         context.aws_request_id = 'test-request-id'
 
@@ -368,29 +342,34 @@ class TestLambdaHandler(TestCase):
         # Verify response
         expected_response = {
             'statusCode': 200,
-            'message': 'Cognito backup export completed successfully',
+            'message': 'Cognito backup export completed successfully for staff user pool',
             'results': {
-                'staff_users_exported': 5,
-                'provider_users_exported': 10
+                'users_exported': 5,
+                'user_pool_type': 'staff',
+                'user_pool_id': 'us-east-1_testpool'
             }
         }
         self.assertEqual(result, expected_response)
 
-        # Verify exporter was called
-        mock_exporter_class.assert_called_once()
-        mock_exporter.export_user_pools.assert_called_once()
+        # Verify exporter was called with correct parameters
+        mock_exporter_class.assert_called_once_with('us-east-1_testpool', 'test-backup-bucket', 'staff')
+        mock_exporter.export_user_pool.assert_called_once()
 
     @patch('lambda_function.CognitoBackupExporter')
     def test_lambda_handler_exception(self, mock_exporter_class):
         """Test lambda handler with exception."""
         # Mock the exporter to raise an exception
         mock_exporter = MagicMock()
-        mock_exporter.export_user_pools.side_effect = Exception('Export failed')
+        mock_exporter.export_user_pool.side_effect = Exception('Export failed')
         mock_exporter_class.return_value = mock_exporter
 
         from lambda_function import lambda_handler
 
-        event = {'source': 'aws.events'}
+        event = {
+            'user_pool_id': 'us-east-1_testpool',
+            'backup_bucket_name': 'test-backup-bucket',
+            'user_pool_type': 'staff'
+        }
         context = MagicMock()
 
         with self.assertRaises(Exception) as context_mgr:
@@ -398,15 +377,15 @@ class TestLambdaHandler(TestCase):
 
         self.assertEqual(str(context_mgr.exception), 'Export failed')
 
-    def test_lambda_handler_missing_env_vars(self):
-        """Test lambda handler with missing environment variables."""
-        # Remove required environment variable
-        del os.environ['BACKUP_BUCKET_NAME']
-
+    def test_lambda_handler_missing_event_params(self):
+        """Test lambda handler with missing event parameters."""
         from lambda_function import lambda_handler
 
-        event = {'source': 'aws.events'}
+        # Missing required event parameters
+        event = {'user_pool_id': 'us-east-1_testpool'}  # Missing backup_bucket_name and user_pool_type
         context = MagicMock()
 
-        with self.assertRaises(KeyError):
+        with self.assertRaises(ValueError) as context_mgr:
             lambda_handler(event, context)
+
+        self.assertIn('Missing required parameters', str(context_mgr.exception))

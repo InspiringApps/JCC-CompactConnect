@@ -2,8 +2,8 @@ from aws_cdk import ArnFormat, Duration, NestedStack, RemovalPolicy
 from aws_cdk.aws_backup import BackupVault
 from aws_cdk.aws_cloudwatch import Alarm, ComparisonOperator, Metric, TreatMissingData
 from aws_cdk.aws_cloudwatch_actions import SnsAction
-from aws_cdk.aws_events import EventPattern, Rule, Schedule
-from aws_cdk.aws_events_targets import LambdaFunction, SnsTopic
+from aws_cdk.aws_events import EventPattern, Rule
+from aws_cdk.aws_events_targets import SnsTopic
 from aws_cdk.aws_iam import (
     AccountPrincipal,
     Effect,
@@ -17,7 +17,6 @@ from aws_cdk.aws_iam import (
 from aws_cdk.aws_kms import Alias, Key
 from aws_cdk.aws_sns import ITopic
 from cdk_nag import NagSuppressions
-from common_constructs.python_function import PythonFunction
 from constructs import Construct
 
 
@@ -45,16 +44,12 @@ class BackupInfrastructureStack(NestedStack):
         environment_name: str,
         backup_config: dict,
         alarm_topic: ITopic,
-        staff_user_pool_id: str | None = None,
-        provider_user_pool_id: str | None = None,
         **kwargs,
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
         self.environment_name = environment_name
         self.alarm_topic = alarm_topic
-        self.staff_user_pool_id = staff_user_pool_id
-        self.provider_user_pool_id = provider_user_pool_id
 
         # If we delete this stack, retain the resource (orphan but prevent data loss) or destroy it (clean up)?
         self.removal_policy = RemovalPolicy.RETAIN if environment_name == 'prod' else RemovalPolicy.DESTROY
@@ -79,29 +74,10 @@ class BackupInfrastructureStack(NestedStack):
         # Create backup monitoring alarms and EventBridge rules
         self._create_backup_monitoring()
 
-        # Create Cognito backup functionality (if user pool IDs are provided)
-        if self.staff_user_pool_id and self.provider_user_pool_id:
-            self._create_cognito_backup_system()
-
         # Add CDK NAG suppressions for expected AWS managed policies in backup service roles
         self._add_cdk_nag_suppressions()
 
-    def set_user_pool_ids(self, staff_user_pool_id: str, provider_user_pool_id: str) -> None:
-        """
-        Set the user pool IDs and create the Cognito backup system.
 
-        This method is called after the user pools are created in the persistent stack
-        to enable the Cognito backup functionality.
-
-        Args:
-            staff_user_pool_id: The Cognito user pool ID for staff users
-            provider_user_pool_id: The Cognito user pool ID for provider users
-        """
-        self.staff_user_pool_id = staff_user_pool_id
-        self.provider_user_pool_id = provider_user_pool_id
-
-        # Now create the Cognito backup system with the actual user pool IDs
-        self._create_cognito_backup_system()
 
     def _create_local_backup_encryption_key(self) -> None:
         """Create a local KMS key for general backup encryption."""
@@ -526,101 +502,7 @@ class BackupInfrastructureStack(NestedStack):
             targets=[SnsTopic(self.alarm_topic)],
         )
 
-    def _create_cognito_backup_system(self) -> None:
-        """Create the Cognito backup Lambda function and EventBridge scheduling."""
 
-        # Import here to avoid circular dependencies
-        from stacks.persistent_stack.cognito_backup_bucket import CognitoBackupBucket
-        from common_constructs.stack import Stack
-
-        # Get the persistent stack to access shared resources
-        parent_stack = Stack.of(self)
-
-        # Create the Cognito backup bucket
-        self.cognito_backup_bucket = CognitoBackupBucket(
-            self,
-            'CognitoBackupBucket',
-            access_logs_bucket=parent_stack.access_logs_bucket,
-            encryption_key=parent_stack.shared_encryption_key,
-            removal_policy=self.removal_policy,
-            backup_infrastructure_stack=self,
-            environment_context=parent_stack.environment_context,
-        )
-
-        # Create the Cognito backup Lambda function
-        self.cognito_backup_lambda = PythonFunction(
-            self,
-            'CognitoBackupLambda',
-            description='Daily Cognito user pool export for backup purposes',
-            lambda_dir='cognito-backup',
-            handler='lambda_handler',
-            timeout=Duration.minutes(15),  # Allow time for large user pools
-            memory_size=512,  # Sufficient memory for processing and S3 uploads
-            environment={
-                'BACKUP_BUCKET_NAME': self.cognito_backup_bucket.bucket_name,
-                'STAFF_USER_POOL_ID': self.staff_user_pool_id,
-                'PROVIDER_USER_POOL_ID': self.provider_user_pool_id,
-                **parent_stack.common_env_vars,
-            },
-        )
-
-        # Grant the Lambda permissions to access Cognito and S3
-        from aws_cdk.aws_iam import PolicyStatement, Effect
-
-        # Grant Cognito permissions
-        self.cognito_backup_lambda.add_to_role_policy(
-            PolicyStatement(
-                effect=Effect.ALLOW,
-                actions=[
-                    'cognito-idp:ListUsers',
-                    'cognito-idp:DescribeUserPool',
-                ],
-                resources=[
-                    f'arn:aws:cognito-idp:{self.region}:{self.account}:userpool/{self.staff_user_pool_id}',
-                    f'arn:aws:cognito-idp:{self.region}:{self.account}:userpool/{self.provider_user_pool_id}',
-                ],
-            )
-        )
-
-        # Grant S3 permissions
-        self.cognito_backup_bucket.grant_write(self.cognito_backup_lambda)
-        parent_stack.shared_encryption_key.grant_encrypt_decrypt(self.cognito_backup_lambda)
-
-        # Create EventBridge rule for daily execution
-        # Schedule at 2 AM UTC to avoid conflicts with other backup operations
-        cognito_backup_rule = Rule(
-            self,
-            'CognitoBackupRule',
-            description='Daily schedule for Cognito user pool backup export',
-            schedule=Schedule.cron(hour='2', minute='0', month='*', year='*', week_day='*'),
-            targets=[LambdaFunction(self.cognito_backup_lambda)],
-        )
-
-        # Create failure alarm for the Cognito backup Lambda
-        cognito_backup_failure_alarm = Alarm(
-            self,
-            'CognitoBackupFailureAlarm',
-            metric=self.cognito_backup_lambda.metric_errors(),
-            threshold=1,
-            evaluation_periods=1,
-            comparison_operator=ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
-            treat_missing_data=TreatMissingData.NOT_BREACHING,
-            alarm_description='Cognito backup export Lambda has failed. User data backup may be incomplete.',
-        )
-        cognito_backup_failure_alarm.add_alarm_action(SnsAction(self.alarm_topic))
-
-        # Add CDK NAG suppressions for the Lambda IAM permissions
-        NagSuppressions.add_resource_suppressions_by_path(
-            self,
-            f'{self.cognito_backup_lambda.node.path}/ServiceRole/DefaultPolicy/Resource',
-            suppressions=[
-                {
-                    'id': 'AwsSolutions-IAM5',
-                    'reason': 'Lambda requires read access to specific Cognito user pools and write access to '
-                    'the backup S3 bucket. Permissions are scoped to specific resources where possible.',
-                },
-            ],
-        )
 
     def _add_cdk_nag_suppressions(self) -> None:
         """Add CDK NAG suppressions for expected patterns in backup infrastructure."""

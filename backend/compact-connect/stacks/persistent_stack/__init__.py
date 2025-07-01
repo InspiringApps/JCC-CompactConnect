@@ -212,6 +212,7 @@ class PersistentStack(AppStack):
             user_pool_email=user_pool_email_settings,
             security_profile=security_profile,
             removal_policy=removal_policy,
+            backup_infrastructure_stack=self.backup_infrastructure_stack,
         )
         # We explicitly export the user pool values so we can later move the API stack over to the
         # new user pool without putting our app into a cross-stack dependency 'deadly embrace':
