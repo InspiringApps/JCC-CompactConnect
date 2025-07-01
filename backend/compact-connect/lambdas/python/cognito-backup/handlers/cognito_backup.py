@@ -7,7 +7,7 @@ for exporting Cognito user pool data to S3 for backup purposes.
 
 import json
 import logging
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 import boto3
@@ -53,7 +53,7 @@ class CognitoBackupExporter:
         """
         logger.info('Starting export of %s user pool %s', self.user_pool_type, self.user_pool_id)
 
-        export_timestamp = datetime.now(tz=datetime.timezone.utc).isoformat()
+        export_timestamp = datetime.now(tz=UTC).isoformat()
         users_exported = 0
 
         try:

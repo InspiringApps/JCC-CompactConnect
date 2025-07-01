@@ -1,4 +1,4 @@
-THIS SHOULD BE A LINTER ERROR"""
+"""
 Unit tests for the Cognito backup handlers.
 
 This module tests the handler functions and classes in isolation
@@ -76,7 +76,7 @@ class TestCognitoBackupExporter(TstLambdas):
         test_datetime = datetime(2023, 1, 1, 12, 0, 0, tzinfo=UTC)
         result = exporter._format_datetime(test_datetime)  # noqa: SLF001 testing private method
 
-        self.assertEqual(result, '2023-01-01T12:00:00')
+        self.assertEqual(result, '2023-01-01T12:00:00+00:00')
 
     @patch('handlers.cognito_backup.boto3.client')
     def test_format_datetime_with_none(self, mock_boto3_client):

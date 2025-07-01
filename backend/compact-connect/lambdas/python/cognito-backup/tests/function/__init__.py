@@ -50,7 +50,7 @@ class TstFunction(TstLambdas):
         self.test_users = [
             {
                 'Username': 'test-user-1',
-                'Attributes': [
+                'UserAttributes': [
                     {'Name': 'email', 'Value': 'user1@example.com'},
                     {'Name': 'given_name', 'Value': 'Test'},
                     {'Name': 'family_name', 'Value': 'User1'},
@@ -60,7 +60,7 @@ class TstFunction(TstLambdas):
             },
             {
                 'Username': 'test-user-2',
-                'Attributes': [
+                'UserAttributes': [
                     {'Name': 'email', 'Value': 'user2@example.com'},
                     {'Name': 'given_name', 'Value': 'Test'},
                     {'Name': 'family_name', 'Value': 'User2'},
