@@ -23,7 +23,7 @@ class TestCognitoBackupExporter(TstLambdas):
         """Test CognitoBackupExporter initialization."""
         from handlers.cognito_backup import CognitoBackupExporter
 
-        exporter = CognitoBackupExporter('us-east-1_testpool', 'test-backup-bucket', 'staff')
+        exporter = CognitoBackupExporter('us-east-1_testpool', 'test-backup-bucket')
 
         # Verify boto3 clients are created
         self.assertEqual(mock_boto3_client.call_count, 2)
@@ -33,7 +33,6 @@ class TestCognitoBackupExporter(TstLambdas):
         # Verify parameters are set correctly
         self.assertEqual(exporter.user_pool_id, 'us-east-1_testpool')
         self.assertEqual(exporter.backup_bucket_name, 'test-backup-bucket')
-        self.assertEqual(exporter.user_pool_type, 'staff')
 
     @patch('handlers.cognito_backup.boto3.client')
     def test_extract_user_attributes(self, mock_boto3_client):
@@ -51,7 +50,7 @@ class TestCognitoBackupExporter(TstLambdas):
             {'Name': 'custom:providerId', 'Value': 'prov123'},
         ]
 
-        exporter = CognitoBackupExporter('us-east-1_testpool', 'test-bucket', 'staff')
+        exporter = CognitoBackupExporter('us-east-1_testpool', 'test-bucket')
         result = exporter._extract_user_attributes(attributes)  # noqa: SLF001 testing private method
 
         expected = {
@@ -71,7 +70,7 @@ class TestCognitoBackupExporter(TstLambdas):
         mock_s3 = MagicMock()
         mock_boto3_client.side_effect = [mock_cognito, mock_s3]
 
-        exporter = CognitoBackupExporter('us-east-1_testpool', 'test-bucket', 'staff')
+        exporter = CognitoBackupExporter('us-east-1_testpool', 'test-bucket')
 
         test_datetime = datetime(2023, 1, 1, 12, 0, 0, tzinfo=UTC)
         result = exporter._format_datetime(test_datetime)  # noqa: SLF001 testing private method
@@ -87,7 +86,7 @@ class TestCognitoBackupExporter(TstLambdas):
         mock_s3 = MagicMock()
         mock_boto3_client.side_effect = [mock_cognito, mock_s3]
 
-        exporter = CognitoBackupExporter('us-east-1_testpool', 'test-bucket', 'staff')
+        exporter = CognitoBackupExporter('us-east-1_testpool', 'test-bucket')
         result = exporter._format_datetime(None)  # noqa: SLF001 testing private method
 
         self.assertIsNone(result)
@@ -107,7 +106,7 @@ class TestCognitoBackupExporter(TstLambdas):
             # Missing Username
         }
 
-        exporter = CognitoBackupExporter('us-east-1_testpool', 'test-bucket', 'staff')
+        exporter = CognitoBackupExporter('us-east-1_testpool', 'test-bucket')
         # Should not raise an exception
         exporter._export_single_user(user_data, '2023-01-01T00:00:00')  # noqa: SLF001 testing private method
 
@@ -131,7 +130,6 @@ class TestBackupHandler(TstLambdas):
         mock_exporter = MagicMock()
         mock_exporter.export_user_pool.return_value = {
             'users_exported': 5,
-            'user_pool_type': 'staff',
             'user_pool_id': 'us-east-1_testpool',
         }
         mock_exporter_class.return_value = mock_exporter
@@ -140,7 +138,6 @@ class TestBackupHandler(TstLambdas):
         event = {
             'user_pool_id': 'us-east-1_testpool',
             'backup_bucket_name': 'test-backup-bucket',
-            'user_pool_type': 'staff',
         }
 
         result = backup_handler(event, self.mock_context)
@@ -148,13 +145,13 @@ class TestBackupHandler(TstLambdas):
         # Verify response
         expected_response = {
             'statusCode': 200,
-            'message': 'Cognito backup export completed successfully for staff user pool',
-            'results': {'users_exported': 5, 'user_pool_type': 'staff', 'user_pool_id': 'us-east-1_testpool'},
+            'message': 'Cognito backup export completed successfully',
+            'results': {'users_exported': 5, 'user_pool_id': 'us-east-1_testpool'},
         }
         self.assertEqual(result, expected_response)
 
         # Verify exporter was called with correct parameters
-        mock_exporter_class.assert_called_once_with('us-east-1_testpool', 'test-backup-bucket', 'staff')
+        mock_exporter_class.assert_called_once_with('us-east-1_testpool', 'test-backup-bucket')
         mock_exporter.export_user_pool.assert_called_once()
 
     @patch('handlers.cognito_backup.CognitoBackupExporter')
@@ -170,7 +167,6 @@ class TestBackupHandler(TstLambdas):
         event = {
             'user_pool_id': 'us-east-1_testpool',
             'backup_bucket_name': 'test-backup-bucket',
-            'user_pool_type': 'staff',
         }
 
         with self.assertRaises(Exception) as context_mgr:
@@ -183,7 +179,7 @@ class TestBackupHandler(TstLambdas):
         from handlers.cognito_backup import backup_handler
 
         # Missing required event parameters
-        event = {'user_pool_id': 'us-east-1_testpool'}  # Missing backup_bucket_name and user_pool_type
+        event = {'user_pool_id': 'us-east-1_testpool'}  # Missing backup_bucket_name
 
         with self.assertRaises(ValueError) as context_mgr:
             backup_handler(event, self.mock_context)
@@ -196,7 +192,6 @@ class TestBackupHandler(TstLambdas):
 
         event = {
             'backup_bucket_name': 'test-backup-bucket',
-            'user_pool_type': 'staff',
         }
 
         with self.assertRaises(ValueError) as context_mgr:
@@ -210,21 +205,6 @@ class TestBackupHandler(TstLambdas):
 
         event = {
             'user_pool_id': 'us-east-1_testpool',
-            'user_pool_type': 'staff',
-        }
-
-        with self.assertRaises(ValueError) as context_mgr:
-            backup_handler(event, self.mock_context)
-
-        self.assertIn('Missing required parameters', str(context_mgr.exception))
-
-    def test_backup_handler_missing_user_pool_type(self):
-        """Test backup handler with missing user_pool_type."""
-        from handlers.cognito_backup import backup_handler
-
-        event = {
-            'user_pool_id': 'us-east-1_testpool',
-            'backup_bucket_name': 'test-backup-bucket',
         }
 
         with self.assertRaises(ValueError) as context_mgr:

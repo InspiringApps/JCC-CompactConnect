@@ -46,7 +46,6 @@ class CognitoUserBackup(Construct):
         construct_id: str,
         *,
         user_pool_id: str,
-        user_pool_type: str,
         access_logs_bucket: AccessLogsBucket,
         encryption_key: IKey,
         removal_policy: RemovalPolicy,
@@ -58,7 +57,6 @@ class CognitoUserBackup(Construct):
         super().__init__(scope, construct_id, **kwargs)
 
         self.user_pool_id = user_pool_id
-        self.user_pool_type = user_pool_type
 
         # Create the backup bucket for this user pool
         self.backup_bucket = self._create_backup_bucket(
@@ -97,7 +95,7 @@ class CognitoUserBackup(Construct):
         bucket.backup_plan = CCBackupPlan(
             bucket,
             'BackupPlan',
-            backup_plan_name_prefix=f'{bucket.bucket_name}-{self.user_pool_type}',
+            backup_plan_name_prefix=f'{bucket.bucket_name}-cognito-backup',
             backup_resources=[BackupResource.from_arn(bucket.bucket_arn)],
             backup_vault=backup_infrastructure_stack.local_backup_vault,
             backup_service_role=backup_infrastructure_stack.backup_service_role,
@@ -112,7 +110,7 @@ class CognitoUserBackup(Construct):
                 {
                     'id': 'HIPAA.Security-S3BucketReplicationEnabled',
                     'reason': 'This bucket stores Cognito user exports that are backed up to cross-account vault via '
-                             'AWS Backup. Replication is handled by backup infrastructure rather than S3 replication.',
+                    'AWS Backup. Replication is handled by backup infrastructure rather than S3 replication.',
                 },
             ],
         )
@@ -129,7 +127,7 @@ class CognitoUserBackup(Construct):
         lambda_function = PythonFunction(
             self,
             'ExportLambda',
-            description=f'Export {self.user_pool_type} user pool data for backup purposes',
+            description=f'Export user pool data for backup purposes',
             lambda_dir='cognito-backup',
             handler='lambda_handler',
             timeout=Duration.minutes(15),  # Allow time for large user pools
@@ -137,7 +135,6 @@ class CognitoUserBackup(Construct):
             environment={
                 'BACKUP_BUCKET_NAME': self.backup_bucket.bucket_name,
                 'USER_POOL_ID': self.user_pool_id,
-                'USER_POOL_TYPE': self.user_pool_type,
                 **parent_stack.common_env_vars,
             },
         )
@@ -182,7 +179,7 @@ class CognitoUserBackup(Construct):
         return Rule(
             self,
             'DailyExportRule',
-            description=f'Daily schedule for {self.user_pool_type} user pool backup export',
+            description=f'Daily schedule for user pool backup export',
             schedule=Schedule.cron(hour='2', minute='0', month='*', year='*', week_day='*'),
             targets=[
                 LambdaFunction(
@@ -190,7 +187,6 @@ class CognitoUserBackup(Construct):
                     event={
                         'user_pool_id': self.user_pool_id,
                         'backup_bucket_name': self.backup_bucket.bucket_name,
-                        'user_pool_type': self.user_pool_type,
                     },
                 )
             ],
@@ -206,8 +202,7 @@ class CognitoUserBackup(Construct):
             evaluation_periods=1,
             comparison_operator=ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
             treat_missing_data=TreatMissingData.NOT_BREACHING,
-            alarm_description=f'{self.user_pool_type.title()} user pool backup export Lambda has failed. '
-            f'User data backup may be incomplete.',
+            alarm_description=f'User pool backup export Lambda has failed. User data backup may be incomplete.',
         )
         alarm.add_alarm_action(SnsAction(alarm_topic))
 

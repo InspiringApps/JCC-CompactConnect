@@ -84,15 +84,13 @@ class TstFunction(TstLambdas):
         """Clean up mock AWS resources."""
         # Moto automatically cleans up resources when the mock context exits
 
-    def get_test_event(self, user_pool_type: str = 'staff') -> dict:
+    def get_test_event(self) -> dict:
         """
         Generate a test event for the lambda handler.
 
-        :param user_pool_type: Type of user pool for testing
         :return: Test event dictionary
         """
         return {
             'user_pool_id': self.user_pool_id,
             'backup_bucket_name': self.bucket_name,
-            'user_pool_type': user_pool_type,
         }

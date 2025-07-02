@@ -86,7 +86,6 @@ class StaffUsers(UserPool):
             self,
             'StaffUserBackup',
             user_pool_id=self.user_pool_id,
-            user_pool_type='staff',
             access_logs_bucket=stack.access_logs_bucket,
             encryption_key=encryption_key,
             removal_policy=removal_policy,

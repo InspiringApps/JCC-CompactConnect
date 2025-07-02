@@ -79,7 +79,6 @@ class ProviderUsers(UserPool):
             self,
             'ProviderUserBackup',
             user_pool_id=self.user_pool_id,
-            user_pool_type='provider',
             access_logs_bucket=stack.access_logs_bucket,
             encryption_key=encryption_key,
             removal_policy=removal_policy,
