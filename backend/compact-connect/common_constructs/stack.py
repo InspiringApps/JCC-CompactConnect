@@ -100,8 +100,11 @@ class AppStack(Stack):
     @cached_property
     def hosted_zone(self) -> IHostedZone | None:
         hosted_zone = None
+        active_region = self.node.try_get_context('active_region') or True
         domain_name = self.environment_context.get('domain_name')
-        if domain_name is not None:
+        # cold regions cannot provision resources that rely on DNS records, since those
+        # records will be in use by the active region
+        if domain_name is not None and active_region:
             hosted_zone = HostedZone.from_lookup(self, 'HostedZone', domain_name=domain_name)
         return hosted_zone
 
