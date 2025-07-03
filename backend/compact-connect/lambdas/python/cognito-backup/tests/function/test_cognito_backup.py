@@ -280,7 +280,7 @@ class TestCognitoBackupErrorHandling(TstFunction):
     def test_extract_user_attributes_functionality(self):
         """Test user attributes extraction with real Cognito user data."""
         from handlers.cognito_backup import CognitoBackupExporter
-        
+
         # Create a user with various attribute types
         self.cognito_client.admin_create_user(
             UserPoolId=self.user_pool_id,
@@ -295,20 +295,20 @@ class TestCognitoBackupErrorHandling(TstFunction):
             MessageAction='SUPPRESS',
             TemporaryPassword='TempPass123!',
         )
-        
+
         exporter = CognitoBackupExporter(self.user_pool_id, self.bucket_name)
         exporter.export_user_pool()
-        
+
         # Find and verify the attributes were extracted correctly
         s3_objects = self.s3_client.list_objects_v2(Bucket=self.bucket_name)
-        
+
         for obj in s3_objects['Contents']:
             if 'attribute-test-user' in obj['Key']:
                 obj_response = self.s3_client.get_object(Bucket=self.bucket_name, Key=obj['Key'])
                 export_data = json.loads(obj_response['Body'].read().decode('utf-8'))
-                
+
                 attributes = export_data['user_data']['attributes']
-                
+
                 # Verify all attributes are properly extracted
                 self.assertEqual(attributes['email'], 'attr@example.com')
                 self.assertEqual(attributes['given_name'], 'Attribute')
@@ -322,37 +322,37 @@ class TestCognitoBackupErrorHandling(TstFunction):
     def test_export_initialization_and_datetime_formatting(self):
         """Test CognitoBackupExporter initialization and datetime handling with real data."""
         from handlers.cognito_backup import CognitoBackupExporter
-        
+
         # Test initialization
         exporter = CognitoBackupExporter(self.user_pool_id, self.bucket_name)
         self.assertEqual(exporter.user_pool_id, self.user_pool_id)
         self.assertEqual(exporter.backup_bucket_name, self.bucket_name)
-        
+
         # Test datetime formatting by running export and checking timestamp formats
         exporter.export_user_pool()
-        
+
         # Get an exported file and verify datetime formats
         s3_objects = self.s3_client.list_objects_v2(Bucket=self.bucket_name)
         first_object_key = s3_objects['Contents'][0]['Key']
-        
+
         obj_response = self.s3_client.get_object(Bucket=self.bucket_name, Key=first_object_key)
         export_data = json.loads(obj_response['Body'].read().decode('utf-8'))
-        
+
         # Verify export timestamp format (ISO format)
         export_timestamp = export_data['export_metadata']['export_timestamp']
         self.assertRegex(export_timestamp, r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d+(\+00:00|Z)')
-        
+
         # Verify user datetime fields are properly formatted or None
         user_data = export_data['user_data']
-        
+
         # These should be properly formatted ISO strings or None
         create_date = user_data['user_create_date']
         modified_date = user_data['user_last_modified_date']
-        
+
         if create_date is not None:
             # Should be a valid ISO timestamp
             self.assertRegex(create_date, r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}')
-        
+
         if modified_date is not None:
             # Should be a valid ISO timestamp
             self.assertRegex(modified_date, r'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}')
@@ -360,23 +360,23 @@ class TestCognitoBackupErrorHandling(TstFunction):
     def test_malformed_user_handling(self):
         """Test graceful handling of users with missing or malformed data."""
         from handlers.cognito_backup import CognitoBackupExporter
-        
+
         # This test verifies the system handles edge cases gracefully
-        # We can't easily create a malformed user in Cognito, but we can test 
+        # We can't easily create a malformed user in Cognito, but we can test
         # the edge case of no users and verify no exceptions are raised
-        
+
         # Create an empty user pool
         empty_pool_response = self.cognito_client.create_user_pool(PoolName='malformed-test-pool')
         empty_pool_id = empty_pool_response['UserPool']['Id']
-        
+
         exporter = CognitoBackupExporter(empty_pool_id, self.bucket_name)
-        
+
         # This should complete without errors even with no users
         results = exporter.export_user_pool()
-        
+
         self.assertEqual(results['users_exported'], 0)
         self.assertEqual(results['status'], 'success')
-        
+
         # Test with users that have minimal attributes
         self.cognito_client.admin_create_user(
             UserPoolId=empty_pool_id,
@@ -385,34 +385,31 @@ class TestCognitoBackupErrorHandling(TstFunction):
             MessageAction='SUPPRESS',
             TemporaryPassword='TempPass123!',
         )
-        
+
         # Clear bucket first
         s3_objects = self.s3_client.list_objects_v2(Bucket=self.bucket_name)
         if 'Contents' in s3_objects:
             for obj in s3_objects['Contents']:
                 self.s3_client.delete_object(Bucket=self.bucket_name, Key=obj['Key'])
-        
+
         # Export should handle user with no attributes gracefully
         results = exporter.export_user_pool()
-        
+
         self.assertEqual(results['users_exported'], 1)
         self.assertEqual(results['status'], 'success')
-        
+
         # Verify the exported data structure is still valid
         s3_objects = self.s3_client.list_objects_v2(Bucket=self.bucket_name)
         self.assertEqual(len(s3_objects['Contents']), 1)
-        
-        obj_response = self.s3_client.get_object(
-            Bucket=self.bucket_name, 
-            Key=s3_objects['Contents'][0]['Key']
-        )
+
+        obj_response = self.s3_client.get_object(Bucket=self.bucket_name, Key=s3_objects['Contents'][0]['Key'])
         export_data = json.loads(obj_response['Body'].read().decode('utf-8'))
-        
+
         # Should have proper structure even with minimal data
         self.assertIn('export_metadata', export_data)
         self.assertIn('user_data', export_data)
         self.assertEqual(export_data['user_data']['username'], 'minimal-user')
-        
+
         # Cognito automatically adds 'sub' attribute, so we expect at least that
         attributes = export_data['user_data']['attributes']
         self.assertIsInstance(attributes, dict)

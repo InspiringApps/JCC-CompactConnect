@@ -8,11 +8,13 @@ and EventBridge scheduling.
 
 from __future__ import annotations
 
+import os
+
 from aws_cdk import Duration, RemovalPolicy
 from aws_cdk.aws_backup import BackupResource
 from aws_cdk.aws_cloudwatch import Alarm, ComparisonOperator, TreatMissingData
 from aws_cdk.aws_cloudwatch_actions import SnsAction
-from aws_cdk.aws_events import Rule, Schedule, RuleTargetInput
+from aws_cdk.aws_events import Rule, RuleTargetInput, Schedule
 from aws_cdk.aws_events_targets import LambdaFunction
 from aws_cdk.aws_iam import Effect, PolicyStatement
 from aws_cdk.aws_kms import IKey
@@ -26,7 +28,6 @@ from common_constructs.access_logs_bucket import AccessLogsBucket
 from common_constructs.backup_plan import CCBackupPlan
 from common_constructs.bucket import Bucket
 from common_constructs.python_function import PythonFunction
-import os
 
 
 class CognitoUserBackup(Construct):
@@ -188,10 +189,12 @@ class CognitoUserBackup(Construct):
             targets=[
                 LambdaFunction(
                     self.export_lambda,
-                    event=RuleTargetInput.from_object({
-                        'user_pool_id': self.user_pool_id,
-                        'backup_bucket_name': self.backup_bucket.bucket_name,
-                    }),
+                    event=RuleTargetInput.from_object(
+                        {
+                            'user_pool_id': self.user_pool_id,
+                            'backup_bucket_name': self.backup_bucket.bucket_name,
+                        }
+                    ),
                 )
             ],
         )

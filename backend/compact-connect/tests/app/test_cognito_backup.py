@@ -4,16 +4,18 @@ Integration tests for Cognito backup functionality in the CDK app.
 This module tests the CDK constructs and integration for the Cognito backup system
 including the backup bucket, Lambda function, EventBridge scheduling, and backup plans.
 """
+
 import json
 from unittest import TestCase
 
-from aws_cdk.aws_cloudwatch import CfnAlarm
-from aws_cdk.aws_iam import CfnPolicy
 from aws_cdk.assertions import Match, Template
 from aws_cdk.aws_backup import CfnBackupPlan, CfnBackupSelection
+from aws_cdk.aws_cloudwatch import CfnAlarm
 from aws_cdk.aws_events import CfnRule
+from aws_cdk.aws_iam import CfnPolicy
 from aws_cdk.aws_lambda import CfnFunction
 from aws_cdk.aws_s3 import CfnBucket
+from common_constructs.cognito_user_backup import CognitoUserBackup
 
 from tests.app.base import TstAppABC
 
@@ -38,7 +40,7 @@ class TestCognitoBackup(TstAppABC, TestCase):
         backup_infrastructure_stack = persistent_stack.backup_infrastructure_stack
 
         self.assertIsInstance(persistent_stack.staff_users.backup_system, CognitoUserBackup)
-        self.assertIsInstance(provider_users_stack.cognito_backup, CognitoUserBackup)
+        self.assertIsInstance(provider_users_stack.provider_users.backup_system, CognitoUserBackup)
 
     def test_cognito_backup_lambda_created(self):
         """Test that the Cognito backup Lambda function is created with proper configuration."""
@@ -53,14 +55,16 @@ class TestCognitoBackup(TstAppABC, TestCase):
             # Verify that we have a Cognito backup Lambda function
             lambda_function = stack_template.find_resources(
                 CfnFunction.CFN_RESOURCE_TYPE_NAME,
-                props=Match.object_like({
-                    'Properties': { 
-                        'Handler': 'handlers.cognito_backup.backup_handler',
-                        'Description': 'Export user pool data for backup purposes'
+                props=Match.object_like(
+                    {
+                        'Properties': {
+                            'Handler': 'handlers.cognito_backup.backup_handler',
+                            'Description': 'Export user pool data for backup purposes',
+                        }
                     }
-                })
+                ),
             )
-            self.assertEqual(len(lambda_function), 1, "Should have one Cognito backup Lambda function")
+            self.assertEqual(len(lambda_function), 1, 'Should have one Cognito backup Lambda function')
             lambda_function_logical_id = list(lambda_function.keys())[0]
 
             # Verify that the lambda has an event bridge rule
@@ -69,33 +73,28 @@ class TestCognitoBackup(TstAppABC, TestCase):
                 props={
                     'ScheduleExpression': Match.string_like_regexp('cron.*'),
                     'State': 'ENABLED',
-                    'Targets': Match.array_with([
-                        Match.object_like({
-                            'Arn': Match.object_like({
-                                'Fn::GetAtt': [
-                                    lambda_function_logical_id,
-                                    'Arn'
-                                ]
-                            })
-                        })
-                    ])
-                }
+                    'Targets': Match.array_with(
+                        [
+                            Match.object_like(
+                                {'Arn': Match.object_like({'Fn::GetAtt': [lambda_function_logical_id, 'Arn']})}
+                            )
+                        ]
+                    ),
+                },
             )
             # Find CloudWatch alarms
             alarm_topic_logical_id = stack.get_logical_id(stack.alarm_topic.node.default_child)
             alarms = stack_template.has_resource_properties(
                 CfnAlarm.CFN_RESOURCE_TYPE_NAME,
-                props=Match.object_like({
-                    'AlarmDescription': 'User pool backup export Lambda has failed. User data backup may be incomplete.',
-                    'ComparisonOperator': 'GreaterThanOrEqualToThreshold',
-                    'Threshold': 1,
-                    'EvaluationPeriods': 1,
-                    'AlarmActions': Match.array_with([
-                        Match.object_like({
-                            'Ref': alarm_topic_logical_id
-                        })
-                    ]),
-                    'Namespace': 'AWS/Lambda',
-                    'MetricName': 'Errors',
-                })
+                props=Match.object_like(
+                    {
+                        'AlarmDescription': 'User pool backup export Lambda has failed. User data backup may be incomplete.',
+                        'ComparisonOperator': 'GreaterThanOrEqualToThreshold',
+                        'Threshold': 1,
+                        'EvaluationPeriods': 1,
+                        'AlarmActions': Match.array_with([Match.object_like({'Ref': alarm_topic_logical_id})]),
+                        'Namespace': 'AWS/Lambda',
+                        'MetricName': 'Errors',
+                    }
+                ),
             )
