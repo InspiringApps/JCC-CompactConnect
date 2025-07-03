@@ -140,7 +140,7 @@ class CognitoUserBackup(Construct):
             environment={
                 'BACKUP_BUCKET_NAME': self.backup_bucket.bucket_name,
                 'USER_POOL_ID': self.user_pool_id,
-                **parent_stack.common_env_vars,
+                **(getattr(parent_stack, 'common_env_vars', {})),
             },
         )
 

@@ -5,6 +5,7 @@ This module tests the CognitoUserBackup construct to ensure it creates all neces
 resources with proper configuration, including the S3 bucket, Lambda function,
 EventBridge rule, CloudWatch alarm, and backup plan.
 """
+
 import json
 from unittest import TestCase
 
@@ -18,7 +19,6 @@ from aws_cdk.aws_kms import Key
 from aws_cdk.aws_lambda import CfnFunction
 from aws_cdk.aws_s3 import CfnBucket
 from aws_cdk.aws_sns import Topic
-
 from common_constructs.access_logs_bucket import AccessLogsBucket
 from common_constructs.cognito_user_backup import CognitoUserBackup
 from stacks.backup_infrastructure_stack import BackupInfrastructureStack
@@ -29,35 +29,42 @@ class TestCognitoUserBackup(TestCase):
         """Set up test infrastructure."""
         self.app = App()
         self.stack = Stack(self.app, 'TestStack')
-        
+
         # Create required dependencies
         self.encryption_key = Key(self.stack, 'TestKey')
         self.alarm_topic = Topic(self.stack, 'AlarmTopic', master_key=self.encryption_key)
-        self.access_logs_bucket = AccessLogsBucket(
-            self.stack, 'AccessLogsBucket', 
-            encryption_key=self.encryption_key,
-            removal_policy=RemovalPolicy.DESTROY
-        )
-        
+        self.access_logs_bucket = AccessLogsBucket(self.stack, 'AccessLogsBucket', removal_policy=RemovalPolicy.DESTROY)
+
+        # Mock backup infrastructure components
+        self.mock_backup_config = {
+            'backup_account_id': '123456789012',
+            'backup_region': 'us-east-1',
+            'general_vault_name': 'test-general-vault',
+            'ssn_vault_name': 'test-ssn-vault',
+        }
+
         # Create backup infrastructure stack for dependencies
         self.backup_infrastructure_stack = BackupInfrastructureStack(
-            self.stack, 'BackupInfrastructure',
-            encryption_key=self.encryption_key,
-            removal_policy=RemovalPolicy.DESTROY
+            self.stack,
+            'BackupInfrastructure',
+            environment_name='test',
+            backup_config=self.mock_backup_config,
+            alarm_topic=self.alarm_topic,
+            removal_policy=RemovalPolicy.DESTROY,
         )
-        
+
         # Test environment context
         self.environment_context = {
             'backup_policies': {
                 'export_data': {
                     'backup_vault_name': 'test-vault',
                     'delete_after_days': 365,
-                    'transition_to_cold_storage_after_days': 30,
-                    'schedule': 'cron(0 2 * * ? *)'
+                    'cold_storage_after_days': 30,
+                    'schedule': 'cron(0 2 * * ? *)',
                 }
             }
         }
-        
+
         # Create the construct under test
         self.cognito_backup = CognitoUserBackup(
             self.stack,
@@ -70,7 +77,7 @@ class TestCognitoUserBackup(TestCase):
             environment_context=self.environment_context,
             alarm_topic=self.alarm_topic,
         )
-        
+
         self.template = Template.from_stack(self.stack)
 
     def test_creates_s3_backup_bucket(self):
@@ -87,9 +94,9 @@ class TestCognitoUserBackup(TestCase):
                                 'KMSMasterKeyID': {
                                     'Fn::GetAtt': [
                                         self.stack.get_logical_id(self.encryption_key.node.default_child),
-                                        'Arn'
+                                        'Arn',
                                     ]
-                                }
+                                },
                             }
                         }
                     ]
@@ -104,8 +111,8 @@ class TestCognitoUserBackup(TestCase):
                     'BlockPublicPolicy': True,
                     'IgnorePublicAcls': True,
                     'RestrictPublicBuckets': True,
-                }
-            }
+                },
+            },
         )
 
     def test_creates_lambda_function(self):
@@ -118,18 +125,18 @@ class TestCognitoUserBackup(TestCase):
                     'Handler': 'handlers.cognito_backup.backup_handler',
                     'Description': 'Export user pool data for backup purposes',
                 }
-            }
+            },
         )
-        self.assertEqual(len(lambda_functions), 1, "Should have exactly one Cognito backup Lambda function")
-        
+        self.assertEqual(len(lambda_functions), 1, 'Should have exactly one Cognito backup Lambda function')
+
         lambda_logical_id = list(lambda_functions.keys())[0]
         lambda_props = lambda_functions[lambda_logical_id]['Properties']
-        
+
         # Verify function configuration
         self.assertEqual(lambda_props['Runtime'], 'python3.12')
         self.assertEqual(lambda_props['Timeout'], 900)  # 15 minutes
         self.assertEqual(lambda_props['MemorySize'], 512)
-        
+
         # Verify environment variables
         env_vars = lambda_props['Environment']['Variables']
         self.assertIn('BACKUP_BUCKET_NAME', env_vars)
@@ -144,21 +151,22 @@ class TestCognitoUserBackup(TestCase):
             {
                 'Properties': {
                     'PolicyDocument': {
-                        'Statement': Match.array_with([
-                            Match.object_like({
-                                'Effect': 'Allow',
-                                'Action': [
-                                    'cognito-idp:ListUsers',
-                                    'cognito-idp:DescribeUserPool'
-                                ],
-                                'Resource': 'arn:aws:cognito-idp:*:*:userpool/us-east-1_TestPool123'
-                            })
-                        ])
+                        'Statement': Match.array_with(
+                            [
+                                Match.object_like(
+                                    {
+                                        'Effect': 'Allow',
+                                        'Action': ['cognito-idp:ListUsers', 'cognito-idp:DescribeUserPool'],
+                                        'Resource': 'arn:aws:cognito-idp:*:*:userpool/us-east-1_TestPool123',
+                                    }
+                                )
+                            ]
+                        )
                     }
                 }
-            }
+            },
         )
-        self.assertGreaterEqual(len(cognito_policies), 1, "Should have IAM policy for Cognito access")
+        self.assertGreaterEqual(len(cognito_policies), 1, 'Should have IAM policy for Cognito access')
 
         # Should have policies for S3 access
         s3_policies = self.template.find_resources(
@@ -166,16 +174,16 @@ class TestCognitoUserBackup(TestCase):
             {
                 'Properties': {
                     'PolicyDocument': {
-                        'Statement': Match.array_with([
-                            Match.object_like({
-                                'Effect': 'Allow',
-                                'Action': Match.any_value(),
-                                'Resource': Match.any_value()
-                            })
-                        ])
+                        'Statement': Match.array_with(
+                            [
+                                Match.object_like(
+                                    {'Effect': 'Allow', 'Action': Match.any_value(), 'Resource': Match.any_value()}
+                                )
+                            ]
+                        )
                     }
                 }
-            }
+            },
         )
         # Should have at least one policy with S3 actions
         found_s3_policy = False
@@ -186,7 +194,7 @@ class TestCognitoUserBackup(TestCase):
                     break
             if found_s3_policy:
                 break
-        self.assertTrue(found_s3_policy, "Should have IAM policy for S3 access")
+        self.assertTrue(found_s3_policy, 'Should have IAM policy for S3 access')
 
     def test_creates_eventbridge_rule(self):
         """Test that the EventBridge rule is created for daily scheduling."""
@@ -197,23 +205,23 @@ class TestCognitoUserBackup(TestCase):
                 'Properties': {
                     'Description': 'Daily schedule for user pool backup export',
                     'ScheduleExpression': 'cron(0 2 * * ? *)',  # 2 AM UTC daily
-                    'State': 'ENABLED'
+                    'State': 'ENABLED',
                 }
-            }
+            },
         )
-        self.assertEqual(len(rules), 1, "Should have exactly one EventBridge rule")
-        
+        self.assertEqual(len(rules), 1, 'Should have exactly one EventBridge rule')
+
         rule_props = list(rules.values())[0]['Properties']
-        
+
         # Verify the rule targets the Lambda function
         self.assertIn('Targets', rule_props)
         targets = rule_props['Targets']
-        self.assertEqual(len(targets), 1, "Rule should have exactly one target")
-        
+        self.assertEqual(len(targets), 1, 'Rule should have exactly one target')
+
         target = targets[0]
         self.assertIn('Arn', target)
         self.assertIn('Input', target)
-        
+
         # Verify the input contains required parameters
         input_json = json.loads(target['Input'])
         self.assertEqual(input_json['user_pool_id'], 'us-east-1_TestPool123')
@@ -222,7 +230,7 @@ class TestCognitoUserBackup(TestCase):
     def test_creates_cloudwatch_alarm(self):
         """Test that the CloudWatch alarm is created with proper configuration."""
         alarm_topic_logical_id = self.stack.get_logical_id(self.alarm_topic.node.default_child)
-        
+
         # Find CloudWatch alarms
         alarms = self.template.find_resources(
             CfnAlarm.CFN_RESOURCE_TYPE_NAME,
@@ -232,20 +240,20 @@ class TestCognitoUserBackup(TestCase):
                     'ComparisonOperator': 'GreaterThanOrEqualToThreshold',
                     'Threshold': 1,
                     'EvaluationPeriods': 1,
-                    'TreatMissingData': 'notBreaching'
+                    'TreatMissingData': 'notBreaching',
                 }
-            }
+            },
         )
-        self.assertEqual(len(alarms), 1, "Should have exactly one CloudWatch alarm")
-        
+        self.assertEqual(len(alarms), 1, 'Should have exactly one CloudWatch alarm')
+
         alarm_props = list(alarms.values())[0]['Properties']
-        
+
         # Verify the alarm targets the SNS topic
         self.assertIn('AlarmActions', alarm_props)
         alarm_actions = alarm_props['AlarmActions']
-        self.assertEqual(len(alarm_actions), 1, "Alarm should have exactly one action")
+        self.assertEqual(len(alarm_actions), 1, 'Alarm should have exactly one action')
         self.assertEqual(alarm_actions[0]['Ref'], alarm_topic_logical_id)
-        
+
         # Verify metric configuration
         self.assertEqual(alarm_props['Namespace'], 'AWS/Lambda')
         self.assertEqual(alarm_props['MetricName'], 'Errors')
@@ -255,15 +263,9 @@ class TestCognitoUserBackup(TestCase):
         # Should create a backup plan
         backup_plans = self.template.find_resources(
             CfnBackupPlan.CFN_RESOURCE_TYPE_NAME,
-            {
-                'Properties': {
-                    'BackupPlan': {
-                        'BackupPlanName': Match.string_like_regexp('.*-cognito-backup')
-                    }
-                }
-            }
+            {'Properties': {'BackupPlan': {'BackupPlanName': Match.string_like_regexp('.*-cognito-backup')}}},
         )
-        self.assertGreaterEqual(len(backup_plans), 1, "Should have at least one backup plan")
+        self.assertGreaterEqual(len(backup_plans), 1, 'Should have at least one backup plan')
 
         # Should create a backup selection
         backup_selections = self.template.find_resources(
@@ -273,14 +275,12 @@ class TestCognitoUserBackup(TestCase):
                     'BackupSelection': {
                         'SelectionName': Match.any_value(),
                         'IamRoleArn': Match.any_value(),
-                        'Resources': Match.array_with([
-                            Match.string_like_regexp('.*')
-                        ])
+                        'Resources': Match.array_with([Match.string_like_regexp('.*')]),
                     }
                 }
-            }
+            },
         )
-        self.assertGreaterEqual(len(backup_selections), 1, "Should have at least one backup selection")
+        self.assertGreaterEqual(len(backup_selections), 1, 'Should have at least one backup selection')
 
     def test_alarm_topic_is_required(self):
         """Test that alarm_topic is a required parameter."""
@@ -321,9 +321,9 @@ class TestCognitoUserBackup(TestCase):
             environment_context=self.environment_context,
             alarm_topic=self.alarm_topic,
         )
-        
+
         template = Template.from_stack(self.stack)
-        
+
         # Should have 2 Lambda functions
         lambda_functions = template.find_resources(
             CfnFunction.CFN_RESOURCE_TYPE_NAME,
@@ -332,14 +332,14 @@ class TestCognitoUserBackup(TestCase):
                     'Handler': 'handlers.cognito_backup.backup_handler',
                     'Description': 'Export user pool data for backup purposes',
                 }
-            }
+            },
         )
-        self.assertEqual(len(lambda_functions), 2, "Should have two Lambda functions for two constructs")
-        
+        self.assertEqual(len(lambda_functions), 2, 'Should have two Lambda functions for two constructs')
+
         # Should have 2 S3 buckets (plus access logs bucket)
         buckets = template.find_resources(CfnBucket.CFN_RESOURCE_TYPE_NAME)
-        self.assertGreaterEqual(len(buckets), 3, "Should have at least 3 buckets (2 backup + 1 access logs)")
-        
+        self.assertGreaterEqual(len(buckets), 3, 'Should have at least 3 buckets (2 backup + 1 access logs)')
+
         # Should have 2 CloudWatch alarms
         alarms = template.find_resources(
             CfnAlarm.CFN_RESOURCE_TYPE_NAME,
@@ -347,6 +347,6 @@ class TestCognitoUserBackup(TestCase):
                 'Properties': {
                     'AlarmDescription': 'User pool backup export Lambda has failed. User data backup may be incomplete.',
                 }
-            }
+            },
         )
-        self.assertEqual(len(alarms), 2, "Should have two CloudWatch alarms for two constructs")
+        self.assertEqual(len(alarms), 2, 'Should have two CloudWatch alarms for two constructs')
