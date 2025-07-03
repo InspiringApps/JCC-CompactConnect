@@ -115,9 +115,13 @@ class BasePipelineStack(Stack):
         env: Environment,
         removal_policy: RemovalPolicy,
         pipeline_access_logs_bucket: IBucket,
+        active_region: bool = True,
         **kwargs,
     ):
         super().__init__(scope, construct_id, environment_name='pipeline', env=env, **kwargs)
+
+        # Set active region context before creating any child constructs
+        self.node.set_context('active_region', active_region)
 
         self.env = env
         self.environment_name = environment_name
@@ -205,6 +209,7 @@ class BaseBackendPipelineStack(BasePipelineStack):
         env: Environment,
         removal_policy: RemovalPolicy,
         pipeline_access_logs_bucket: IBucket,
+        active_region: bool = True,
         **kwargs,
     ):
         super().__init__(
@@ -214,6 +219,7 @@ class BaseBackendPipelineStack(BasePipelineStack):
             env=env,
             removal_policy=removal_policy,
             pipeline_access_logs_bucket=pipeline_access_logs_bucket,
+            active_region=active_region,
             **kwargs,
         )
 
@@ -321,6 +327,7 @@ class BaseFrontendPipelineStack(BasePipelineStack):
         env: Environment,
         removal_policy: RemovalPolicy,
         pipeline_access_logs_bucket: IBucket,
+        active_region: bool = True,
         **kwargs,
     ):
         super().__init__(
@@ -330,6 +337,7 @@ class BaseFrontendPipelineStack(BasePipelineStack):
             env=env,
             removal_policy=removal_policy,
             pipeline_access_logs_bucket=pipeline_access_logs_bucket,
+            active_region=active_region,
             **kwargs,
         )
 
@@ -376,6 +384,7 @@ class TestBackendPipelineStack(BaseBackendPipelineStack):
         pipeline_alarm_topic: ITopic,
         pipeline_access_logs_bucket: IBucket,
         cdk_path: str,
+        active_region: bool = True,
         **kwargs,
     ):
         super().__init__(
@@ -384,6 +393,7 @@ class TestBackendPipelineStack(BaseBackendPipelineStack):
             environment_name=TEST_ENVIRONMENT_NAME,
             removal_policy=RemovalPolicy.DESTROY,
             pipeline_access_logs_bucket=pipeline_access_logs_bucket,
+            active_region=active_region,
             **kwargs,
         )
 
@@ -438,6 +448,7 @@ class TestFrontendPipelineStack(BaseFrontendPipelineStack):
         pipeline_alarm_topic: ITopic,
         pipeline_access_logs_bucket: IBucket,
         cdk_path: str,
+        active_region: bool = True,
         **kwargs,
     ):
         super().__init__(
@@ -446,6 +457,7 @@ class TestFrontendPipelineStack(BaseFrontendPipelineStack):
             environment_name=TEST_ENVIRONMENT_NAME,
             removal_policy=RemovalPolicy.DESTROY,
             pipeline_access_logs_bucket=pipeline_access_logs_bucket,
+            active_region=active_region,
             **kwargs,
         )
 
@@ -604,6 +616,7 @@ class ProdBackendPipelineStack(BaseBackendPipelineStack):
         pipeline_alarm_topic: ITopic,
         pipeline_access_logs_bucket: IBucket,
         cdk_path: str,
+        active_region: bool = True,
         **kwargs,
     ):
         super().__init__(
@@ -612,6 +625,7 @@ class ProdBackendPipelineStack(BaseBackendPipelineStack):
             environment_name=PROD_ENVIRONMENT_NAME,
             removal_policy=RemovalPolicy.RETAIN,
             pipeline_access_logs_bucket=pipeline_access_logs_bucket,
+            active_region=active_region,
             **kwargs,
         )
 
@@ -663,6 +677,7 @@ class ProdFrontendPipelineStack(BaseFrontendPipelineStack):
         pipeline_alarm_topic: ITopic,
         pipeline_access_logs_bucket: IBucket,
         cdk_path: str,
+        active_region: bool = True,
         **kwargs,
     ):
         super().__init__(
@@ -671,6 +686,7 @@ class ProdFrontendPipelineStack(BaseFrontendPipelineStack):
             environment_name=PROD_ENVIRONMENT_NAME,
             removal_policy=RemovalPolicy.RETAIN,
             pipeline_access_logs_bucket=pipeline_access_logs_bucket,
+            active_region=active_region,
             **kwargs,
         )
 

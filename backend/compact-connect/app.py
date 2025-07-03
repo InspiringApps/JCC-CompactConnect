@@ -172,6 +172,7 @@ class CompactConnectApp(App):
             env=self.environment,
             standard_tags=StandardTags(**self.tags, environment='pipeline'),
             cdk_path=CDK_PATH,
+            active_region=True
         )
         return self.test_backend_pipeline_stack
 
@@ -186,6 +187,7 @@ class CompactConnectApp(App):
             env=self.environment,
             standard_tags=StandardTags(**self.tags, environment='pipeline'),
             cdk_path=CDK_PATH,
+            active_region=True
         )
         return self.test_frontend_pipeline_stack
 
@@ -228,6 +230,7 @@ class CompactConnectApp(App):
             env=self.environment,
             standard_tags=StandardTags(**self.tags, environment='pipeline'),
             cdk_path=CDK_PATH,
+            active_region=True
         )
         return self.prod_backend_pipeline_stack
 
@@ -242,6 +245,7 @@ class CompactConnectApp(App):
             env=self.environment,
             standard_tags=StandardTags(**self.tags, environment='pipeline'),
             cdk_path=CDK_PATH,
+            active_region=True
         )
         return self.prod_frontend_pipeline_stack
 
