@@ -24,6 +24,16 @@ class AlarmTopic(Topic):
         self._configure_cloudwatch_principal(master_key)
         self._configure_s3_principal(master_key)
 
+        # Configure subscriptions based on region status
+        active_region = scope.node.try_get_context('active_region') or True
+        if active_region:
+            self._configure_subscriptions(email_subscriptions, slack_subscriptions)
+        else:
+            # In standby regions, create topic but don't add subscriptions
+            self.slack_channel_integrations = {}
+
+    def _configure_subscriptions(self, email_subscriptions: list[str], slack_subscriptions: list[dict]):
+        """Configure SNS subscriptions - only called for active regions"""
         for email in email_subscriptions:
             self.add_subscription(EmailSubscription(email))
 

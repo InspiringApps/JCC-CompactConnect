@@ -38,6 +38,7 @@ class PythonFunction(CdkPythonFunction):
             'timeout': Duration.seconds(28),
         }
         defaults.update(kwargs)
+        active_region = scope.node.try_get_context('active_region') or True
 
         super().__init__(
             scope,
@@ -46,6 +47,8 @@ class PythonFunction(CdkPythonFunction):
             runtime=Runtime.PYTHON_3_12,
             log_retention=log_retention,
             role=role,
+            # throttle the lambdas if not in active region
+            reserved_concurrent_executions=None if active_region else 0,
             **defaults,
         )
         self.add_layers(self._get_common_layer())

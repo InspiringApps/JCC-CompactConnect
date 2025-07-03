@@ -33,6 +33,8 @@ class NodejsFunction(CdkNodejsFunction):
         nodejs_dir = os.path.join('lambdas', 'nodejs')
         lambda_dir = os.path.join(nodejs_dir, lambda_dir)
 
+        active_region = scope.node.try_get_context('active_region') or True
+
         super().__init__(
             scope,
             construct_id,
@@ -46,6 +48,8 @@ class NodejsFunction(CdkNodejsFunction):
                 force_docker_bundling=True,
             ),
             log_retention=log_retention,
+            # throttle the lambdas if not in active region
+            reserved_concurrent_executions=None if active_region else 0,
             **defaults,
         )
         if alarm_topic is not None:
