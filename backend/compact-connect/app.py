@@ -30,6 +30,9 @@ DEPLOYMENT_RESOURCES_STACK = 'DeploymentResourcesStack'
 # CDK path
 CDK_PATH = 'backend/compact-connect'
 
+PRIMARY_REGION = 'us-east-1'
+SECONDARY_REGION = 'us-west-2'
+
 
 class CompactConnectApp(App):
     """
@@ -137,20 +140,41 @@ class CompactConnectApp(App):
 
     def add_all_pipeline_stacks(self):
         """
-        add all pipeline stacks for deployment
+        Add pipeline stacks based on current region - ensures each region only manages its own pipelines
 
-        This is needed so that permissions set by the DeploymentResourcesStack are properly added for the pipeline
-        stack resources in every environment.
+        This method implements region-based conditional synthesis to support disaster recovery:
+        - Primary region (us-east-1): Deploys primary pipeline stacks (including beta) in active mode
+        - Secondary region (us-west-2): Deploys secondary pipeline stacks (test and prod only) in standby mode
+
+        Each region manages only its own pipeline infrastructure, enabling true disaster recovery
+        where secondary pipelines remain operational even if primary region experiences outages.
         """
         # This stack must be declared first, as all other pipeline stacks depend on it.
         self.add_deployment_resources_stack()
 
-        self.add_test_backend_pipeline_stack()
-        self.add_test_frontend_pipeline_stack()
-        self.add_beta_backend_pipeline_stack()
-        self.add_beta_frontend_pipeline_stack()
-        self.add_prod_backend_pipeline_stack()
-        self.add_prod_frontend_pipeline_stack()
+        current_region = self.environment.region
+
+        if current_region == PRIMARY_REGION:
+            test_primary_region_is_active = True
+            prod_primary_region_is_active = True
+            # Primary region - deploy primary pipeline stacks that manage primary environments
+            self.add_test_backend_pipeline_stack(active_region=test_primary_region_is_active)
+            self.add_test_frontend_pipeline_stack(active_region=test_primary_region_is_active)
+            self.add_beta_backend_pipeline_stack()  # Beta only exists in primary region
+            self.add_beta_frontend_pipeline_stack()  # Beta only exists in primary region
+            self.add_prod_backend_pipeline_stack(active_region=prod_primary_region_is_active)
+            self.add_prod_frontend_pipeline_stack(active_region=prod_primary_region_is_active)
+        elif current_region == SECONDARY_REGION:
+            test_secondary_region_is_active = False
+            prod_secondary_region_is_active = False
+            # Secondary region - deploy secondary pipeline stacks (test and prod only)
+            # These pipelines deploy from us-west-2 for disaster recovery purposes
+            self.add_test_backend_pipeline_stack(active_region=test_secondary_region_is_active)
+            self.add_test_frontend_pipeline_stack(active_region=test_secondary_region_is_active)
+            self.add_prod_backend_pipeline_stack(active_region=prod_secondary_region_is_active)
+            self.add_prod_frontend_pipeline_stack(active_region=prod_secondary_region_is_active)
+        else:
+            raise ValueError(f'Unsupported region for pipeline deployment: {current_region}')
 
     def add_deployment_resources_stack(self):
         """add the deployment resources stack"""
@@ -161,7 +185,7 @@ class CompactConnectApp(App):
             standard_tags=StandardTags(**self.tags, environment='deploy'),
         )
 
-    def add_test_backend_pipeline_stack(self):
+    def add_test_backend_pipeline_stack(self, active_region: bool):
         """add and return the Test Backend Pipeline Stack"""
         self.test_backend_pipeline_stack = TestBackendPipelineStack(
             self,
@@ -172,11 +196,11 @@ class CompactConnectApp(App):
             env=self.environment,
             standard_tags=StandardTags(**self.tags, environment='pipeline'),
             cdk_path=CDK_PATH,
-            active_region=True
+            active_region=active_region,
         )
         return self.test_backend_pipeline_stack
 
-    def add_test_frontend_pipeline_stack(self):
+    def add_test_frontend_pipeline_stack(self, active_region: bool):
         """add and return the Test Frontend Pipeline Stack"""
         self.test_frontend_pipeline_stack = TestFrontendPipelineStack(
             self,
@@ -187,7 +211,7 @@ class CompactConnectApp(App):
             env=self.environment,
             standard_tags=StandardTags(**self.tags, environment='pipeline'),
             cdk_path=CDK_PATH,
-            active_region=True
+            active_region=active_region,
         )
         return self.test_frontend_pipeline_stack
 
@@ -219,7 +243,7 @@ class CompactConnectApp(App):
         )
         return self.beta_frontend_pipeline_stack
 
-    def add_prod_backend_pipeline_stack(self):
+    def add_prod_backend_pipeline_stack(self, active_region: bool):
         """add and return the Production Backend Pipeline Stack"""
         self.prod_backend_pipeline_stack = ProdBackendPipelineStack(
             self,
@@ -230,11 +254,11 @@ class CompactConnectApp(App):
             env=self.environment,
             standard_tags=StandardTags(**self.tags, environment='pipeline'),
             cdk_path=CDK_PATH,
-            active_region=True
+            active_region=active_region,
         )
         return self.prod_backend_pipeline_stack
 
-    def add_prod_frontend_pipeline_stack(self):
+    def add_prod_frontend_pipeline_stack(self, active_region: bool):
         """add and return the Production Frontend Pipeline Stack"""
         self.prod_frontend_pipeline_stack = ProdFrontendPipelineStack(
             self,
@@ -245,7 +269,7 @@ class CompactConnectApp(App):
             env=self.environment,
             standard_tags=StandardTags(**self.tags, environment='pipeline'),
             cdk_path=CDK_PATH,
-            active_region=True
+            active_region=active_region,
         )
         return self.prod_frontend_pipeline_stack
 
