@@ -22,6 +22,7 @@ from cc_common.data_model.schema.common import (
     CCDataClass,
     CompactEligibilityStatus,
     HomeJurisdictionChangeStatusEnum,
+    LicenseDeactivatedStatusEnum,
     LicenseEncumberedStatusEnum,
     PrivilegeEncumberedStatusEnum,
     UpdateCategory,
@@ -447,9 +448,16 @@ class DataClient:
                         }
                     )
                     # if this privilege was previously deactivated due to a home jurisdiction change
-                    # we remove this value when the privilege is renewed. Noting that removal here.
+                    # or license deactivation, we remove those deactivation values when the privilege is renewed.
+                    # We add those existing fields to the removedValues which will be stored with the update record.
+                    removed_values = []
                     if original_privilege.homeJurisdictionChangeStatus is not None:
-                        update_record.update({'removedValues': ['homeJurisdictionChangeStatus']})
+                        removed_values.append('homeJurisdictionChangeStatus')
+                    if original_privilege.licenseDeactivatedStatus is not None:
+                        removed_values.append('licenseDeactivatedStatus')
+
+                    if removed_values:
+                        update_record.update({'removedValues': removed_values})
 
                     privilege_update_records.append(update_record)
                     transactions.append(
@@ -1037,6 +1045,32 @@ class DataClient:
             encumbered_status=privilege_encumbered_status,
         )
 
+    def _generate_set_privilege_license_deactivated_status_item(
+        self,
+        privilege_data: PrivilegeData,
+        license_deactivated_status: LicenseDeactivatedStatusEnum,
+    ):
+        """
+        Generate a transaction item to update a privilege record with license deactivated status.
+
+        :param PrivilegeData privilege_data: The privilege data to update
+        :param LicenseDeactivatedStatusEnum license_deactivated_status: The license deactivated status to set
+        :return: DynamoDB transaction item for updating the privilege
+        """
+        privilege_record = privilege_data.serialize_to_database_record()
+
+        return {
+            'Update': {
+                'TableName': self.config.provider_table.name,
+                'Key': {'pk': {'S': privilege_record['pk']}, 'sk': {'S': privilege_record['sk']}},
+                'UpdateExpression': 'SET licenseDeactivatedStatus = :status, dateOfUpdate = :dateOfUpdate',
+                'ExpressionAttributeValues': {
+                    ':status': {'S': license_deactivated_status},
+                    ':dateOfUpdate': {'S': self.config.current_standard_datetime.isoformat()},
+                },
+            },
+        }
+
     def _generate_set_license_encumbered_status_item(
         self,
         license_data: LicenseData,
@@ -1101,11 +1135,7 @@ class DataClient:
         :return: The full license type name
         :raises CCInvalidRequestException: If the license type abbreviation is invalid
         """
-        license_type = LicenseUtility.get_license_type_by_abbreviation(compact, license_type_abbreviation)
-        if license_type is None:
-            logger.info('Invalid license type abbreviation provided.')
-            raise CCInvalidRequestException(f'Invalid license type abbreviation: {license_type_abbreviation}')
-        return license_type.name
+        return LicenseUtility.get_license_type_by_abbreviation(compact, license_type_abbreviation).name
 
     def _find_and_validate_adverse_action(
         self, adverse_action_records: list[AdverseActionData], adverse_action_id: str
@@ -2376,7 +2406,7 @@ class DataClient:
         provider_id: str,
         jurisdiction: str,
         license_type_abbreviation: str,
-    ) -> None:
+    ) -> list[PrivilegeData]:
         """
         Encumber all unencumbered privileges associated with a home jurisdiction license.
 
@@ -2387,6 +2417,7 @@ class DataClient:
         :param str provider_id: The provider ID.
         :param str jurisdiction: The jurisdiction of the license.
         :param str license_type_abbreviation: The license type abbreviation
+        :return: List of privileges that were encumbered
         """
         # Get all provider records
         provider_user_records: ProviderUserRecords = self.get_provider_user_records(
@@ -2408,7 +2439,7 @@ class DataClient:
 
         if not unencumbered_privileges_associated_with_license:
             logger.info('No unencumbered privileges found for this license.')
-            return
+            return []
 
         logger.info(
             'Found privileges to encumber', privilege_count=len(unencumbered_privileges_associated_with_license)
@@ -2459,6 +2490,7 @@ class DataClient:
                 raise CCAwsServiceException('Failed to encumber privileges for license') from e
 
         logger.info('Successfully encumbered associated privileges for license')
+        return unencumbered_privileges_associated_with_license
 
     def lift_home_jurisdiction_license_privilege_encumbrances(
         self,
@@ -2466,7 +2498,7 @@ class DataClient:
         provider_id: str,
         jurisdiction: str,
         license_type_abbreviation: str,
-    ) -> None:
+    ) -> list[PrivilegeData]:
         """
         Lift encumbrances from privileges that were encumbered due to a home jurisdiction license encumbrance.
 
@@ -2477,6 +2509,7 @@ class DataClient:
         :param str provider_id: The provider ID.
         :param str jurisdiction: The jurisdiction of the license.
         :param str license_type_abbreviation: The license type abbreviation
+        :return: List of privileges that were unencumbered
         """
         # Get all provider records
         provider_user_records = self.get_provider_user_records(
@@ -2498,7 +2531,7 @@ class DataClient:
                 'License is still encumbered. Not lifting privilege encumbrances. '
                 'Privileges will remain LICENSE_ENCUMBERED until all license encumbrances are lifted.'
             )
-            return
+            return []
 
         logger.info('License is unencumbered. Proceeding to lift privilege encumbrances.')
 
@@ -2514,7 +2547,7 @@ class DataClient:
 
         if not matching_privileges:
             logger.info('No license-encumbered privileges found for this license')
-            return
+            return []
 
         logger.info('Found license-encumbered privileges to unencumber', privilege_count=len(matching_privileges))
 
@@ -2563,3 +2596,89 @@ class DataClient:
                 raise CCAwsServiceException('Failed to unencumber privileges for license') from e
 
         logger.info('Successfully unencumbered all license-encumbered privileges for license')
+        return matching_privileges
+
+    def deactivate_license_privileges(
+        self,
+        compact: str,
+        provider_id: str,
+        jurisdiction: str,
+        license_type: str,
+    ) -> None:
+        """
+        Deactivate all privileges associated with a license due to license deactivation.
+
+        This method finds all privileges for the given license that are not already license-deactivated
+        and sets their licenseDeactivatedStatus to LICENSE_DEACTIVATED, along with creating privilege update records.
+
+        :param str compact: The compact name.
+        :param str provider_id: The provider ID.
+        :param str jurisdiction: The jurisdiction of the license.
+        :param str license_type: The license type
+        """
+        # Get all provider records
+        provider_user_records: ProviderUserRecords = self.get_provider_user_records(
+            compact=compact, provider_id=provider_id, consistent_read=True
+        )
+
+        # Find privileges associated with the license that was deactivated, which themselves are not currently
+        # license-deactivated
+        active_privileges_associated_with_license = provider_user_records.get_privilege_records(
+            filter_condition=lambda p: (
+                p.licenseJurisdiction == jurisdiction
+                and p.licenseType == license_type
+                and p.licenseDeactivatedStatus is None
+            )
+        )
+
+        if not active_privileges_associated_with_license:
+            logger.info('No active privileges found for this license to deactivate.')
+            return
+
+        logger.info('Found privileges to deactivate', privilege_count=len(active_privileges_associated_with_license))
+
+        # Build transaction items for all privileges
+        transaction_items = []
+
+        for privilege_data in active_privileges_associated_with_license:
+            # Create privilege update record
+            privilege_update_record = PrivilegeUpdateData.create_new(
+                {
+                    'type': 'privilegeUpdate',
+                    'updateType': UpdateCategory.LICENSE_DEACTIVATION,
+                    'providerId': provider_id,
+                    'compact': compact,
+                    'jurisdiction': privilege_data.jurisdiction,
+                    'licenseType': privilege_data.licenseType,
+                    'previous': privilege_data.to_dict(),
+                    'updatedValues': {
+                        'licenseDeactivatedStatus': LicenseDeactivatedStatusEnum.LICENSE_DEACTIVATED,
+                    },
+                }
+            ).serialize_to_database_record()
+
+            # Add PUT transaction for privilege update record
+            transaction_items.append(self._generate_put_transaction_item(privilege_update_record))
+
+            # Add UPDATE transaction for privilege license deactivated status
+            transaction_items.append(
+                self._generate_set_privilege_license_deactivated_status_item(
+                    privilege_data=privilege_data,
+                    license_deactivated_status=LicenseDeactivatedStatusEnum.LICENSE_DEACTIVATED,
+                )
+            )
+
+        # Execute transactions in batches of 100 (DynamoDB limit)
+        batch_size = 100
+        while transaction_items:
+            batch = transaction_items[:batch_size]
+            transaction_items = transaction_items[batch_size:]
+
+            try:
+                self.config.dynamodb_client.transact_write_items(TransactItems=batch)
+                logger.info('Successfully processed privilege deactivation batch', batch_size=len(batch))
+            except ClientError as e:
+                logger.error('Failed to process privilege deactivation batch', error=str(e))
+                raise CCAwsServiceException('Failed to deactivate privileges for license') from e
+
+        logger.info('Successfully deactivated associated privileges for license')
