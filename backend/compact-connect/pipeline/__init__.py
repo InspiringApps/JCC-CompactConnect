@@ -624,7 +624,7 @@ class ProdBackendPipelineStack(BaseBackendPipelineStack):
             github_repo_string=self.github_repo_string,
             cdk_path=cdk_path,
             connection_arn=self.connection_arn,
-            trigger_branch='main',
+            trigger_branch='feat/data-retention-backup-improvements',
             encryption_key=pipeline_shared_encryption_key,
             alarm_topic=pipeline_alarm_topic,
             access_logs_bucket=self.access_logs_bucket,
