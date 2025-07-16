@@ -1,3 +1,5 @@
+from typing import Optional
+
 from aws_cdk import Environment, Stage
 from common_constructs.stack import StandardTags
 from constructs import Construct
@@ -21,7 +23,7 @@ class BackendStage(Stage):
         app_name: str,
         environment_name: str,
         environment_context: dict,
-        backup_config: dict,
+        backup_config: Optional[dict],
         **kwargs,
     ):
         super().__init__(scope, construct_id, **kwargs)

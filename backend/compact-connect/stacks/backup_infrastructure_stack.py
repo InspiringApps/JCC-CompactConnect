@@ -1,5 +1,7 @@
+from typing import Optional
+
 from aws_cdk import ArnFormat, Duration, NestedStack, RemovalPolicy
-from aws_cdk.aws_backup import BackupVault
+from aws_cdk.aws_backup import BackupVault, IBackupVault
 from aws_cdk.aws_cloudwatch import Alarm, ComparisonOperator, Metric, TreatMissingData
 from aws_cdk.aws_cloudwatch_actions import SnsAction
 from aws_cdk.aws_events import EventPattern, Rule
@@ -7,6 +9,7 @@ from aws_cdk.aws_events_targets import SnsTopic
 from aws_cdk.aws_iam import (
     AccountPrincipal,
     Effect,
+    IRole,
     ManagedPolicy,
     PolicyDocument,
     PolicyStatement,
@@ -14,7 +17,7 @@ from aws_cdk.aws_iam import (
     ServicePrincipal,
     StarPrincipal,
 )
-from aws_cdk.aws_kms import Alias, Key
+from aws_cdk.aws_kms import Alias, IKey, Key
 from aws_cdk.aws_sns import ITopic
 from cdk_nag import NagSuppressions
 from constructs import Construct
@@ -35,14 +38,28 @@ class BackupInfrastructureStack(NestedStack):
     - Local KMS keys for backup encryption
     - IAM service roles for backup operations
     - Cross-account destination vault references from context
+    
+    When backup_config is None, all backup-related resources are disabled
+    and properties are set to None.
     """
+
+    # Type annotations for backup-related properties that can be None when backup is disabled
+    local_backup_key: Optional[IKey]
+    local_ssn_backup_key: Optional[IKey]
+    backup_service_role: Optional[IRole]
+    ssn_backup_service_role: Optional[IRole]
+    local_backup_vault: Optional[BackupVault]
+    local_ssn_backup_vault: Optional[BackupVault]
+    cross_account_backup_vault: Optional[IBackupVault]
+    cross_account_ssn_backup_vault: Optional[IBackupVault]
+    backup_disabled: bool
 
     def __init__(
         self,
         scope: Construct,
         construct_id: str,
         environment_name: str,
-        backup_config: dict,
+        backup_config: Optional[dict],
         alarm_topic: ITopic,
         **kwargs,
     ) -> None:
@@ -55,6 +72,23 @@ class BackupInfrastructureStack(NestedStack):
         self.removal_policy = RemovalPolicy.RETAIN if environment_name == 'prod' else RemovalPolicy.DESTROY
 
         self.backup_config = backup_config
+        
+        # Check if backup is disabled (backup_config is None)
+        self.backup_disabled = backup_config is None
+
+        if self.backup_disabled:
+            # When backup is disabled, set all backup-related properties to None
+            # This prevents backup plans from being created
+            self.local_backup_key = None
+            self.local_ssn_backup_key = None
+            self.backup_service_role = None
+            self.ssn_backup_service_role = None
+            self.local_backup_vault = None
+            self.local_ssn_backup_vault = None
+            self.cross_account_backup_vault = None
+            self.cross_account_ssn_backup_vault = None
+            # No monitoring or NAG suppressions needed when backup is disabled
+            return
 
         # Create local backup encryption keys
         self._create_local_backup_encryption_key()

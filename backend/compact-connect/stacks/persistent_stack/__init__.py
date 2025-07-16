@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 
 from aws_cdk import Duration, RemovalPolicy, aws_ssm
 from aws_cdk.aws_cognito import SignInAliases, UserPoolEmail
@@ -51,7 +52,7 @@ class PersistentStack(AppStack):
         app_name: str,
         environment_name: str,
         environment_context: dict,
-        backup_config: dict,
+        backup_config: Optional[dict],
         **kwargs,
     ) -> None:
         super().__init__(

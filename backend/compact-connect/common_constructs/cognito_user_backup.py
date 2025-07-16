@@ -93,44 +93,50 @@ class CognitoUserBackup(Construct):
             versioned=False,  # Versioning is redundant with backup plan
         )
 
-        NagSuppressions.add_resource_suppressions(
-            self.bucket,
-            suppressions=[
-                {
-                    'id': 'HIPAA.Security-S3BucketVersioningEnabled',
-                    'reason': 'This bucket has recovery points saved by AWS Backup, so versioning is redundant.',
-                },
-                {
-                    'id': 'HIPAA.Security-S3BucketReplicationEnabled',
-                    'reason': 'This bucket stores Cognito user exports that are backed up to cross-account vault via '
-                    'AWS Backup. Replication is handled by backup infrastructure rather than S3 replication.',
-                },
-            ],
-        )
+        # Only add backup-related NAG suppressions if backup is enabled
+        if not backup_infrastructure_stack.backup_disabled:
+            NagSuppressions.add_resource_suppressions(
+                self.bucket,
+                suppressions=[
+                    {
+                        'id': 'HIPAA.Security-S3BucketVersioningEnabled',
+                        'reason': 'This bucket has recovery points saved by AWS Backup, so versioning is redundant.',
+                    },
+                    {
+                        'id': 'HIPAA.Security-S3BucketReplicationEnabled',
+                        'reason': 'This bucket stores Cognito user exports that are backed up to cross-account vault via '
+                        'AWS Backup. Replication is handled by backup infrastructure rather than S3 replication.',
+                    },
+                ],
+            )
 
-        # Set up backup plan using the general_data backup category
-        self.backup_plan = CCBackupPlan(
-            self.bucket,
-            'BackupPlan',
-            backup_plan_name_prefix=f'{self.bucket.bucket_name}-cognito-backup',
-            backup_resources=[BackupResource.from_arn(self.bucket.bucket_arn)],
-            backup_vault=backup_infrastructure_stack.local_backup_vault,
-            backup_service_role=backup_infrastructure_stack.backup_service_role,
-            cross_account_backup_vault=backup_infrastructure_stack.cross_account_backup_vault,
-            # We'll force a single backup policy for all Cognito user pools
-            # So that we can synchronize the backup timing with the export Lambda timing.
-            backup_policy={
-                'schedule': {
-                    'year': '*',
-                    'month': '*',
-                    'day': '*',
-                    'hour': '6',  # One hour after the export Lambda runs
-                    'minute': '0',
+        # Set up backup plan using the general_data backup category only if backup is enabled
+        if not backup_infrastructure_stack.backup_disabled:
+            self.backup_plan = CCBackupPlan(
+                self.bucket,
+                'BackupPlan',
+                backup_plan_name_prefix=f'{self.bucket.bucket_name}-cognito-backup',
+                backup_resources=[BackupResource.from_arn(self.bucket.bucket_arn)],
+                backup_vault=backup_infrastructure_stack.local_backup_vault,
+                backup_service_role=backup_infrastructure_stack.backup_service_role,
+                cross_account_backup_vault=backup_infrastructure_stack.cross_account_backup_vault,
+                # We'll force a single backup policy for all Cognito user pools
+                # So that we can synchronize the backup timing with the export Lambda timing.
+                backup_policy={
+                    'schedule': {
+                        'year': '*',
+                        'month': '*',
+                        'day': '*',
+                        'hour': '6',  # One hour after the export Lambda runs
+                        'minute': '0',
+                    },
+                    'delete_after_days': 730,
+                    'cold_storage_after_days': 30,
                 },
-                'delete_after_days': 730,
-                'cold_storage_after_days': 30,
-            },
-        )
+            )
+        else:
+            # Backup is disabled, set backup_plan to None
+            self.backup_plan = None
 
         return self.bucket
 
