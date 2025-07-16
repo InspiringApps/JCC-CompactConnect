@@ -36,7 +36,7 @@
               "hour": "5",
               "minute": "0"
             },
-            "delete_after_days": 180,
+            "delete_after_days": 121,
             "cold_storage_after_days": 30
           },
           "frequent_updates": {
@@ -47,7 +47,7 @@
               "hour": "5",
               "minute": "0"
             },
-            "delete_after_days": 180,
+            "delete_after_days": 121,
             "cold_storage_after_days": 30
           }
         }
