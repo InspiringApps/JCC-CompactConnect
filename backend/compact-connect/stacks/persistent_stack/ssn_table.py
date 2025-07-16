@@ -139,7 +139,7 @@ class SSNTable(Table):
             backup_vault=backup_infrastructure_stack.local_ssn_backup_vault,
             backup_service_role=backup_infrastructure_stack.ssn_backup_service_role,
             cross_account_backup_vault=backup_infrastructure_stack.cross_account_ssn_backup_vault,
-            backup_policy=environment_context['backup_policies']['general_data'],
+            backup_policy=environment_context.get('backup_policies', {}).get('general_data'),
         )
 
         # Store backup service role for KMS key policy configuration
@@ -192,6 +192,15 @@ class SSNTable(Table):
 
         # This explicitly blocks any principals (including account admins) from reading data
         # encrypted with this key other than our IAM roles declared here and dynamodb itself
+        allowed_principal_arns = [
+            self.ingest_role.role_arn,
+            self.license_upload_role.role_arn,
+            self.api_query_role.role_arn,
+        ]
+        # Only include backup service role if backup is enabled
+        if self.backup_service_role is not None:
+            allowed_principal_arns.append(self.backup_service_role.role_arn)
+        
         self.key.add_to_resource_policy(
             PolicyStatement(
                 effect=Effect.DENY,
@@ -200,12 +209,7 @@ class SSNTable(Table):
                 resources=['*'],
                 conditions={
                     'StringNotEquals': {
-                        'aws:PrincipalArn': [
-                            self.ingest_role.role_arn,
-                            self.license_upload_role.role_arn,
-                            self.api_query_role.role_arn,
-                            self.backup_service_role.role_arn,  # Allow SSN backup service role
-                        ],
+                        'aws:PrincipalArn': allowed_principal_arns,
                         'aws:PrincipalServiceName': ['dynamodb.amazonaws.com', 'events.amazonaws.com'],
                     }
                 },

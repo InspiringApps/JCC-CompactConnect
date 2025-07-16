@@ -23,8 +23,9 @@ class CCBackupPlan(Construct):
     AWS Backup (DynamoDB tables, S3 buckets, etc.) by accepting a list of backup resources
     and a name prefix.
     
-    When backup infrastructure is disabled (backup_vault is None), this construct will not create
-    any backup resources, allowing the application to run without backup functionality.
+    When backup infrastructure is disabled (backup_vault is None) or backup policies are not
+    available (backup_policy is None), this construct will not create any backup resources,
+    allowing the application to run without backup functionality.
     """
 
     def __init__(
@@ -37,13 +38,15 @@ class CCBackupPlan(Construct):
         backup_vault: Optional[BackupVault],
         backup_service_role: Optional[IRole],
         cross_account_backup_vault: Optional[IBackupVault],
-        backup_policy: dict,
+        backup_policy: Optional[dict],
         **kwargs,
     ):
         super().__init__(scope, construct_id, **kwargs)
 
         # Check if backup is disabled (backup infrastructure returns None for vaults/roles)
-        if backup_vault is None or backup_service_role is None or cross_account_backup_vault is None:
+        # or if backup policies are not available
+        if (backup_vault is None or backup_service_role is None or 
+            cross_account_backup_vault is None or backup_policy is None):
             # Backup is disabled - set properties to None and skip creating backup resources
             self.backup_plan = None
             self.backup_selection = None

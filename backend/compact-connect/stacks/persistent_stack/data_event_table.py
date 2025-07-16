@@ -142,5 +142,5 @@ class DataEventTable(Table):
             backup_vault=backup_infrastructure_stack.local_backup_vault,
             backup_service_role=backup_infrastructure_stack.backup_service_role,
             cross_account_backup_vault=backup_infrastructure_stack.cross_account_backup_vault,
-            backup_policy=environment_context['backup_policies']['frequent_updates'],
+            backup_policy=environment_context.get('backup_policies', {}).get('frequent_updates'),
         )
