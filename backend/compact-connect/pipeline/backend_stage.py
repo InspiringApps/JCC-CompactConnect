@@ -1,3 +1,5 @@
+from typing import Optional
+
 from aws_cdk import Environment, Stage
 from common_constructs.stack import StandardTags
 from constructs import Construct
@@ -21,6 +23,7 @@ class BackendStage(Stage):
         app_name: str,
         environment_name: str,
         environment_context: dict,
+        backup_config: Optional[dict],
         **kwargs,
     ):
         super().__init__(scope, construct_id, **kwargs)
@@ -37,7 +40,11 @@ class BackendStage(Stage):
             standard_tags=standard_tags,
             app_name=app_name,
             environment_name=environment_name,
+            backup_config=backup_config,
         )
+
+        # Backup infrastructure is now created as a nested stack within PersistentStack
+        self.backup_infrastructure_stack = self.persistent_stack.backup_infrastructure_stack
 
         self.provider_users_stack = ProviderUsersStack(
             self,

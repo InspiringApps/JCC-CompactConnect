@@ -147,6 +147,7 @@ class BasePipelineStack(Stack):
         self.pipeline_environment_context = self.ssm_context['environments']['pipeline']
         self.connection_arn = self.pipeline_environment_context['connection_arn']
         self.github_repo_string = self.ssm_context['github_repo_string']
+        self.backup_config = self.ssm_context.get('backup_config')
         self.app_name = self.ssm_context['app_name']
 
     def _add_pipeline_cdk_assume_role_policy(self, pipeline: CdkCodePipeline):
@@ -248,6 +249,7 @@ class BaseBackendPipelineStack(BasePipelineStack):
             app_name=app_name,
             environment_name=environment_name,
             environment_context=environment_context,
+            backup_config=self.backup_config,
         )
 
     def _generate_frontend_pipeline_trigger_step(self):
@@ -622,7 +624,7 @@ class ProdBackendPipelineStack(BaseBackendPipelineStack):
             github_repo_string=self.github_repo_string,
             cdk_path=cdk_path,
             connection_arn=self.connection_arn,
-            trigger_branch='main',
+            trigger_branch='feat/data-retention-backup-improvements',
             encryption_key=pipeline_shared_encryption_key,
             alarm_topic=pipeline_alarm_topic,
             access_logs_bucket=self.access_logs_bucket,
