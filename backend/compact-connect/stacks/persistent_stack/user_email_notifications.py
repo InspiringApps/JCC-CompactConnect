@@ -3,7 +3,7 @@ import os
 from aws_cdk import CustomResource, Duration
 from aws_cdk.aws_iam import PolicyStatement, ServicePrincipal
 from aws_cdk.aws_kms import IKey
-from aws_cdk.aws_logs import RetentionDays
+from aws_cdk.aws_logs import RetentionDays, LogGroup
 from aws_cdk.aws_route53 import IHostedZone, TxtRecord
 from aws_cdk.aws_ses import ConfigurationSet, EmailIdentity, EmailSendingEvent, EventDestination, Identity
 from aws_cdk.aws_sns import Subscription, SubscriptionProtocol, Topic
@@ -137,12 +137,19 @@ class UserEmailNotifications(Construct):
             ],
         )
 
+        # Create log group for the provider
+        verification_provider_log_group = LogGroup(
+            self,
+            'VerificationProviderLogGroup',
+            retention=RetentionDays.ONE_DAY,
+        )
+
         # Create a provider for the custom resource
         verification_provider = Provider(
             self,
             'VerificationProvider',
             on_event_handler=verification_function,
-            log_retention=RetentionDays.ONE_DAY,
+            log_group=verification_provider_log_group,
         )
 
         # Add suppressions for the provider

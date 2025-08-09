@@ -1,5 +1,12 @@
 from aws_cdk import RemovalPolicy
-from aws_cdk.aws_dynamodb import AttributeType, BillingMode, Table
+from aws_cdk.aws_dynamodb import (
+    Attribute,
+    AttributeType,
+    BillingMode,
+    Table,
+    TableEncryption,
+    PointInTimeRecoverySpecification,
+)
 from aws_cdk.aws_kms import IKey
 from cdk_nag import NagSuppressions
 from constructs import Construct
@@ -18,12 +25,15 @@ class RateLimitingTable(Table):
         super().__init__(
             scope,
             construct_id,
-            billing_mode=BillingMode.PAY_PER_REQUEST,
+            encryption=TableEncryption.CUSTOMER_MANAGED,
             encryption_key=encryption_key,
-            partition_key={'name': 'pk', 'type': AttributeType.STRING},
-            sort_key={'name': 'sk', 'type': AttributeType.STRING},
-            point_in_time_recovery=False,
+            billing_mode=BillingMode.PAY_PER_REQUEST,
             removal_policy=removal_policy,
+            point_in_time_recovery_specification=PointInTimeRecoverySpecification(
+                point_in_time_recovery_enabled=False
+            ),
+            partition_key=Attribute(name='pk', type=AttributeType.STRING),
+            sort_key=Attribute(name='sk', type=AttributeType.STRING),
             time_to_live_attribute='ttl',
         )
         NagSuppressions.add_resource_suppressions(
