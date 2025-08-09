@@ -6,7 +6,7 @@ from aws_cdk import Duration, Stack
 from aws_cdk.aws_cloudwatch import Alarm, ComparisonOperator, Stats, TreatMissingData
 from aws_cdk.aws_cloudwatch_actions import SnsAction
 from aws_cdk.aws_iam import IRole
-from aws_cdk.aws_lambda import ILayerVersion, Runtime
+from aws_cdk.aws_lambda import ILayerVersion, LoggingFormat, Runtime
 from aws_cdk.aws_lambda_python_alpha import PythonFunction as CdkPythonFunction
 from aws_cdk.aws_lambda_python_alpha import PythonLayerVersion
 from aws_cdk.aws_logs import LogGroup, RetentionDays
@@ -52,6 +52,7 @@ class PythonFunction(CdkPythonFunction):
             entry=os.path.join('lambdas', 'python', lambda_dir),
             runtime=Runtime.PYTHON_3_12,
             log_group=log_group,
+            logging_format=LoggingFormat.TEXT,
             role=role,
             **defaults,
         )

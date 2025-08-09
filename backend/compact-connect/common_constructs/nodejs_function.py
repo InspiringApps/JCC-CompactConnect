@@ -3,7 +3,7 @@ import os
 from aws_cdk import Duration, Stack
 from aws_cdk.aws_cloudwatch import Alarm, ComparisonOperator, Stats, TreatMissingData
 from aws_cdk.aws_cloudwatch_actions import SnsAction
-from aws_cdk.aws_lambda import Runtime
+from aws_cdk.aws_lambda import LoggingFormat, Runtime
 from aws_cdk.aws_lambda_nodejs import BundlingOptions, OutputFormat
 from aws_cdk.aws_lambda_nodejs import NodejsFunction as CdkNodejsFunction
 from aws_cdk.aws_logs import LogGroup, RetentionDays
@@ -53,6 +53,7 @@ class NodejsFunction(CdkNodejsFunction):
                 force_docker_bundling=True,
             ),
             log_group=log_group,
+            logging_format=LoggingFormat.TEXT,
             **defaults,
         )
         if alarm_topic is not None:
