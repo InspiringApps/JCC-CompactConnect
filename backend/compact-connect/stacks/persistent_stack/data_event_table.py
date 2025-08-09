@@ -10,9 +10,9 @@ from aws_cdk.aws_dynamodb import (
     Attribute,
     AttributeType,
     BillingMode,
+    PointInTimeRecoverySpecification,
     Table,
     TableEncryption,
-    PointInTimeRecoverySpecification,
 )
 from aws_cdk.aws_events import EventPattern, IEventBus, Match, Rule
 from aws_cdk.aws_events_targets import SqsQueue

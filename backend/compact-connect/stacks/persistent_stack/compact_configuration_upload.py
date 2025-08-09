@@ -4,7 +4,7 @@ import os
 import yaml
 from aws_cdk import CustomResource, Duration
 from aws_cdk.aws_kms import IKey
-from aws_cdk.aws_logs import RetentionDays, LogGroup
+from aws_cdk.aws_logs import LogGroup, RetentionDays
 from aws_cdk.custom_resources import Provider
 from cdk_nag import NagSuppressions
 from common_constructs.python_function import PythonFunction

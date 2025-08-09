@@ -3,7 +3,7 @@ import os
 from aws_cdk import CustomResource, Duration
 from aws_cdk.aws_iam import PolicyStatement, ServicePrincipal
 from aws_cdk.aws_kms import IKey
-from aws_cdk.aws_logs import RetentionDays, LogGroup
+from aws_cdk.aws_logs import LogGroup, RetentionDays
 from aws_cdk.aws_route53 import IHostedZone, TxtRecord
 from aws_cdk.aws_ses import ConfigurationSet, EmailIdentity, EmailSendingEvent, EventDestination, Identity
 from aws_cdk.aws_sns import Subscription, SubscriptionProtocol, Topic

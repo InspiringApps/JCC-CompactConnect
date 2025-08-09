@@ -3,9 +3,9 @@ from aws_cdk.aws_dynamodb import (
     Attribute,
     AttributeType,
     BillingMode,
+    PointInTimeRecoverySpecification,
     Table,
     TableEncryption,
-    PointInTimeRecoverySpecification,
 )
 from aws_cdk.aws_kms import IKey
 from cdk_nag import NagSuppressions
