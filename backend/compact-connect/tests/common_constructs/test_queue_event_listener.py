@@ -5,9 +5,11 @@ from aws_cdk.assertions import Template
 from aws_cdk.aws_cloudwatch import CfnAlarm
 from aws_cdk.aws_events import CfnRule, EventBus
 from aws_cdk.aws_kms import Key
-from aws_cdk.aws_lambda import CfnEventSourceMapping, Code, Function, Runtime
+from aws_cdk.aws_lambda import CfnEventSourceMapping, Code, Function, Runtime, LoggingFormat
 from aws_cdk.aws_sns import Topic
 from aws_cdk.aws_sqs import CfnQueue
+from aws_cdk.aws_logs import LogGroup, RetentionDays
+from cdk_nag import NagSuppressions
 from common_constructs.queue_event_listener import QueueEventListener
 
 
@@ -20,12 +22,38 @@ class TestQueueEventListener(TestCase):
         self.key = Key(self.stack, 'TestKey')
         self.topic = Topic(self.stack, 'TestTopic')
         self.event_bus = EventBus(self.stack, 'TestEventBus')
+        
+        # Create log group with retention
+        test_log_group = LogGroup(
+            self.stack,
+            'TestFunctionLogGroup',
+            retention=RetentionDays.ONE_DAY,
+        )
+        
         self.function = Function(
             self.stack,
             'TestFunction',
             handler='handle',
             runtime=Runtime.PYTHON_3_12,
             code=Code.from_inline("""def handle(*args): return"""),
+            log_group=test_log_group,
+            logging_format=LoggingFormat.TEXT,
+        )
+        
+        # Suppress log group encryption and retention findings for test
+        NagSuppressions.add_resource_suppressions(
+            test_log_group,
+            suppressions=[
+                {
+                    'id': 'HIPAA.Security-CloudWatchLogGroupEncrypted',
+                    'reason': 'Test function logs contain no PII or PHI and are used for operational debugging. '
+                    'Encryption is not required for these logs.',
+                },
+                {
+                    'id': 'HIPAA.Security-CloudWatchLogGroupRetentionPeriod',
+                    'reason': 'Test function logs have explicit retention period configured.',
+                },
+            ],
         )
 
     def test_creates_queue_event_listener_with_default_parameters(self):

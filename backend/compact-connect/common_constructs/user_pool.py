@@ -4,13 +4,13 @@ from collections.abc import Mapping
 from aws_cdk import CfnOutput, Duration, RemovalPolicy
 from aws_cdk.aws_cognito import (
     AccountRecovery,
-    AdvancedSecurityMode,
     AuthFlow,
     AutoVerifiedAttrs,
     CfnManagedLoginBranding,
     CfnUserPoolRiskConfigurationAttachment,
     ClientAttributes,
     CognitoDomainOptions,
+    CustomThreatProtectionMode,
     DeviceTracking,
     FeaturePlan,
     ICustomAttribute,
@@ -23,6 +23,7 @@ from aws_cdk.aws_cognito import (
     PasswordPolicy,
     SignInAliases,
     StandardAttributes,
+    StandardThreatProtectionMode,
     UserPoolClient,
     UserPoolEmail,
 )
@@ -64,9 +65,9 @@ class UserPool(CdkUserPool):
             email=email,
             account_recovery=AccountRecovery.EMAIL_ONLY,
             auto_verify=AutoVerifiedAttrs(email=True),
-            advanced_security_mode=AdvancedSecurityMode.ENFORCED
+            standard_threat_protection_mode=StandardThreatProtectionMode.FULL_FUNCTION
             if security_profile == SecurityProfile.RECOMMENDED
-            else AdvancedSecurityMode.AUDIT,
+            else StandardThreatProtectionMode.AUDIT_ONLY,
             # required for advanced security mode
             feature_plan=FeaturePlan.PLUS,
             custom_sender_kms_key=encryption_key,

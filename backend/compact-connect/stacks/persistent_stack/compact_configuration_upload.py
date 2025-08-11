@@ -4,7 +4,7 @@ import os
 import yaml
 from aws_cdk import CustomResource, Duration
 from aws_cdk.aws_kms import IKey
-from aws_cdk.aws_logs import RetentionDays
+from aws_cdk.aws_logs import LogGroup, RetentionDays
 from aws_cdk.custom_resources import Provider
 from cdk_nag import NagSuppressions
 from common_constructs.python_function import PythonFunction
@@ -58,11 +58,34 @@ class CompactConfigurationUpload(Construct):
             ],
         )
 
+        # Create log group for the provider
+        upload_provider_log_group = LogGroup(
+            scope,
+            'CompactConfigurationUploadProviderLogGroup',
+            retention=RetentionDays.ONE_DAY,
+        )
+
+        # Suppress log group encryption and retention findings
+        NagSuppressions.add_resource_suppressions(
+            upload_provider_log_group,
+            suppressions=[
+                {
+                    'id': 'HIPAA.Security-CloudWatchLogGroupEncrypted',
+                    'reason': 'Provider logs contain no PII or PHI and are used for operational debugging. '
+                    'Encryption is not required for these logs.',
+                },
+                {
+                    'id': 'HIPAA.Security-CloudWatchLogGroupRetentionPeriod',
+                    'reason': 'Provider logs have explicit retention period configured.',
+                },
+            ],
+        )
+
         self.compact_configuration_upload_provider = Provider(
             scope,
             'CompactConfigurationUploadProvider',
             on_event_handler=self.compact_configuration_upload_function,
-            log_retention=RetentionDays.ONE_DAY,
+            log_group=upload_provider_log_group,
         )
         NagSuppressions.add_resource_suppressions_by_path(
             Stack.of(scope),

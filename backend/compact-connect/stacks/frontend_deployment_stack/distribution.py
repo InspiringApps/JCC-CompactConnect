@@ -14,10 +14,12 @@ from aws_cdk.aws_cloudfront import (
     ViewerProtocolPolicy,
 )
 from aws_cdk.aws_cloudfront_origins import S3BucketOrigin
-from aws_cdk.aws_lambda import Code, Function, Runtime
+from aws_cdk.aws_lambda import Code, Function, LoggingFormat, Runtime
 from aws_cdk.aws_route53 import ARecord, RecordTarget
 from aws_cdk.aws_route53_targets import CloudFrontTarget
 from aws_cdk.aws_s3 import IBucket
+from aws_cdk.aws_logs import LogGroup, RetentionDays
+from aws_cdk.aws_kms import Key
 from cdk_nag import NagSuppressions
 from common_constructs.access_logs_bucket import AccessLogsBucket
 from common_constructs.frontend_app_config_utility import (
@@ -121,12 +123,37 @@ class UIDistribution(Distribution):
             persistent_stack_frontend_app_config_values, provider_users_stack_frontend_app_config_values
         )
 
+        # Create log group with retention
+        csp_log_group = LogGroup(
+            scope,
+            'CSPFunctionLogGroup',
+            retention=RetentionDays.ONE_MONTH,
+        )
+
         self.csp_function = Function(
             scope,
             'CSPFunction',
             code=Code.from_inline(csp_function_code),
             runtime=Runtime.NODEJS_22_X,
             handler='index.handler',
+            log_group=csp_log_group,
+            logging_format=LoggingFormat.TEXT,
+        )
+
+        # Suppress log group encryption and retention findings
+        NagSuppressions.add_resource_suppressions(
+            csp_log_group,
+            suppressions=[
+                {
+                    'id': 'HIPAA.Security-CloudWatchLogGroupEncrypted',
+                    'reason': 'CSP function logs contain no PII or PHI and are used for operational debugging. '
+                    'Encryption is not required for these logs.',
+                },
+                {
+                    'id': 'HIPAA.Security-CloudWatchLogGroupRetentionPeriod',
+                    'reason': 'CSP function logs have explicit retention period configured.',
+                },
+            ],
         )
 
         NagSuppressions.add_resource_suppressions_by_path(

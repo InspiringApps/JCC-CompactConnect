@@ -3,9 +3,11 @@ from unittest import TestCase
 from aws_cdk import App, Duration, Stack
 from aws_cdk.assertions import Template
 from aws_cdk.aws_kms import Key
-from aws_cdk.aws_lambda import CfnEventSourceMapping, Code, Function, Runtime
+from aws_cdk.aws_lambda import CfnEventSourceMapping, Code, Function, Runtime, LoggingFormat
 from aws_cdk.aws_sns import Topic
 from aws_cdk.aws_sqs import CfnQueue
+from aws_cdk.aws_logs import LogGroup, RetentionDays
+from cdk_nag import NagSuppressions
 from common_constructs.queued_lambda_processor import QueuedLambdaProcessor
 
 
@@ -16,12 +18,38 @@ class TestQueuedLambdaProcessor(TestCase):
 
         key = Key(stack, 'Key')
         topic = Topic(stack, 'Topic')
+        
+        # Create log group with retention
+        test_log_group = LogGroup(
+            stack,
+            'TestFunctionLogGroup',
+            retention=RetentionDays.ONE_DAY,
+        )
+        
         function = Function(
             stack,
             'Function',
             handler='handle',
             runtime=Runtime.PYTHON_3_12,
             code=Code.from_inline("""def handle(*args): return"""),
+            log_group=test_log_group,
+            logging_format=LoggingFormat.TEXT,
+        )
+        
+        # Suppress log group encryption and retention findings for test
+        NagSuppressions.add_resource_suppressions(
+            test_log_group,
+            suppressions=[
+                {
+                    'id': 'HIPAA.Security-CloudWatchLogGroupEncrypted',
+                    'reason': 'Test function logs contain no PII or PHI and are used for operational debugging. '
+                    'Encryption is not required for these logs.',
+                },
+                {
+                    'id': 'HIPAA.Security-CloudWatchLogGroupRetentionPeriod',
+                    'reason': 'Test function logs have explicit retention period configured.',
+                },
+            ],
         )
         processor = QueuedLambdaProcessor(
             stack,

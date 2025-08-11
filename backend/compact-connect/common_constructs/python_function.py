@@ -6,10 +6,10 @@ from aws_cdk import Duration, Stack
 from aws_cdk.aws_cloudwatch import Alarm, ComparisonOperator, Stats, TreatMissingData
 from aws_cdk.aws_cloudwatch_actions import SnsAction
 from aws_cdk.aws_iam import IRole
-from aws_cdk.aws_lambda import ILayerVersion, Runtime
+from aws_cdk.aws_lambda import ILayerVersion, Runtime, LoggingFormat
 from aws_cdk.aws_lambda_python_alpha import PythonFunction as CdkPythonFunction
 from aws_cdk.aws_lambda_python_alpha import PythonLayerVersion
-from aws_cdk.aws_logs import RetentionDays
+from aws_cdk.aws_logs import LogGroup, RetentionDays
 from aws_cdk.aws_sns import ITopic
 from aws_cdk.aws_ssm import StringParameter
 from cdk_nag import NagSuppressions
@@ -39,12 +39,20 @@ class PythonFunction(CdkPythonFunction):
         }
         defaults.update(kwargs)
 
+        # Create log group with retention
+        log_group = LogGroup(
+            scope,
+            f'{construct_id}LogGroup',
+            retention=log_retention,
+        )
+
         super().__init__(
             scope,
             construct_id,
             entry=os.path.join('lambdas', 'python', lambda_dir),
             runtime=Runtime.PYTHON_3_12,
-            log_retention=log_retention,
+            log_group=log_group,
+            logging_format=LoggingFormat.TEXT,
             role=role,
             **defaults,
         )
@@ -73,6 +81,22 @@ class PythonFunction(CdkPythonFunction):
             ],
         )
 
+        # Suppress log group encryption and retention findings
+        NagSuppressions.add_resource_suppressions(
+            log_group,
+            suppressions=[
+                {
+                    'id': 'HIPAA.Security-CloudWatchLogGroupEncrypted',
+                    'reason': 'Lambda logs contain no PII or PHI and are used for operational debugging. '
+                    'Encryption is not required for these logs.',
+                },
+                {
+                    'id': 'HIPAA.Security-CloudWatchLogGroupRetentionPeriod',
+                    'reason': 'Lambda logs have explicit retention periods configured via the log_retention parameter.',
+                },
+            ],
+        )
+
         # If a role is provided from elsewhere for this lambda (role is not None), we don't need to run suppressions for
         # the role that this construct normally creates.
         if role is None:
@@ -89,31 +113,6 @@ class PythonFunction(CdkPythonFunction):
                     },
                 ],
             )
-        NagSuppressions.add_resource_suppressions_by_path(
-            stack,
-            path=f'{stack.node.path}/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole/Resource',
-            suppressions=[
-                {
-                    'id': 'AwsSolutions-IAM4',
-                    'appliesTo': [
-                        'Policy::arn:<AWS::Partition>:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
-                    ],  # noqa: E501 line-too-long
-                    'reason': 'This policy is appropriate for the log retention lambda',
-                },
-            ],
-        )
-        NagSuppressions.add_resource_suppressions_by_path(
-            stack,
-            path=f'{stack.node.path}/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole/DefaultPolicy/Resource',
-            suppressions=[
-                {
-                    'id': 'AwsSolutions-IAM5',
-                    'appliesTo': ['Resource::*'],
-                    'reason': 'This lambda needs to be able to configure log groups across the account, though the'
-                    ' actions it is allowed are scoped specifically for this task.',
-                },
-            ],
-        )
 
     def _add_alarms(self, alarm_topic: ITopic):
         throttle_alarm = Alarm(

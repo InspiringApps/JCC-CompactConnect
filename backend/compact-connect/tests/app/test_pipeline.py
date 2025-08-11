@@ -173,7 +173,12 @@ class TestBackendPipeline(TstAppABC, TestCase):
             user_pools = template.find_resources(
                 CfnUserPool.CFN_RESOURCE_TYPE_NAME,
                 props={
-                    'Properties': {'UserPoolAddOns': {'AdvancedSecurityMode': 'ENFORCED'}, 'MfaConfiguration': 'ON'}
+                    'Properties': {
+                        'UserPoolAddOns': {'AdvancedSecurityMode': 'ENFORCED'},
+                        'UserPoolTier': 'PLUS',
+                        'MfaConfiguration': 'ON',
+                        'EnabledMfas': ['SOFTWARE_TOKEN_MFA'],
+                    }
                 },
             )
             number_of_user_pools = len(user_pools)
@@ -194,6 +199,7 @@ class TestBackendPipeline(TstAppABC, TestCase):
                     }
                 },
             )
+
             # Every user pool should have this risk configuration
             self.assertEqual(number_of_user_pools, len(risk_configurations))
 

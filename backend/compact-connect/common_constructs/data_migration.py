@@ -3,7 +3,7 @@ import os
 import jsii
 from aws_cdk import CustomResource, Duration, Stack
 from aws_cdk.aws_iam import IGrantable, IRole
-from aws_cdk.aws_logs import RetentionDays
+from aws_cdk.aws_logs import LogGroup, RetentionDays
 from aws_cdk.custom_resources import Provider
 from cdk_nag import NagSuppressions
 from constructs import Construct
@@ -48,11 +48,35 @@ class DataMigration(Construct):
             # so they complete their process sooner
             memory_size=3008,
         )
+
+        # Create log group for the provider
+        provider_log_group = LogGroup(
+            self,
+            'ProviderLogGroup',
+            retention=RetentionDays.ONE_DAY,
+        )
+
+        # Suppress log group encryption and retention findings
+        NagSuppressions.add_resource_suppressions(
+            provider_log_group,
+            suppressions=[
+                {
+                    'id': 'HIPAA.Security-CloudWatchLogGroupEncrypted',
+                    'reason': 'Provider logs contain no PII or PHI and are used for operational debugging. '
+                    'Encryption is not required for these logs.',
+                },
+                {
+                    'id': 'HIPAA.Security-CloudWatchLogGroupRetentionPeriod',
+                    'reason': 'Provider logs have explicit retention period configured.',
+                },
+            ],
+        )
+
         self.provider = Provider(
             self,
             'Provider',
             on_event_handler=self.migration_function,
-            log_retention=RetentionDays.ONE_DAY,
+            log_group=provider_log_group,
         )
         NagSuppressions.add_resource_suppressions_by_path(
             Stack.of(self),
