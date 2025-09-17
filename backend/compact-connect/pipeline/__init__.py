@@ -306,9 +306,28 @@ class BaseBackendPipelineStack(BasePipelineStack):
             ],
         )
 
+    def _add_pipeline_cdk_assume_role_policy_for_tag_pipeline(self, pipeline):
+        """Add CDK assume role policy to the tag-triggered pipeline's synth project"""
+        pipeline.synth_project.add_to_role_policy(
+            PolicyStatement(
+                effect=Effect.ALLOW,
+                actions=['sts:AssumeRole'],
+                resources=[
+                    self.format_arn(
+                        partition=self.partition,
+                        service='iam',
+                        region='',
+                        account='*',
+                        resource='role',
+                        resource_name='cdk-hnb659fds-lookup-role-*',
+                    ),
+                ],
+            ),
+        )
+
 
 class TestBackendPipelineStack(BaseBackendPipelineStack):
-    """Pipeline stack for the test backend environment, triggered by the development branch."""
+    """Pipeline stack for the test backend environment, triggered by tags matching 'test-*'."""
 
     def __init__(
         self,
@@ -330,24 +349,21 @@ class TestBackendPipelineStack(BaseBackendPipelineStack):
             **kwargs,
         )
 
-        # Allows us to override the default branching scheme for the test environment, via context variable
-        pre_prod_trigger_branch = self.pipeline_environment_context.get('pre_prod_trigger_branch', 'development')
-
-        self.pre_prod_pipeline = BackendPipeline(
+        self.test_pipeline = BackendPipeline(
             self,
             'TestBackendPipeline',
             pipeline_name=self._get_backend_pipeline_name(),
             github_repo_string=self.github_repo_string,
             cdk_path=cdk_path,
             connection_arn=self.connection_arn,
-            trigger_branch=pre_prod_trigger_branch,
+            tag_patterns=['test-*'],  # Trigger ONLY on tags like 'test-v1.0.0', 'test-hotfix-123'
+            excluded_tag_patterns=['test-*-draft', 'test-*-wip'],  # Exclude draft/work-in-progress tags
             encryption_key=pipeline_shared_encryption_key,
             alarm_topic=pipeline_alarm_topic,
             access_logs_bucket=self.access_logs_bucket,
             ssm_parameter=self.parameter,
             pipeline_stack_name=self.stack_name,
             environment_context=self.pipeline_environment_context,
-            self_mutation=True,
             removal_policy=self.removal_policy,
         )
 
@@ -362,15 +378,15 @@ class TestBackendPipelineStack(BaseBackendPipelineStack):
 
         # Add a post step to trigger the frontend pipeline
         trigger_frontend_pipeline_step = self._generate_frontend_pipeline_trigger_step()
-        self.pre_prod_pipeline.add_stage(self.test_stage, post=[trigger_frontend_pipeline_step])
-        self.pre_prod_pipeline.build_pipeline()
-        self._add_pipeline_cdk_assume_role_policy(self.pre_prod_pipeline)
+        self.test_pipeline.add_stage(self.test_stage, post=[trigger_frontend_pipeline_step])
+        self.test_pipeline.build_pipeline()
+        self._add_pipeline_cdk_assume_role_policy_for_tag_pipeline(self.test_pipeline)
         # the following must be called after the pipeline is built
         self._add_nag_suppressions_for_trigger_pipeline_step_role(trigger_frontend_pipeline_step)
 
 
 class BetaBackendPipelineStack(BaseBackendPipelineStack):
-    """Pipeline stack for the beta backend environment, triggered by the main branch."""
+    """Pipeline stack for the beta backend environment, triggered by tags matching 'beta-*'."""
 
     def __init__(
         self,
@@ -399,14 +415,14 @@ class BetaBackendPipelineStack(BaseBackendPipelineStack):
             github_repo_string=self.github_repo_string,
             cdk_path=cdk_path,
             connection_arn=self.connection_arn,
-            trigger_branch='main',
+            tag_patterns=['beta-*'],  # Trigger ONLY on tags like 'beta-v1.0.0', 'beta-rc1'
+            excluded_tag_patterns=['beta-*-draft', 'beta-*-wip'],  # Exclude draft/work-in-progress tags
             encryption_key=pipeline_shared_encryption_key,
             alarm_topic=pipeline_alarm_topic,
             access_logs_bucket=self.access_logs_bucket,
             ssm_parameter=self.parameter,
             pipeline_stack_name=self.stack_name,
             environment_context=self.pipeline_environment_context,
-            self_mutation=True,
             removal_policy=self.removal_policy,
         )
 
@@ -424,12 +440,12 @@ class BetaBackendPipelineStack(BaseBackendPipelineStack):
         self.beta_backend_pipeline.add_stage(self.beta_backend_stage, post=[trigger_frontend_pipeline_step])
         self.beta_backend_pipeline.build_pipeline()
         # the following must be called after the pipeline is built
-        self._add_pipeline_cdk_assume_role_policy(self.beta_backend_pipeline)
+        self._add_pipeline_cdk_assume_role_policy_for_tag_pipeline(self.beta_backend_pipeline)
         self._add_nag_suppressions_for_trigger_pipeline_step_role(trigger_frontend_pipeline_step)
 
 
 class ProdBackendPipelineStack(BaseBackendPipelineStack):
-    """Pipeline stack for the production backend environment, triggered by the main branch."""
+    """Pipeline stack for the production backend environment, triggered by tags matching 'prod-*'."""
 
     def __init__(
         self,
@@ -461,14 +477,14 @@ class ProdBackendPipelineStack(BaseBackendPipelineStack):
             github_repo_string=self.github_repo_string,
             cdk_path=cdk_path,
             connection_arn=self.connection_arn,
-            trigger_branch='main',
+            tag_patterns=['prod-*'],  # Trigger ONLY on tags like 'prod-v1.0.0', 'prod-hotfix-123'
+            excluded_tag_patterns=['prod-*-draft', 'prod-*-wip', 'prod-*-beta'],  # Exclude non-production tags
             encryption_key=pipeline_shared_encryption_key,
             alarm_topic=pipeline_alarm_topic,
             access_logs_bucket=self.access_logs_bucket,
             ssm_parameter=self.parameter,
             pipeline_stack_name=self.stack_name,
             environment_context=self.pipeline_environment_context,
-            self_mutation=True,
             removal_policy=self.removal_policy,
         )
 
@@ -486,5 +502,5 @@ class ProdBackendPipelineStack(BaseBackendPipelineStack):
         self.prod_pipeline.add_stage(self.prod_stage, post=[trigger_frontend_pipeline_step])
         self.prod_pipeline.build_pipeline()
         # the following must be called after the pipeline is built
-        self._add_pipeline_cdk_assume_role_policy(self.prod_pipeline)
+        self._add_pipeline_cdk_assume_role_policy_for_tag_pipeline(self.prod_pipeline)
         self._add_nag_suppressions_for_trigger_pipeline_step_role(trigger_frontend_pipeline_step)
