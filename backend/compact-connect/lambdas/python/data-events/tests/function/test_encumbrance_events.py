@@ -212,7 +212,7 @@ class TestEncumbranceEvents(TstFunction):
         self.test_data_generator.put_default_provider_record_in_provider_table()
 
         # Create privileges that are already encumbered
-        self.test_data_generator.put_default_privilege_record_in_provider_table(
+        privilege = self.test_data_generator.put_default_privilege_record_in_provider_table(
             value_overrides={
                 'licenseJurisdiction': DEFAULT_LICENSE_JURISDICTION,
                 'licenseTypeAbbreviation': DEFAULT_LICENSE_TYPE_ABBREVIATION,
@@ -235,7 +235,6 @@ class TestEncumbranceEvents(TstFunction):
         provider_records = self.config.data_client.get_provider_user_records(
             compact=DEFAULT_COMPACT,
             provider_id=DEFAULT_PROVIDER_ID,
-            include_updates=True,
         )
 
         privileges = provider_records.get_privilege_records()
@@ -243,9 +242,9 @@ class TestEncumbranceEvents(TstFunction):
 
         self.assertEqual(PrivilegeEncumberedStatusEnum.ENCUMBERED, privileges[0].encumberedStatus)
 
-        # Get update records using ProviderUserRecords
-        update_records = provider_records.get_update_records_for_privilege(
-            jurisdiction=privileges[0].jurisdiction, license_type=privileges[0].licenseType
+        # Get update records using test_data_generator
+        update_records = self.test_data_generator.query_privilege_update_records_for_given_record_from_database(
+            privilege
         )
         self.assertEqual(1, len(update_records))
         update_record = update_records[0]
@@ -277,7 +276,7 @@ class TestEncumbranceEvents(TstFunction):
         self.test_data_generator.put_default_provider_record_in_provider_table()
 
         # Create privileges that are already encumbered
-        self.test_data_generator.put_default_privilege_record_in_provider_table(
+        privilege = self.test_data_generator.put_default_privilege_record_in_provider_table(
             value_overrides={
                 'licenseJurisdiction': DEFAULT_LICENSE_JURISDICTION,
                 'licenseTypeAbbreviation': DEFAULT_LICENSE_TYPE_ABBREVIATION,
@@ -303,7 +302,6 @@ class TestEncumbranceEvents(TstFunction):
         provider_records = self.config.data_client.get_provider_user_records(
             compact=DEFAULT_COMPACT,
             provider_id=DEFAULT_PROVIDER_ID,
-            include_updates=True,
         )
 
         privileges = provider_records.get_privilege_records()
@@ -311,9 +309,9 @@ class TestEncumbranceEvents(TstFunction):
 
         self.assertEqual(PrivilegeEncumberedStatusEnum.ENCUMBERED, privileges[0].encumberedStatus)
 
-        # Get update records using ProviderUserRecords
-        update_records = provider_records.get_update_records_for_privilege(
-            jurisdiction=privileges[0].jurisdiction, license_type=privileges[0].licenseType
+        # Get update records using test_data_generator
+        update_records = self.test_data_generator.query_privilege_update_records_for_given_record_from_database(
+            privilege
         )
         self.assertEqual(1, len(update_records))
         update_record = update_records[0]
@@ -339,7 +337,7 @@ class TestEncumbranceEvents(TstFunction):
 
         # Set up test data
         self.test_data_generator.put_default_provider_record_in_provider_table()
-        self.test_data_generator.put_default_privilege_record_in_provider_table()
+        privilege = self.test_data_generator.put_default_privilege_record_in_provider_table()
         # add adverse action item for license
         self.test_data_generator.put_default_adverse_action_record_in_provider_table(
             value_overrides={'actionAgainst': 'license'}
@@ -352,13 +350,8 @@ class TestEncumbranceEvents(TstFunction):
         license_encumbrance_listener(event, self.mock_context)
 
         # Verify privilege update record was created
-        provider_records = self.config.data_client.get_provider_user_records(
-            compact=DEFAULT_COMPACT, provider_id=DEFAULT_PROVIDER_ID, include_updates=True
-        )
-        privileges = provider_records.get_privilege_records()
-        self.assertEqual(1, len(privileges))
-        update_records = provider_records.get_update_records_for_privilege(
-            jurisdiction=privileges[0].jurisdiction, license_type=privileges[0].licenseType
+        update_records = self.test_data_generator.query_privilege_update_records_for_given_record_from_database(
+            privilege
         )
         self.assertEqual(1, len(update_records))
         update_record = update_records[0]
@@ -522,7 +515,7 @@ class TestEncumbranceEvents(TstFunction):
             }
         )
 
-        self.test_data_generator.put_default_privilege_record_in_provider_table(
+        privilege = self.test_data_generator.put_default_privilege_record_in_provider_table(
             value_overrides={
                 'licenseJurisdiction': DEFAULT_LICENSE_JURISDICTION,
                 'licenseTypeAbbreviation': DEFAULT_LICENSE_TYPE_ABBREVIATION,
@@ -547,13 +540,8 @@ class TestEncumbranceEvents(TstFunction):
         license_encumbrance_lifted_listener(event, self.mock_context)
 
         # Verify privilege update record was created
-        provider_records = self.config.data_client.get_provider_user_records(
-            compact=DEFAULT_COMPACT, provider_id=DEFAULT_PROVIDER_ID, include_updates=True
-        )
-        privileges = provider_records.get_privilege_records()
-        self.assertEqual(1, len(privileges))
-        update_records = provider_records.get_update_records_for_privilege(
-            jurisdiction=privileges[0].jurisdiction, license_type=privileges[0].licenseType
+        update_records = self.test_data_generator.query_privilege_update_records_for_given_record_from_database(
+            privilege
         )
         self.assertEqual(1, len(update_records))
         update_record = update_records[0]
