@@ -1,0 +1,40 @@
+# Idea
+.idea
+
+# VS Code
+.vscode
+
+# Cursor
+.cursorignore
+
+# Kiro
+.kiro
+
+#OS
+.DS_Store
+.tmp
+
+# Environment variables
+.env*
+!.env.example
+
+# Dependency directories
+node_modules
+
+# Logs
+*.log
+
+# Python files
+.python-version
+__pycache__
+.pytest_cache
+.venv
+*.egg-info
+
+# Pytest/coverage
+.coverage
+coverage
+
+# Node files
+package-lock.json
+.node-version
