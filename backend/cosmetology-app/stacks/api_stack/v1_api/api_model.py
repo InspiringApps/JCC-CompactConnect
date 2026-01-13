@@ -775,8 +775,6 @@ class ApiModel:
         )
         return self.api._v1_post_credentials_payment_processor_response_model
 
-    
-
     @property
     def _providers_response_schema(self):
         return JsonSchema(
