@@ -142,8 +142,7 @@ class TestInvestigationPatchRequestSchema(TstLambdas):
         investigation_data = {
             'encumbrance': {
                 'encumbranceEffectiveDate': '2024-03-15',
-                'encumbranceType': 'suspension',
-                'clinicalPrivilegeActionCategories': ['Unsafe Practice or Substandard Care'],
+                'clinicalPrivilegeActionCategories': ['Consumer Harm'],
             }
         }
         result = InvestigationPatchRequestSchema().load(investigation_data)

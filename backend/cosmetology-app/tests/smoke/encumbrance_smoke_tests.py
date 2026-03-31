@@ -377,32 +377,25 @@ class EncumbranceTestHelper:
         Verify that at least one adverse action matches the request payload.
 
         :param adverse_actions: List of adverse action records
-        :param request_payload: The request payload that was sent (containing encumbranceType and
-                                clinicalPrivilegeActionCategories)
+        :param request_payload: The request payload that was sent (clinicalPrivilegeActionCategories)
         :return: The matching adverse action record
         :raises SmokeTestFailureException: If no matching adverse action is found
         """
-        expected_encumbrance_type = request_payload.get('encumbranceType')
         expected_categories = set(request_payload.get('clinicalPrivilegeActionCategories', []))
 
-        logger.info(
-            f'Verifying adverse action matches request: encumbranceType={expected_encumbrance_type}, '
-            f'categories={expected_categories}'
-        )
+        logger.info(f'Verifying adverse action matches request: categories={expected_categories}')
 
         matching_actions = []
         for adverse_action in adverse_actions:
-            action_type = adverse_action.get('encumbranceType')
             action_categories = set(adverse_action.get('clinicalPrivilegeActionCategories', []))
 
-            if action_type == expected_encumbrance_type and action_categories == expected_categories:
+            if action_categories == expected_categories:
                 matching_actions.append(adverse_action)
 
         if not matching_actions:
             raise SmokeTestFailureException(
                 f'No adverse action found matching request payload. '
-                f'Expected encumbranceType="{expected_encumbrance_type}" and '
-                f'categories={expected_categories}. '
+                f'Expected categories={expected_categories}. '
                 f'Found adverse actions: {adverse_actions}'
             )
 
@@ -501,8 +494,7 @@ def test_license_encumbrance_workflow():
 
         encumbrance_body = {
             'encumbranceEffectiveDate': '2024-11-11',
-            'encumbranceType': 'surrender of license',
-            'clinicalPrivilegeActionCategories': ['Fraud, Deception, or Misrepresentation'],
+            'clinicalPrivilegeActionCategories': ['Fraud'],
         }
 
         # First encumbrance
@@ -563,8 +555,7 @@ def test_license_encumbrance_workflow():
         # Second encumbrance
         second_encumbrance_body = {
             'encumbranceEffectiveDate': '2025-01-01',
-            'encumbranceType': 'denial',
-            'clinicalPrivilegeActionCategories': ['Unsafe Practice or Substandard Care'],
+            'clinicalPrivilegeActionCategories': ['Consumer Harm'],
         }
         helper.encumber_license(second_encumbrance_body)
         logger.info('Second license encumbrance created successfully')
@@ -587,8 +578,7 @@ def test_license_encumbrance_workflow():
         # Step 3: Encumber Privilege
         privilege_encumbrance_body = {
             'encumbranceEffectiveDate': '2025-05-09',
-            'encumbranceType': 'reprimand',
-            'clinicalPrivilegeActionCategories': ['Unsafe Practice or Substandard Care', 'Misconduct or Abuse'],
+            'clinicalPrivilegeActionCategories': ['Other'],
         }
 
         helper.encumber_privilege(privilege_encumbrance_body)
@@ -714,8 +704,7 @@ def test_privilege_encumbrance_workflow():
 
         encumbrance_body = {
             'encumbranceEffectiveDate': '2024-12-12',
-            'encumbranceType': 'fine',
-            'clinicalPrivilegeActionCategories': ['Fraud, Deception, or Misrepresentation'],
+            'clinicalPrivilegeActionCategories': ['Fraud'],
         }
 
         # First encumbrance
@@ -749,8 +738,7 @@ def test_privilege_encumbrance_workflow():
         # Second encumbrance
         second_encumbrance_body = {
             'encumbranceEffectiveDate': '2025-02-02',
-            'encumbranceType': 'completion of continuing education',
-            'clinicalPrivilegeActionCategories': ['Unsafe Practice or Substandard Care'],
+            'clinicalPrivilegeActionCategories': ['Consumer Harm'],
         }
         helper.encumber_privilege(second_encumbrance_body)
         logger.info('Second privilege encumbrance created successfully')
@@ -838,11 +826,8 @@ def test_privilege_encumbrance_status_changes_with_license_encumbrance_workflow(
         logger.info('Step 1: Creating privilege encumbrance...')
         privilege_encumbrance_body = {
             'encumbranceEffectiveDate': '2024-01-15',
-            'encumbranceType': 'probation',
             'clinicalPrivilegeActionCategories': [
-                'Unsafe Practice or Substandard Care',
-                'Non-compliance With Requirements',
-                'Fraud, Deception, or Misrepresentation',
+                'Fraud',
             ],
         }
 
@@ -865,11 +850,8 @@ def test_privilege_encumbrance_status_changes_with_license_encumbrance_workflow(
         logger.info('Step 2: Creating license encumbrance...')
         license_encumbrance_body = {
             'encumbranceEffectiveDate': '2024-01-20',
-            'encumbranceType': 'suspension',
             'clinicalPrivilegeActionCategories': [
-                'Criminal Conviction or Adjudication',
-                'Improper Supervision or Allowing Unlicensed Practice',
-                'Other',
+                'Fraud',
             ],
         }
 

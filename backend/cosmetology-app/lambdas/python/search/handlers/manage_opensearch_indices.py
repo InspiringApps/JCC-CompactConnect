@@ -206,7 +206,6 @@ class OpenSearchIndexManager(CustomResourceHandler):
             'creationDate': {'type': 'date'},
             'effectiveLiftDate': {'type': 'date'},
             'dateOfUpdate': {'type': 'date'},
-            'encumbranceType': {'type': 'keyword'},
             'clinicalPrivilegeActionCategories': {'type': 'keyword'},
             'clinicalPrivilegeActionCategory': {'type': 'keyword'},
             'submittingUser': {'type': 'keyword'},

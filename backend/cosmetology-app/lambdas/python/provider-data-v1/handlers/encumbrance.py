@@ -8,11 +8,7 @@ from cc_common.data_model.schema.adverse_action.api import (
     AdverseActionPatchRequestSchema,
     AdverseActionPostRequestSchema,
 )
-from cc_common.data_model.schema.common import (
-    AdverseActionAgainstEnum,
-    CCPermissionsAction,
-    EncumbranceType,
-)
+from cc_common.data_model.schema.common import AdverseActionAgainstEnum, CCPermissionsAction
 from cc_common.exceptions import CCInvalidRequestException
 from cc_common.license_util import LicenseUtility
 from cc_common.utils import api_handler, authorize_state_level_only_action, to_uuid
@@ -97,7 +93,6 @@ def _generate_adverse_action_for_record_type(
     adverse_action.licenseTypeAbbreviation = license_type.abbreviation
     adverse_action.licenseType = license_type.name
     adverse_action.actionAgainst = adverse_action_against_record_type
-    adverse_action.encumbranceType = EncumbranceType(adverse_action_post_body['encumbranceType'])
     adverse_action.clinicalPrivilegeActionCategories = adverse_action_post_body['clinicalPrivilegeActionCategories']
     adverse_action.effectiveStartDate = encumbrance_effective_date
     adverse_action.submittingUser = submitting_user

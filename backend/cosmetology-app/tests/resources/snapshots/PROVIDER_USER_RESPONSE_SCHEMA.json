@@ -600,12 +600,14 @@
                   "format": "date-time",
                   "type": "string"
                 },
-                "encumbranceType": {
-                  "type": "string"
-                },
                 "clinicalPrivilegeActionCategories": {
                   "description": "The categories of clinical privilege action",
                   "items": {
+                    "enum": [
+                      "Fraud",
+                      "Consumer Harm",
+                      "Other"
+                    ],
                     "type": "string"
                   },
                   "type": "array"
@@ -625,8 +627,7 @@
                 "effectiveStartDate",
                 "creationDate",
                 "adverseActionId",
-                "dateOfUpdate",
-                "encumbranceType"
+                "dateOfUpdate"
               ],
               "type": "object"
             },
@@ -1505,12 +1506,14 @@
                   "format": "date-time",
                   "type": "string"
                 },
-                "encumbranceType": {
-                  "type": "string"
-                },
                 "clinicalPrivilegeActionCategories": {
                   "description": "The categories of clinical privilege action",
                   "items": {
+                    "enum": [
+                      "Fraud",
+                      "Consumer Harm",
+                      "Other"
+                    ],
                     "type": "string"
                   },
                   "type": "array"
@@ -1530,8 +1533,7 @@
                 "effectiveStartDate",
                 "creationDate",
                 "adverseActionId",
-                "dateOfUpdate",
-                "encumbranceType"
+                "dateOfUpdate"
               ],
               "type": "object"
             },

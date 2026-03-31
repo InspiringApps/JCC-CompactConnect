@@ -6,7 +6,6 @@ from cc_common.data_model.schema.common import (
     ActiveInactiveStatus,
     ClinicalPrivilegeActionCategory,
     CompactEligibilityStatus,
-    EncumbranceType,
     HomeJurisdictionChangeStatusEnum,
     InvestigationAgainstEnum,
     InvestigationStatusEnum,
@@ -108,11 +107,6 @@ class ITUTE164PhoneNumber(String):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, validate=Regexp(r'^\+[0-9]{8,15}$'), **kwargs)
-
-
-class EncumbranceTypeField(String):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, validate=OneOf([entry.value for entry in EncumbranceType]), **kwargs)
 
 
 class ClinicalPrivilegeActionCategoryField(String):

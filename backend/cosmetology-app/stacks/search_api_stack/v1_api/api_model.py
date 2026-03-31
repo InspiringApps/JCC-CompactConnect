@@ -339,7 +339,6 @@ class ApiModel:
                 'creationDate',
                 'adverseActionId',
                 'dateOfUpdate',
-                'encumbranceType',
                 'submittingUser',
             ],
             properties={
@@ -355,10 +354,12 @@ class ApiModel:
                 'adverseActionId': JsonSchema(type=JsonSchemaType.STRING),
                 'effectiveLiftDate': JsonSchema(type=JsonSchemaType.STRING, format='date', pattern=cc_api.YMD_FORMAT),
                 'dateOfUpdate': JsonSchema(type=JsonSchemaType.STRING, format='date-time'),
-                'encumbranceType': JsonSchema(type=JsonSchemaType.STRING),
                 'clinicalPrivilegeActionCategories': JsonSchema(
                     type=JsonSchemaType.ARRAY,
-                    items=JsonSchema(type=JsonSchemaType.STRING),
+                    items=JsonSchema(
+                        type=JsonSchemaType.STRING,
+                        enum=['Fraud', 'Consumer Harm', 'Other'],
+                    ),
                 ),
                 'liftingUser': JsonSchema(type=JsonSchemaType.STRING),
                 'submittingUser': JsonSchema(type=JsonSchemaType.STRING),
