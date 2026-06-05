@@ -123,7 +123,7 @@ class TestGeneratePrivilegesForProvider(TstLambdas):
             'socw': {
                 'licensed clinical social worker': 'lcsw',
                 'licensed master social worker': 'lmsw',
-                'licensed bachelor social worker': 'lbsw',
+                'licensed bachelors social worker': 'lbsw',
             }
         }
         return patch('cc_common.data_model.provider_record_util.config', mock_config)
@@ -189,7 +189,7 @@ class TestGeneratePrivilegesForProvider(TstLambdas):
         expiration = date(2026, 2, 28)
         # WA and CO do not recognize the bachelors license type
         live_jurisdictions = {'socw': ['al', 'co', 'wa', 'oh']}
-        lbsw_type = 'licensed bachelor social worker'
+        lbsw_type = 'licensed bachelors social worker'
 
         lbsw_records = self._make_provider_records(
             license_overrides_list=_license_pair_overrides(
@@ -1194,7 +1194,7 @@ class TestGenerateApiResponseObject(TstLambdas):
             'socw': {
                 'licensed clinical social worker': 'lcsw',
                 'licensed master social worker': 'lmsw',
-                'licensed bachelor social worker': 'lbsw',
+                'licensed bachelors social worker': 'lbsw',
             }
         }
         return patch('cc_common.data_model.provider_record_util.config', mock_config)
@@ -1327,7 +1327,7 @@ class TestGenerateOpenSearchDocuments(TstLambdas):
             'socw': {
                 'licensed clinical social worker': 'lcsw',
                 'licensed master social worker': 'lmsw',
-                'licensed bachelor social worker': 'lbsw',
+                'licensed bachelors social worker': 'lbsw',
             }
         }
         return patch('cc_common.data_model.provider_record_util.config', mock_config)
