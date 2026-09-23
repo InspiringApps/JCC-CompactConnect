@@ -102,6 +102,9 @@ fi
 if [[ "$LANGUAGE" == 'python' || "$LANGUAGE" == 'all' ]]; then
   echo "Running Python tests..."
 
+  # Fail fast if common-python copies drifted from Cosmetology/JCC sources
+  ../common-python/bin/run_copy_sync_tests.sh || exit "$?"
+
   # Build Python test arguments
   PYTHON_ARGS=()
 

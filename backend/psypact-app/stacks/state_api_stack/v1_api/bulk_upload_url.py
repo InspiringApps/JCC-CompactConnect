@@ -49,6 +49,7 @@ class BulkUploadUrl:
             'V1BulkUrlHandler',
             description='Get upload url handler',
             lambda_dir='provider-data-v1',
+            shared=True,
             index=os.path.join('handlers', 'state_api.py'),
             handler='bulk_upload_url_handler',
             role=license_upload_role,

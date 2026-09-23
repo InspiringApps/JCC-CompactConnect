@@ -118,14 +118,16 @@ class TestTransactionMonitoring(TstAppABC, TestCase):
             )
 
     def test_workflow_generates_expected_process_transaction_history_lambda_invoke_step(self):
-        aslp_transaction_history_proccessing_workflow = (
-            self.app.prod_backend_pipeline_stack.prod_stage.transaction_monitoring_stack.compact_state_machines['aslp']
+        psypact_transaction_history_processing_workflow = (
+            self.app.prod_backend_pipeline_stack.prod_stage.transaction_monitoring_stack.compact_state_machines[
+                'psypact'
+            ]
         )
 
         self.assertEqual(
             {
                 'InputPath': '${Token[Payload]}',
-                'Next': 'aslp-CheckProcessingStatus',
+                'Next': 'psypact-CheckProcessingStatus',
                 'Parameters': {'FunctionName': '${Token[TOKEN]}', 'Payload.$': '$'},
                 'Resource': 'arn:${Token[AWS.Partition]}:states:::lambda:invoke',
                 'ResultPath': '$',
@@ -146,71 +148,77 @@ class TestTransactionMonitoring(TstAppABC, TestCase):
                 'Type': 'Task',
             },
             self.remove_dynamic_tokens_numbers(
-                aslp_transaction_history_proccessing_workflow.processor_task.to_state_json()
+                psypact_transaction_history_processing_workflow.processor_task.to_state_json()
             ),
         )
 
     def test_workflow_generates_expected_initialize_step(self):
-        aslp_transaction_history_proccessing_workflow = (
-            self.app.prod_backend_pipeline_stack.prod_stage.transaction_monitoring_stack.compact_state_machines['aslp']
+        psypact_transaction_history_processing_workflow = (
+            self.app.prod_backend_pipeline_stack.prod_stage.transaction_monitoring_stack.compact_state_machines[
+                'psypact'
+            ]
         )
 
         self.assertEqual(
             {
-                'Next': 'aslp-ProcessTransactionHistory',
-                'Parameters': {'compact': 'aslp', 'processedBatchIds': [], 'scheduledTime.$': '$.time'},
+                'Next': 'psypact-ProcessTransactionHistory',
+                'Parameters': {'compact': 'psypact', 'processedBatchIds': [], 'scheduledTime.$': '$.time'},
                 'ResultPath': '$.Payload',
                 'Type': 'Pass',
             },
             self.remove_dynamic_tokens_numbers(
-                aslp_transaction_history_proccessing_workflow.initialize_state.to_state_json()
+                psypact_transaction_history_processing_workflow.initialize_state.to_state_json()
             ),
         )
 
     def test_workflow_generates_expected_choice_step(self):
-        aslp_transaction_history_proccessing_workflow = (
-            self.app.prod_backend_pipeline_stack.prod_stage.transaction_monitoring_stack.compact_state_machines['aslp']
+        psypact_transaction_history_processing_workflow = (
+            self.app.prod_backend_pipeline_stack.prod_stage.transaction_monitoring_stack.compact_state_machines[
+                'psypact'
+            ]
         )
 
         self.assertEqual(
             {
                 'Choices': [
                     {
-                        'Next': 'aslp-ProcessingComplete',
+                        'Next': 'psypact-ProcessingComplete',
                         'StringEquals': 'COMPLETE',
                         'Variable': '$.Payload.status',
                     },
                     {
-                        'Next': 'aslp-ProcessTransactionHistory',
+                        'Next': 'psypact-ProcessTransactionHistory',
                         'StringEquals': 'IN_PROGRESS',
                         'Variable': '$.Payload.status',
                     },
                     {
-                        'Next': 'aslp-BatchFailureNotification',
+                        'Next': 'psypact-BatchFailureNotification',
                         'StringEquals': 'BATCH_FAILURE',
                         'Variable': '$.Payload.status',
                     },
                 ],
-                'Default': 'aslp-ProcessingFailed',
+                'Default': 'psypact-ProcessingFailed',
                 'Type': 'Choice',
             },
             self.remove_dynamic_tokens_numbers(
-                aslp_transaction_history_proccessing_workflow.check_status.to_state_json()
+                psypact_transaction_history_processing_workflow.check_status.to_state_json()
             ),
         )
 
     def test_workflow_generates_expected_batch_failure_notification_step(self):
-        aslp_transaction_history_proccessing_workflow = (
-            self.app.prod_backend_pipeline_stack.prod_stage.transaction_monitoring_stack.compact_state_machines['aslp']
+        psypact_transaction_history_processing_workflow = (
+            self.app.prod_backend_pipeline_stack.prod_stage.transaction_monitoring_stack.compact_state_machines[
+                'psypact'
+            ]
         )
 
         self.assertEqual(
             {
-                'Next': 'aslp-ProcessingComplete',
+                'Next': 'psypact-ProcessingComplete',
                 'Parameters': {
                     'FunctionName': '${Token[TOKEN]}',
                     'Payload': {
-                        'compact': 'aslp',
+                        'compact': 'psypact',
                         'recipientType': 'COMPACT_OPERATIONS_TEAM',
                         'template': 'transactionBatchSettlementFailure',
                         'templateVariables': {'batchFailureErrorMessage.$': '$.Payload.batchFailureErrorMessage'},
@@ -235,6 +243,6 @@ class TestTransactionMonitoring(TstAppABC, TestCase):
                 'Type': 'Task',
             },
             self.remove_dynamic_tokens_numbers(
-                aslp_transaction_history_proccessing_workflow.email_notification_service_invoke_step.to_state_json()
+                psypact_transaction_history_processing_workflow.email_notification_service_invoke_step.to_state_json()
             ),
         )

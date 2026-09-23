@@ -31,10 +31,10 @@ class BulkUploadsBucket(Bucket):
         *,
         access_logs_bucket: AccessLogsBucket,
         bucket_encryption_key: IKey,
-        event_bus: EventBus,
-        license_preprocessing_queue: IQueue,
-        license_upload_role: IRole,
-        provider_table: ProviderTable,
+        event_bus: EventBus | None = None,
+        license_preprocessing_queue: IQueue | None = None,
+        license_upload_role: IRole | None = None,
+        provider_table: ProviderTable | None = None,
         **kwargs,
     ):
         super().__init__(
@@ -54,8 +54,6 @@ class BulkUploadsBucket(Bucket):
             **kwargs,
         )
         self.log_groups = []
-
-        self._add_v1_ingest_object_events(event_bus, license_preprocessing_queue, license_upload_role, provider_table)
 
         QueryDefinition(
             self,
@@ -98,6 +96,7 @@ class BulkUploadsBucket(Bucket):
             'V1ParseObjectsHandler',
             description='Parse s3 objects handler',
             lambda_dir='provider-data-v1',
+            shared=True,
             index=os.path.join('handlers', 'bulk_upload.py'),
             handler='parse_bulk_upload_file',
             role=license_upload_role,

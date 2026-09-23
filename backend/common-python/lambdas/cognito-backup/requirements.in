@@ -1,0 +1,5 @@
+# Copied from backend/cosmetology-app/lambdas/python/cognito-backup/requirements.in
+
+boto3>=1.43.71
+botocore>=1.29.0
+aws-lambda-powertools>=3.34.0
