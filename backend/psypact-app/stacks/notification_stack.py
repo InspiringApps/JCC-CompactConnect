@@ -42,7 +42,6 @@ class NotificationStack(AppStack):
         data_event_bus = SSMParameterUtility.load_data_event_bus_from_ssm_parameter(self)
         self.event_processors = {}
         self.event_state_stack = event_state_stack
-        self._add_privilege_purchase_notification_chain(persistent_stack, data_event_bus)
         self._add_license_encumbrance_notification_listener(
             persistent_stack=persistent_stack, data_event_bus=data_event_bus, event_state_stack=event_state_stack
         )
@@ -67,9 +66,6 @@ class NotificationStack(AppStack):
         self._add_privilege_investigation_closed_notification_listener(
             persistent_stack=persistent_stack, data_event_bus=data_event_bus, event_state_stack=event_state_stack
         )
-        self._add_military_audit_notification_listener(
-            persistent_stack=persistent_stack, data_event_bus=data_event_bus, event_state_stack=event_state_stack
-        )
         self._add_home_jurisdiction_change_notification_listener(
             persistent_stack=persistent_stack, data_event_bus=data_event_bus, event_state_stack=event_state_stack
         )
@@ -84,6 +80,7 @@ class NotificationStack(AppStack):
             'PrivilegePurchaseHandler',
             description='Privilege purchase notification handler',
             lambda_dir='provider-data-v1',
+            shared=True,
             index=os.path.join('handlers', 'privileges.py'),
             handler='privilege_purchase_message_handler',
             timeout=Duration.minutes(1),
@@ -196,6 +193,7 @@ class NotificationStack(AppStack):
             f'{construct_id_prefix}Handler',
             description=f'{construct_id_prefix} Emailer Event Listener Handler',
             lambda_dir='data-events',
+            shared=True,
             index=os.path.join('handlers', index),
             handler=handler,
             timeout=Duration.minutes(1),

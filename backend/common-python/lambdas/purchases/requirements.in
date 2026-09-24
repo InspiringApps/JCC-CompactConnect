@@ -1,0 +1,6 @@
+# Copied from backend/compact-connect/lambdas/python/purchases/requirements.in
+
+# common requirements are managed in the common-python requirements.in file
+authorizenet>=1.1.6, <2
+# explicitly setting this transitive dependency to pick vulnerability patch
+urllib3>=2.7.0, <3

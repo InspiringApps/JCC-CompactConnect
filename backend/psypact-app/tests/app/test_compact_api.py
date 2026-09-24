@@ -108,21 +108,9 @@ class TestCompactsApi(TestApi):
                                         ]
                                     ),
                                     'Effect': 'Allow',
-                                    'Resource': Match.array_with(
-                                        [
-                                            Match.string_like_regexp(
-                                                'arn:aws:secretsmanager:[a-z0-9-]+:[0-9]{12}:secret:compact-connect/env'
-                                                + r'/.*/aslp/credentials/payment-processor-\?\?\?\?\?\?'
-                                            ),
-                                            Match.string_like_regexp(
-                                                'arn:aws:secretsmanager:[a-z0-9-]+:[0-9]{12}:secret:compact-connect/env'
-                                                + r'/.*/coun/credentials/payment-processor-\?\?\?\?\?\?'
-                                            ),
-                                            Match.string_like_regexp(
-                                                'arn:aws:secretsmanager:[a-z0-9-]+:[0-9]{12}:secret:compact-connect/env'
-                                                + r'/.*/octp/credentials/payment-processor-\?\?\?\?\?\?'
-                                            ),
-                                        ]
+                                    'Resource': Match.string_like_regexp(
+                                        'arn:aws:secretsmanager:[a-z0-9-]+:[0-9]{12}:secret:compact-connect/env'
+                                        + r'/.*/psypact/credentials/payment-processor-\?\?\?\?\?\?'
                                     ),
                                 },
                             ]

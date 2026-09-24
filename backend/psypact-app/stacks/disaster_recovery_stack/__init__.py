@@ -8,9 +8,6 @@ from common_constructs.stack import AppStack
 from constructs import Construct
 
 from stacks import persistent_stack as ps
-from stacks.disaster_recovery_stack.license_upload_rollback_step_function import (
-    LicenseUploadRollbackStepFunctionConstruct,
-)
 from stacks.disaster_recovery_stack.restore_dynamo_db_table_step_function import (
     RestoreDynamoDbTableStepFunctionConstruct,
 )
@@ -109,15 +106,6 @@ class DisasterRecoveryStack(AppStack):
         # Enable DR for the SSN table with special handling for security
         self.dr_workflows[persistent_stack.ssn_table.table_name] = self._create_ssn_dynamodb_table_dr_recovery_workflow(
             ssn_table=persistent_stack.ssn_table
-        )
-
-        # Create License Upload Rollback workflow
-        self.license_upload_rollback_workflow = LicenseUploadRollbackStepFunctionConstruct(
-            self,
-            'LicenseUploadRollback',
-            persistent_stack=persistent_stack,
-            rollback_results_bucket=self.disaster_recovery_results_bucket,
-            dr_shared_encryption_key=self.dr_shared_encryption_key,
         )
 
     def _create_dynamodb_table_dr_recovery_workflow(self, table: Table, shared_persistent_stack_key: Key):

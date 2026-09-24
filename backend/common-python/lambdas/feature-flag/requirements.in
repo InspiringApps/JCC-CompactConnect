@@ -1,0 +1,4 @@
+# Copied from backend/cosmetology-app/lambdas/python/feature-flag/requirements.in
+
+# common requirements are managed in the common requirements.in file
+statsig-python-core>=0.21.0, <1.0.0

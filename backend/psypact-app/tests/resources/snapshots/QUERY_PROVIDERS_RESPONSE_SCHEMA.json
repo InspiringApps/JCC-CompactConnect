@@ -71,9 +71,7 @@
           },
           "compact": {
             "enum": [
-              "aslp",
-              "octp",
-              "coun"
+              "psypact"
             ],
             "type": "string"
           },

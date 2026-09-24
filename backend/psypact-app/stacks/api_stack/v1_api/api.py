@@ -4,18 +4,16 @@ from aws_cdk import Stack
 from aws_cdk.aws_apigateway import AuthorizationType, IResource, MethodOptions
 
 from stacks import persistent_stack as ps
+from stacks import search_persistent_stack as sps
 from stacks.api_lambda_stack import ApiLambdaStack
 
 from .api_model import ApiModel
-from .attestations import Attestations
-from .bulk_upload_url import BulkUploadUrl
 from .compact_configuration_api import CompactConfigurationApi
 from .credentials import Credentials
 from .feature_flags import FeatureFlagsApi
 from .provider_management import ProviderManagement
 from .provider_users import ProviderUsers
 from .public_lookup_api import PublicLookupApi
-from .purchases import Purchases
 from .staff_users import StaffUsers
 
 
@@ -27,6 +25,7 @@ class V1Api:
         root: IResource,
         persistent_stack: ps.PersistentStack,
         api_lambda_stack: ApiLambdaStack,
+        search_persistent_stack: sps.SearchPersistentStack,
     ):
         super().__init__()
         from stacks.api_stack.api import LicenseApi
@@ -53,7 +52,6 @@ class V1Api:
             stack.common_env_vars.update({'API_BASE_URL': f'https://{persistent_stack.api_domain_name}'})
 
         read_scopes = []
-        write_scopes = []
         admin_scopes = []
         read_ssn_scopes = []
         # set the compact level scopes
@@ -61,7 +59,6 @@ class V1Api:
             # We only set the readGeneral permission scope at the compact level, since users with any permissions
             # within a compact are implicitly granted this scope
             read_scopes.append(f'{compact}/readGeneral')
-            write_scopes.append(f'{compact}/write')
             admin_scopes.append(f'{compact}/admin')
             read_ssn_scopes.append(f'{compact}/readSSN')
 
@@ -73,7 +70,6 @@ class V1Api:
             # The one exception to this is the readPrivate scope, as this is exclusively checked in the runtime code
             # to determine what data to return from the query related endpoints
             for jurisdiction in _active_compact_jurisdictions:
-                write_scopes.append(f'{jurisdiction}/{compact}.write')
                 admin_scopes.append(f'{jurisdiction}/{compact}.admin')
                 read_ssn_scopes.append(f'{jurisdiction}/{compact}.readSSN')
 
@@ -81,11 +77,6 @@ class V1Api:
             authorization_type=AuthorizationType.COGNITO,
             authorizer=self.api.staff_users_authorizer,
             authorization_scopes=read_scopes,
-        )
-        write_auth_method_options = MethodOptions(
-            authorization_type=AuthorizationType.COGNITO,
-            authorizer=self.api.staff_users_authorizer,
-            authorization_scopes=write_scopes,
         )
 
         admin_auth_method_options = MethodOptions(
@@ -99,9 +90,6 @@ class V1Api:
             authorizer=self.api.staff_users_authorizer,
             authorization_scopes=read_ssn_scopes,
         )
-
-        # Store the privilege history handler for use by multiple modules
-        privilege_history_handler = api_lambda_stack.privilege_history_handler
 
         # /v1/flags
         self.flags_resource = self.resource.add_resource('flags')
@@ -129,7 +117,7 @@ class V1Api:
                 resource=self.public_compacts_compact_providers_resource,
                 api_model=self.api_model,
                 api_lambda_stack=api_lambda_stack,
-                privilege_history_function=privilege_history_handler,
+                search_persistent_stack=search_persistent_stack,
             )
 
         # /v1/provider-users
@@ -137,26 +125,13 @@ class V1Api:
         self.provider_users = ProviderUsers(
             resource=self.provider_users_resource,
             api_model=self.api_model,
-            privilege_history_function=privilege_history_handler,
             api_lambda_stack=api_lambda_stack,
         )
-
-        # /v1/purchases
-        self.purchases_resource = self.resource.add_resource('purchases')
-        self.purchases = Purchases(self.purchases_resource, api_model=self.api_model, api_lambda_stack=api_lambda_stack)
 
         # /v1/compacts
         self.compacts_resource = self.resource.add_resource('compacts')
         # /v1/compacts/{compact}
         self.compact_resource = self.compacts_resource.add_resource('{compact}')
-
-        # /v1/compacts/{compact}/attestations
-        self.attestations_resource = self.compact_resource.add_resource('attestations')
-        self.attestations = Attestations(
-            resource=self.attestations_resource,
-            api_model=self.api_model,
-            api_lambda_stack=api_lambda_stack,
-        )
 
         # /v1/compacts/{compact}/credentials
         credentials_resource = self.compact_resource.add_resource('credentials')
@@ -177,7 +152,6 @@ class V1Api:
             ssn_method_options=read_ssn_auth_method_options,
             api_model=self.api_model,
             api_lambda_stack=api_lambda_stack,
-            privilege_history_function=privilege_history_handler,
         )
         # GET  /v1/compacts/{compact}/jurisdictions
         self.jurisdictions_resource = self.compact_resource.add_resource('jurisdictions')
@@ -197,15 +171,6 @@ class V1Api:
             jurisdiction_resource=self.jurisdiction_resource,
             general_read_method_options=read_auth_method_options,
             admin_method_options=admin_auth_method_options,
-            api_model=self.api_model,
-            api_lambda_stack=api_lambda_stack,
-        )
-
-        # GET  /v1/compacts/{compact}/jurisdictions/{jurisdiction}/licenses/bulk-upload
-        licenses_resource = self.jurisdiction_resource.add_resource('licenses')
-        BulkUploadUrl(
-            resource=licenses_resource,
-            method_options=write_auth_method_options,
             api_model=self.api_model,
             api_lambda_stack=api_lambda_stack,
         )

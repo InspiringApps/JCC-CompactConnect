@@ -59,6 +59,7 @@ class CredentialsLambdas:
             description='Post credentials payment processor handler',
             runtime=Runtime.PYTHON_3_12,
             lambda_dir='purchases',
+            shared=True,
             index=os.path.join('handlers', 'credentials.py'),
             handler='post_payment_processor_credentials',
             environment=env_vars,

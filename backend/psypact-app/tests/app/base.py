@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 from aws_cdk.assertions import Annotations, Match, Template
 from aws_cdk.aws_apigateway import CfnGatewayResponse, CfnMethod
-from aws_cdk.aws_cognito import CfnUserPool, CfnUserPoolClient, CfnUserPoolDomain, CfnUserPoolResourceServer
+from aws_cdk.aws_cognito import CfnUserPool, CfnUserPoolClient
 from aws_cdk.aws_dynamodb import CfnTable
 from aws_cdk.aws_events import CfnRule
 from aws_cdk.aws_kms import CfnKey
@@ -21,7 +21,6 @@ from pipeline import BackendStage
 from stacks.api_stack import ApiStack
 from stacks.persistent_stack import PersistentStack
 from stacks.provider_users import ProviderUsersStack
-from stacks.state_auth import StateAuthStack
 
 
 class _AppSynthesizer:
@@ -160,42 +159,6 @@ class TstAppABC(ABC):
                 ['custom:compact', 'custom:providerId', 'email'],
             )
             self.assertEqual(provider_users_user_pool_app_client['WriteAttributes'], ['email'])
-
-    def _inspect_state_auth_stack(
-        self,
-        state_auth_stack: StateAuthStack,
-    ):
-        with self.subTest(state_auth_stack.stack_name):
-            state_auth_stack_template = Template.from_stack(state_auth_stack)
-
-            # Basic resource count validation
-            state_auth_stack_template.resource_count_is(CfnUserPool.CFN_RESOURCE_TYPE_NAME, 1)
-            state_auth_stack_template.resource_count_is(
-                CfnUserPoolClient.CFN_RESOURCE_TYPE_NAME, 0
-            )  # Manual provisioning
-            state_auth_stack_template.resource_count_is('AWS::Cognito::UserPoolDomain', 1)
-
-            # Fundamental security configuration
-            state_auth_stack_template.has_resource_properties(
-                CfnUserPool.CFN_RESOURCE_TYPE_NAME,
-                {
-                    'AdminCreateUserConfig': {
-                        'AllowAdminCreateUserOnly': True,
-                    },
-                    'Policies': {
-                        'PasswordPolicy': {
-                            'MinimumLength': 32,
-                            'RequireNumbers': True,
-                            'RequireLowercase': True,
-                            'RequireUppercase': True,
-                            'RequireSymbols': True,
-                            'TemporaryPasswordValidityDays': 1,
-                        },
-                    },
-                },
-            )
-            state_auth_stack_template.has_resource(CfnUserPoolDomain.CFN_RESOURCE_TYPE_NAME, {})
-            state_auth_stack_template.has_resource(CfnUserPoolResourceServer.CFN_RESOURCE_TYPE_NAME, {})
 
     def _inspect_persistent_stack(
         self,
@@ -579,23 +542,18 @@ class TstAppABC(ABC):
         self._check_no_stack_annotations(stage.api_lambda_stack)
         self._check_no_stack_annotations(stage.api_stack)
         self._check_no_stack_annotations(stage.disaster_recovery_stack)
-        self._check_no_stack_annotations(stage.event_listener_stack)
         self._check_no_stack_annotations(stage.feature_flag_stack)
-        self._check_no_stack_annotations(stage.ingest_stack)
         self._check_no_stack_annotations(stage.managed_login_stack)
         self._check_no_stack_annotations(stage.persistent_stack)
         self._check_no_stack_annotations(stage.provider_users_stack)
-        self._check_no_stack_annotations(stage.state_api_stack)
-        self._check_no_stack_annotations(stage.state_auth_stack)
+        self._check_no_stack_annotations(stage.search_api_stack)
+        self._check_no_stack_annotations(stage.search_persistent_stack)
         self._check_no_stack_annotations(stage.transaction_monitoring_stack)
         # These are only present if a hosted zone is configured
         if stage.persistent_stack.hosted_zone:
             self._check_no_stack_annotations(stage.notification_stack)
             self._check_no_stack_annotations(stage.reporting_stack)
-            # Expiration reminder stack is not deployed in beta (same as pipeline)
-            if stage.environment_name != 'beta':
-                self._check_no_stack_annotations(stage.expiration_reminder_stack)
-        # No backup stack here, because nexted stack annotations are checked in the parent stack
+        # No backup stack here, because nested stack annotations are checked in the parent stack
 
     def _count_stack_resources(self, stack: Stack) -> int:
         """
@@ -624,14 +582,12 @@ class TstAppABC(ABC):
             ('api_stack', stage.api_stack),
             ('backup_infrastructure_stack', stage.backup_infrastructure_stack),
             ('disaster_recovery_stack', stage.disaster_recovery_stack),
-            ('event_listener_stack', stage.event_listener_stack),
             ('feature_flag_stack', stage.feature_flag_stack),
-            ('ingest_stack', stage.ingest_stack),
             ('managed_login_stack', stage.managed_login_stack),
             ('persistent_stack', stage.persistent_stack),
             ('provider_users_stack', stage.provider_users_stack),
-            ('state_api_stack', stage.state_api_stack),
-            ('state_auth_stack', stage.state_auth_stack),
+            ('search_api_stack', stage.search_api_stack),
+            ('search_persistent_stack', stage.search_persistent_stack),
             ('transaction_monitoring_stack', stage.transaction_monitoring_stack),
         ]
         if stage.persistent_stack.hosted_zone:

@@ -2,19 +2,19 @@
 from datetime import date
 from urllib.parse import quote
 
-from marshmallow import post_dump, post_load, pre_dump, pre_load
+from marshmallow import post_load, pre_dump, pre_load
 from marshmallow.fields import UUID, AwareDateTime, Date, Email, String
 from marshmallow.validate import Length
 
-from cc_common.config import config
-from cc_common.data_model.schema.base_record import BaseRecordSchema, ForgivingSchema
-from cc_common.data_model.schema.common import (
+from common_lambdas.config import config
+from common_lambdas.data_model.schema.base_record import BaseRecordSchema, ForgivingSchema
+from common_lambdas.data_model.schema.common import (
     ActiveInactiveStatus,
     CompactEligibilityStatus,
     LicenseEncumberedStatusEnum,
     ValidatesLicenseTypeMixin,
 )
-from cc_common.data_model.schema.fields import (
+from common_lambdas.data_model.schema.fields import (
     ActiveInactive,
     Compact,
     CompactEligibility,

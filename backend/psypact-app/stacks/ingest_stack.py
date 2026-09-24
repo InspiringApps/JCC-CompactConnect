@@ -46,6 +46,7 @@ class IngestStack(AppStack):
             'V1IngestHandler',
             description='Ingest license data handler',
             lambda_dir='provider-data-v1',
+            shared=True,
             index=os.path.join('handlers', 'ingest.py'),
             handler='ingest_license_message',
             timeout=Duration.minutes(5),
