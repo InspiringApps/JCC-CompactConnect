@@ -1009,7 +1009,7 @@ class ApiModel:
                                 ),
                                 'isLive': JsonSchema(
                                     type=JsonSchemaType.BOOLEAN,
-                                    description='Whether the state is live and available for registrations.',
+                                    description='Whether the state is privilege-live.',
                                 ),
                             },
                         ),
@@ -1073,7 +1073,19 @@ class ApiModel:
                                 ),
                                 'isLive': JsonSchema(
                                     type=JsonSchemaType.BOOLEAN,
-                                    description='Whether the state is live and available for registrations.',
+                                    description='Whether the state is privilege-live.',
+                                ),
+                                'jurisdictionAdverseActionsNotificationEmails': JsonSchema(
+                                    type=JsonSchemaType.ARRAY,
+                                    description=(
+                                        'Adverse action notification emails. Required when marking the state '
+                                        'privilege-live, even if the jurisdiction already has emails. An existing '
+                                        'list is not overwritten. Not stored on the compact.'
+                                    ),
+                                    min_items=1,
+                                    max_items=10,
+                                    unique_items=True,
+                                    items=JsonSchema(type=JsonSchemaType.STRING, format='email'),
                                 ),
                             },
                         ),

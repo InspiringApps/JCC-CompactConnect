@@ -25,6 +25,17 @@ class CompactConfigurationResponseSchema(ForgivingSchema):
     configuredStates = List(Nested(ConfiguredStateSchema()), required=True, allow_none=False)
 
 
+class PutConfiguredStateRequestSchema(ConfiguredStateSchema):
+    """Request-only configured state. Emails are written to the jurisdiction record, not stored on the compact."""
+
+    jurisdictionAdverseActionsNotificationEmails = List(
+        Email(required=True, allow_none=False),
+        required=False,
+        allow_none=False,
+        validate=Length(min=1),
+    )
+
+
 class PutCompactConfigurationRequestSchema(Schema):
     """Schema for the PUT /v1/compacts/{compact} request body"""
 
@@ -35,7 +46,7 @@ class PutCompactConfigurationRequestSchema(Schema):
         Email(required=True, allow_none=False), required=True, allow_none=False, validate=Length(min=1)
     )
     licenseeRegistrationEnabled = Boolean(required=True, allow_none=False)
-    configuredStates = List(Nested(ConfiguredStateSchema()), required=True, allow_none=False)
+    configuredStates = List(Nested(PutConfiguredStateRequestSchema()), required=True, allow_none=False)
 
     @validates_schema
     def validate_no_duplicates_in_configured_states(self, data, **kwargs):  # noqa: ARG001 unused-argument
