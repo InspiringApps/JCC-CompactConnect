@@ -400,6 +400,7 @@ class StateSettingsList extends mixins(MixinForm) {
             const { compactType, selectedState } = this;
             const selectedStateAbbrev = selectedState?.abbrev || '';
             const payload = { ...this.initialCompactConfig };
+            let isStateConfigured = false;
 
             // For enabling a state, the server requires the entire compact config, minus a couple props
             payload.compactName = undefined;
@@ -415,8 +416,20 @@ class StateSettingsList extends mixins(MixinForm) {
                         configuredState.jurisdictionAdverseActionsNotificationEmails = // eslint-disable-line operator-linebreak
                             this.formData.adverseActionNotificationEmails.value;
                     }
+
+                    isStateConfigured = true;
                 }
             });
+
+            // If the compact is able to separately enable states as privilege-live AND the state isn't already part of the server-side config
+            if (!isStateConfigured) {
+                payload.configuredStates.push({
+                    postalAbbreviation: selectedStateAbbrev,
+                    isLive: true,
+                    jurisdictionAdverseActionsNotificationEmails: this.formData.adverseActionNotificationEmails.value,
+                });
+                isStateConfigured = true;
+            }
 
             // Call the server API to update
             await dataApi.updateCompactConfig(compactType, payload).catch((err) => {
