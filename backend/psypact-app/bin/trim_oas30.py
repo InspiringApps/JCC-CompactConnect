@@ -49,7 +49,7 @@ if __name__ == '__main__':
     elif args.internal:
         base_dir = os.path.join('docs', 'internal', 'api-specification')
     else:
-        base_dir = os.path.join('docs', 'api-specification')
+        raise SystemExit('Pass --internal or --search. PSYPACT does not publish a state license API specification.')
     file_path = os.path.join(workspace_dir, base_dir, 'latest-oas30.json')
 
     with open(file_path) as f:

@@ -22,7 +22,6 @@ from common_constructs.stack import AppStack
 from constructs import Construct
 
 from stacks.backup_infrastructure_stack import BackupInfrastructureStack
-from stacks.persistent_stack.bulk_uploads_bucket import BulkUploadsBucket
 from stacks.persistent_stack.compact_configuration_table import CompactConfigurationTable
 from stacks.persistent_stack.compact_configuration_upload import CompactConfigurationUpload
 from stacks.persistent_stack.data_event_table import DataEventTable
@@ -208,14 +207,10 @@ class PersistentStack(AppStack):
             self,
             'SSNTable',
             removal_policy=removal_policy,
-            data_event_bus=self._data_event_bus,
-            alarm_topic=self.alarm_topic,
             backup_infrastructure_stack=backup_infrastructure_stack,
             environment_context=self.environment_context,
         )
 
-        # The provider table is created before the bulk uploads bucket, because the bucket's CSV parse
-        # lambda needs the table's license number index to resolve uploads that omit the SSN.
         self.provider_table = ProviderTable(
             self,
             'ProviderTable',
@@ -223,18 +218,6 @@ class PersistentStack(AppStack):
             removal_policy=removal_policy,
             backup_infrastructure_stack=backup_infrastructure_stack,
             environment_context=self.environment_context,
-        )
-
-        self.bulk_uploads_bucket = BulkUploadsBucket(
-            self,
-            'BulkUploadsBucket',
-            access_logs_bucket=self.access_logs_bucket,
-            # Note that we're using the ssn key here, which has a much more restrictive policy.
-            # The messages in this bucket include SSN, so we want it just as locked down as our
-            # permanent storage of SSN data.
-            bucket_encryption_key=self.ssn_table.key,
-            removal_policy=removal_policy,
-            auto_delete_objects=removal_policy == RemovalPolicy.DESTROY,
         )
 
         self.transaction_reports_bucket = TransactionReportsBucket(
@@ -251,24 +234,6 @@ class PersistentStack(AppStack):
             encryption_key=self.shared_encryption_key,
             removal_policy=removal_policy,
         )
-
-        # Both license upload lambdas (the POST licenses API handler and the bulk upload CSV parser)
-        # share the license upload role, and both need to resolve a practitioner from a license number
-        # when a state uploads without an SSN. They are granted Query on the license number index alone,
-        # rather than read access to the table, so this SSN-handling role cannot read full license
-        # records. The index projects only the provider id and ssnLastFour those handlers need.
-        self.ssn_table.license_upload_role.add_to_policy(
-            PolicyStatement(
-                effect=Effect.ALLOW,
-                actions=['dynamodb:Query'],
-                resources=[f'{self.provider_table.table_arn}/index/{self.provider_table.license_number_gsi_name}'],
-            )
-        )
-        # the provider table is encrypted with the shared key, so reading from its index needs decrypt
-        self.shared_encryption_key.grant_decrypt(self.ssn_table.license_upload_role)
-        # Both upload lambdas publish license.ingest events directly for uploads that omit the SSN,
-        # bypassing the preprocessing queue that exists only to translate full SSNs into a provider id.
-        self._data_event_bus.grant_put_events_to(self.ssn_table.license_upload_role)
 
         # The api query role needs access to the provider table to associate a provider with
         # its jurisdictions, so it can make authorization decisions for the requester.
@@ -520,7 +485,6 @@ class PersistentStack(AppStack):
         )
 
         # Add bucket names needed for CSP Lambda
-        frontend_app_config.set_license_bulk_uploads_bucket_name(bucket_name=self.bulk_uploads_bucket.bucket_name)
         frontend_app_config.set_provider_users_bucket_name(bucket_name=self.provider_users_bucket.bucket_name)
 
         # Generate the SSM parameter

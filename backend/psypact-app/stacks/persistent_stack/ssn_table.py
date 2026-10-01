@@ -1,6 +1,4 @@
-import os
-
-from aws_cdk import ArnFormat, Duration, RemovalPolicy
+from aws_cdk import ArnFormat, RemovalPolicy
 from aws_cdk.aws_backup import BackupResource
 from aws_cdk.aws_dynamodb import (
     Attribute,
@@ -11,7 +9,6 @@ from aws_cdk.aws_dynamodb import (
     Table,
     TableEncryption,
 )
-from aws_cdk.aws_events import EventBus
 from aws_cdk.aws_iam import (
     Effect,
     ManagedPolicy,
@@ -22,11 +19,8 @@ from aws_cdk.aws_iam import (
     StarPrincipal,
 )
 from aws_cdk.aws_kms import Key
-from aws_cdk.aws_sns import ITopic
 from cdk_nag import NagSuppressions
 from common_constructs.backup_plan import CCBackupPlan
-from common_constructs.python_function import PythonFunction
-from common_constructs.queued_lambda_processor import QueuedLambdaProcessor
 from common_constructs.stack import Stack
 from constructs import Construct
 
@@ -51,8 +45,6 @@ class SSNTable(Table):
         construct_id: str,
         *,
         removal_policy: RemovalPolicy,
-        data_event_bus: EventBus,
-        alarm_topic: ITopic,
         backup_infrastructure_stack: BackupInfrastructureStack,
         environment_context: dict,
         **kwargs,
@@ -212,31 +204,6 @@ class SSNTable(Table):
         self._configure_access()
 
     def _configure_access(self):
-        self.ingest_role = Role(
-            self,
-            'LicenseIngestRole',
-            assumed_by=ServicePrincipal('lambda.amazonaws.com'),
-            description='Dedicated role for license ingest, with access to full SSNs',
-            managed_policies=[ManagedPolicy.from_aws_managed_policy_name('service-role/AWSLambdaBasicExecutionRole')],
-        )
-        self.grant_read_write_data(self.ingest_role)
-        self._role_suppressions(self.ingest_role)
-
-        self.license_upload_role = Role(
-            self,
-            'LicenseUploadRole',
-            assumed_by=ServicePrincipal('lambda.amazonaws.com'),
-            description='Dedicated role for lambdas that upload license records '
-            'into the preprocessing queue with full SSNs',
-            managed_policies=[ManagedPolicy.from_aws_managed_policy_name('service-role/AWSLambdaBasicExecutionRole')],
-        )
-        # This role is used by both the bulk upload and post license lambdas, the bulk upload S3 bucket is encrypted
-        # with the same KMS key as the SSN table, so we must grant the role decrypt and encrypt to read/write the
-        # objects in the bucket.
-        # The role also needs the encrypt permission in order to put license data on the license preprocessing queue.
-        self.key.grant_encrypt_decrypt(self.license_upload_role)
-        self._role_suppressions(self.license_upload_role)
-
         self.api_query_role = Role(
             self,
             'ProviderQueryRole',
@@ -415,8 +382,6 @@ class SSNTable(Table):
         # This explicitly blocks any principals (including account admins) from reading data
         # encrypted with this key other than our IAM roles declared here and dynamodb itself
         allowed_principal_arns = [
-            self.ingest_role.role_arn,
-            self.license_upload_role.role_arn,
             self.api_query_role.role_arn,
             self.disaster_recovery_lambda_role.role_arn,
             self.disaster_recovery_step_function_role.role_arn,
@@ -440,63 +405,6 @@ class SSNTable(Table):
             )
         )
         self.key.grant_decrypt(self.api_query_role)
-        self.key.grant_encrypt_decrypt(self.ingest_role)
-
-    def _setup_license_preprocessor_queue(self, data_event_bus: EventBus, alarm_topic: ITopic):
-        """Set up the license preprocessor queue and handler"""
-        stack: Stack = Stack.of(self)
-
-        preprocess_handler = PythonFunction(
-            self,
-            'LicensePreprocessHandler',
-            description='Preprocess license data to create SSN Dynamo records before sending licenses to the event bus',
-            lambda_dir='provider-data-v1',
-            shared=True,
-            index=os.path.join('handlers', 'ingest.py'),
-            handler='preprocess_license_ingest',
-            role=self.ingest_role,
-            timeout=Duration.minutes(2),
-            environment={
-                'EVENT_BUS_NAME': data_event_bus.event_bus_name,
-                'SSN_TABLE_NAME': self.table_name,
-                **stack.common_env_vars,
-            },
-            alarm_topic=alarm_topic,
-        )
-
-        # Grant permissions to the preprocess handler
-        data_event_bus.grant_put_events_to(preprocess_handler)
-        NagSuppressions.add_resource_suppressions_by_path(
-            Stack.of(preprocess_handler.role),
-            f'{preprocess_handler.role.node.path}/DefaultPolicy/Resource',
-            suppressions=[
-                {
-                    'id': 'AwsSolutions-IAM5',
-                    'reason': """
-                            This policy contains wild-carded actions and resources but they are scoped to the
-                            specific actions, KMS key and Table that this lambda specifically needs access to.
-                            """,
-                },
-            ],
-        )
-
-        # Create the queued lambda processor for license preprocessing
-        self.preprocessor_queue = QueuedLambdaProcessor(
-            self,
-            'LicenseQueuePreprocessor',
-            process_function=preprocess_handler,
-            # SQS visibility timeout is larger than the function timeout,
-            # so a message stays invisible long enough to cover the full batch's processing, plus potential retries,
-            # before it can be redelivered. See https://docs.aws.amazon.com/lambda/latest/dg/services-sqs-configure.html
-            visibility_timeout=Duration.minutes(8),
-            retention_period=Duration.hours(12),
-            max_batching_window=Duration.minutes(1),
-            max_receive_count=3,
-            batch_size=50,
-            # Use the SSN key for encryption to protect sensitive data
-            encryption_key=self.key,
-            alarm_topic=alarm_topic,
-        )
 
     def _role_suppressions(self, role: Role):
         stack = Stack.of(role)

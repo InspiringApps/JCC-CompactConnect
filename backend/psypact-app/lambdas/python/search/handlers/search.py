@@ -548,8 +548,6 @@ def _create_flattened_privilege(privilege: dict, license_record: dict, provider:
     """
     Create a flattened privilege record by combining privilege and license data.
 
-    This mirrors the logic in state_api.py _create_flattened_privilege function.
-
     :param privilege: Privilege record
     :param license_record: Matching license record
     :param provider: Provider record (for email if registered)

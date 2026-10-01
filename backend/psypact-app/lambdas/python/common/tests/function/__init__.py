@@ -41,7 +41,6 @@ class TstFunction(TstLambdas):
         self.create_ssn_table()
         self.create_users_table()
         self.create_transaction_history_table()
-        self.create_license_preprocessing_queue()
         self.create_rate_limiting_table()
         self.create_event_state_table()
         self.create_provider_users_bucket()
@@ -213,10 +212,6 @@ class TstFunction(TstLambdas):
             BillingMode='PAY_PER_REQUEST',
         )
 
-    def create_license_preprocessing_queue(self):
-        self._license_preprocessing_queue = boto3.resource('sqs').create_queue(QueueName='workflow-queue')
-        os.environ['LICENSE_PREPROCESSING_QUEUE_URL'] = self._license_preprocessing_queue.url
-
     def delete_resources(self):
         self._provider_user_bucket.objects.delete()
         self._provider_user_bucket.delete()
@@ -225,7 +220,6 @@ class TstFunction(TstLambdas):
         self._ssn_table.delete()
         self._users_table.delete()
         self._transaction_history_table.delete()
-        self._license_preprocessing_queue.delete()
         self._rate_limiting_table.delete()
         self._event_state_table.delete()
 

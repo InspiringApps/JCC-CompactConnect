@@ -151,14 +151,15 @@ Keeping documentation current is an important part of feature development in thi
 non-trivial amount of architecture or other technical design, be sure that the design and considerations are captured
 in the [design documentation](./docs/design). If any updates are made to the API, be sure to follow these steps to keep
 the documentation current:
-1) Export a fresh api specification (OAS 3.0) is exported from API Gateway and used to update
-   [the Open API Specification JSON file](./docs/api-specification/latest-oas30.json).
-2) Run `bin/trim_oas30.py` to organize and trim the API to include only supported API endpoints (and update the script
-   itself, if needed).
+1) Export a fresh api specification (OAS 3.0) from API Gateway and use it to update
+   [the internal Open API Specification JSON file](./docs/internal/api-specification/latest-oas30.json)
+   or [the search API specification](./docs/search-internal/api-specification/latest-oas30.json).
+2) Run `bin/trim_oas30.py --internal` or `bin/trim_oas30.py --search` to organize and trim the API to include only
+   supported API endpoints (and update the script itself, if needed).
 3) If you exported the api specification from somewhere other than the CSG Test environment, be sure to set the
    `servers[0].url` entry back to the correct base URL for the CSG Test environment.
-4) Use `bin/update_postman_collection.py` to update the [Postman Collection and Environment](./docs/postman), based on
-   your new api spec, as appropriate.
+4) Use `bin/update_postman_collection.py --internal` or `bin/update_postman_collection.py --search` to update the
+   matching Postman collection, based on your new api spec, as appropriate.
 
 ## Deployment
 [Back to top](#compact-connect---backend-developer-documentation)
@@ -384,7 +385,7 @@ There are **two** parameters to copy, and the frontend deployment fails unless b
 
 | Parameter | Created by | Contains |
 | --- | --- | --- |
-| `/app/psypact/deployment/persistent-stack/frontend_app_configuration` | Persistent stack | Staff Cognito domain and client id, UI/API/search API domain names, bulk uploads and provider users bucket names |
+| `/app/psypact/deployment/persistent-stack/frontend_app_configuration` | Persistent stack | Staff Cognito domain and client id, UI/API/search API domain names, and the provider users bucket name |
 | `/app/psypact/deployment/provider-users-stack/frontend_app_configuration` | Provider users stack | Provider (licensee) Cognito domain and client id |
 
 Repeat the process below for each parameter.

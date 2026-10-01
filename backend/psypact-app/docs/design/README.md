@@ -4,7 +4,7 @@ Look here for continued documentation of the back-end design, as it progresses.
 
 ## Table of Contents
 - **[Compacts and Jurisdictions](#compacts-and-jurisdictions)**
-- **[License Ingest](#license-ingest)**
+- **[SSN Access Controls](#ssn-access-controls)**
 - **[User Architecture](#user-architecture)**
 - **[Data Model](#data-model)**
 - **[Privileges](#privileges)**
@@ -35,17 +35,12 @@ Once the supported compacts have been updated and the configuration change deplo
 a user for the compact's executive director, who then will be allowed to start creating users for the boards of each
 jurisdiction within the compact.
 
-## License Ingest
+PSYPACT member jurisdictions do not upload license records into this system. There is no state license API, bulk
+license upload, or license ingest pipeline.
+
+## SSN Access Controls
 [Back to top](#backend-design)
 
-To facilitate sharing of license data across states, compact member jurisdictions will periodically upload data for
-eligible licensees to CompactConnect. See [license-ingest-digram.pdf](./license-ingest-diagram.pdf) for an illustration
-of the ingest chain architecture. Board admins and/or information systems have two primary methods of upload:
-- A direct HTTP POST method, where they can synchronously validate up to 100 licenses per call.
-- A bulk-upload mechanism that allows submitting of a CSV file with a much larger number of licenses for asynchronous
-  validation and ingest.
-
-### SSN Access Controls
 The system implements strict controls for SSN access:
 
 1. **Dedicated SSN Table**: All SSN data is stored in a dedicated DynamoDB table with strict access controls and
@@ -59,51 +54,9 @@ The system implements strict controls for SSN access:
 4. **Restricted Operations**: The SSN table policy explicitly denies batch operations to prevent mass data extraction.
 
 #### SSN Role-Based Access
-Three specialized IAM roles control access to SSN data:
-   - `license_upload_role`: Used by upload handlers to encrypt SSN data for the preprocessing queue.
-   - `ingest_role`: Used by the license preprocessor to create and update SSN records in the SSN table.
-   - `api_query_role`: Used by the Get SSN API endpoint to allow staff users to read the SSN for an individual provider
-     per request (staff user must have the readSSN permission).
-
-### Ingest Flow
-
-The ingest process begins when license data enters the system through one of the following two methods:
-
-#### HTTP POST
-   Clients can directly post an array of up to 100 licenses to the license data API. If they do this, the API will
-validate each license synchronously and return any validation errors to the client. If the licenses are valid,
-the API will send the validated licenses to the preprocessing queue.
-
-#### Bulk Upload
-   To upload a bulk license file, clients use an authenticated GET endpoint to receive a
-[presigned url](https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-presigned-url.html) that will allow the
-client to directly upload their file to s3. Once the file is uploaded to s3, an s3 event triggers a lambda to read and
-validate each license in the data file, then fire either a success or failure event to the license data event bus.
-
-Both of these upload methods will place license records containing full SSNs in an SQS queue which is encrypted with the
-same KMS key as the SSN table to invoke the license preprocessor Lambda function.
-
-#### **License Preprocessing**:
-   - A Lambda function processes messages from the encrypted queue
-   - For each license, it:
-     - Extracts the full SSN from the license data and creates/updates a record in the SSN table, which becomes
-       associated with a provider ID. This provider id is unique to the CompactConnect system and is used to generate
-       provider records within the system.
-     - After creating the SSN record, the lambda Publishes an event to the data event bus with the license data
-       (minus the full SSN)
-
-   The event bus then triggers the license data processing Lambda function.
-
-#### **License Data Processing**:
-   - The data event bus receives the sanitized license events
-   - Downstream processors create provider and license records in the provider table, using only the last four digits
-     of the SSN
-
-This architecture ensures that SSN data is protected throughout the ingest process while still allowing the system to
-associate licenses with the correct providers across jurisdictions.
-
-### Asynchronous validation feedback
-Asynchronous validation feedback for boards to review is not yet implemented.
+`api_query_role` is used by the Get SSN API endpoint to allow staff users to read the SSN for an individual provider
+per request. The staff user must have the readSSN permission. Disaster recovery roles are also allowed to use the
+SSN key when restoring the table.
 
 ## User Architecture
 [Back to top](#backend-design)
@@ -217,11 +170,6 @@ and includes a data structure that details that user's particular permissions. C
 We use that feature to retrieve the database record for each user, parse the permissions data and translate those
 into scopes, which will be added to the Cognito token. The lambda generates scopes based on both compact-level and
 jurisdiction-level permissions, ensuring consistent access control at token issuance.
-
-#### Machine-to-machine app clients
-
-See README under the [app_clients](../../app_clients/README.md) directory for more information about how
-machine-to-machine app clients are configured and used in the system.
 
 ### Licensee Users
 
