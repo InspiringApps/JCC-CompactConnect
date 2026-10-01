@@ -18,6 +18,7 @@ _SKIP_DIR_NAMES = frozenset(
     {
         '__pycache__',
         '.ruff_cache',
+        '.pytest_cache',
         '.venv',
         # This test package is not a copy of Cosmetology/JCC sources.
         'copy_sync_tests',
