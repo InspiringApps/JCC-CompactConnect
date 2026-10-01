@@ -147,6 +147,7 @@ class FeatureFlagStack(AppStack):
             'ManageFunction',
             index=os.path.join('handlers', 'manage_feature_flag.py'),
             lambda_dir='feature-flag',
+            shared=True,
             handler='on_event',
             log_retention=RetentionDays.ONE_MONTH,
             environment={'ENVIRONMENT_NAME': environment_name},

@@ -38,10 +38,14 @@ class PublicLookupApiLambdas:
             env_vars=lambda_environment,
             data_encryption_key=persistent_stack.shared_encryption_key,
             provider_table=persistent_stack.provider_table,
+            compact_configuration_table=persistent_stack.compact_configuration_table,
             alarm_topic=persistent_stack.alarm_topic,
         )
         api_lambda_stack.log_groups.append(self.get_provider_handler.log_group)
 
+        # the public query providers endpoint now uses SearchPersistentStack.search_handler.public_handler;
+        # this lambda is no longer wired to the API.
+        # TODO: remove this lambda after the stack is deployed to all envs  # noqa: FIX002
         self.query_providers_handler = self._query_providers_handler(
             scope=scope,
             env_vars=lambda_environment,
@@ -58,6 +62,7 @@ class PublicLookupApiLambdas:
         env_vars: dict,
         data_encryption_key: IKey,
         provider_table: ITable,
+        compact_configuration_table: ITable,
         alarm_topic: ITopic,
     ) -> PythonFunction:
         stack = Stack.of(scope)
@@ -67,6 +72,7 @@ class PublicLookupApiLambdas:
             'PublicGetProviderHandler',
             description='Public Get provider handler',
             lambda_dir='provider-data-v1',
+            shared=True,
             index=os.path.join('handlers', 'public_lookup.py'),
             handler='public_get_provider',
             environment=env_vars,
@@ -74,6 +80,7 @@ class PublicLookupApiLambdas:
         )
         data_encryption_key.grant_decrypt(handler)
         provider_table.grant_read_data(handler)
+        compact_configuration_table.grant_read_data(handler)
 
         NagSuppressions.add_resource_suppressions_by_path(
             stack,
@@ -102,6 +109,7 @@ class PublicLookupApiLambdas:
             'PublicQueryProvidersHandler',
             description='Public Query providers handler',
             lambda_dir='provider-data-v1',
+            shared=True,
             index=os.path.join('handlers', 'public_lookup.py'),
             handler='public_query_providers',
             environment=env_vars,

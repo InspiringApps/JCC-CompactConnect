@@ -17,9 +17,7 @@
     "compact": {
       "description": "Compact abbreviation",
       "enum": [
-        "aslp",
-        "octp",
-        "coun"
+        "psypact"
       ],
       "type": "string"
     },
@@ -108,11 +106,8 @@
     "licenseType": {
       "description": "Type of license",
       "enum": [
-        "audiologist",
-        "speech-language pathologist",
-        "occupational therapist",
-        "occupational therapy assistant",
-        "licensed professional counselor"
+        "Psychologist",
+        "School Psychologist"
       ],
       "type": "string"
     },

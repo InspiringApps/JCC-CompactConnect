@@ -152,6 +152,7 @@ class CognitoUserBackup(Construct):
             'ExportLambda',
             description='Export user pool data for backup purposes',
             lambda_dir='cognito-backup',
+            shared=True,
             index=os.path.join('handlers', 'cognito_backup.py'),
             handler='backup_handler',
             timeout=Duration.minutes(15),  # Allow time for large user pools

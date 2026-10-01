@@ -54,6 +54,7 @@ class ExpirationReminderStack(AppStack):
             description='Processes privilege expiration reminders and sends email notifications',
             index=os.path.join('handlers', 'expiration_reminders.py'),
             lambda_dir='search',
+            shared=True,
             handler='process_expiration_reminders',
             timeout=Duration.minutes(15),  # 15-minute timeout to handle all providers in single execution
             memory_size=2048,  # Higher memory for processing large result sets

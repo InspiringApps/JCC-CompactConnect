@@ -110,8 +110,11 @@ class SearchPersistentStack(AppStack):
             vpc_subnets=self.provider_search_domain.vpc_subnets,
             lambda_role=self.search_api_lambda_role,
             alarm_topic=persistent_stack.alarm_topic,
-            export_results_bucket=self.export_results_bucket,
         )
+
+        # The public query providers route (POST /v1/public/.../providers/query) is wired to this
+        # public_handler and is not deployed in the beta environment (see api_stack/v1_api/api.py).
+        self.export_value(self.search_handler.public_handler.function_arn)
 
         # Create the populate provider documents handler for manual invocation
         # This handler is used to bulk index provider documents from DynamoDB into OpenSearch
@@ -123,6 +126,7 @@ class SearchPersistentStack(AppStack):
             vpc_subnets=self.provider_search_domain.vpc_subnets,
             lambda_role=self.opensearch_ingest_lambda_role,
             provider_table=persistent_stack.provider_table,
+            compact_configuration_table=persistent_stack.compact_configuration_table,
             alarm_topic=persistent_stack.alarm_topic,
         )
 
@@ -136,6 +140,7 @@ class SearchPersistentStack(AppStack):
             vpc_subnets=self.provider_search_domain.vpc_subnets,
             lambda_role=self.opensearch_ingest_lambda_role,
             provider_table=persistent_stack.provider_table,
+            compact_configuration_table=persistent_stack.compact_configuration_table,
             encryption_key=self.opensearch_encryption_key,
             alarm_topic=persistent_stack.alarm_topic,
         )

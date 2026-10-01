@@ -57,8 +57,6 @@ class ProviderUsersBucket(Bucket):
         )
         self.log_groups = []
 
-        self._add_v1_object_events(provider_table, encryption_key)
-
         backup_enabled = environment_context['backup_enabled']
         if backup_enabled and backup_infrastructure_stack is not None:
             self.backup_plan = CCBackupPlan(
@@ -106,6 +104,7 @@ class ProviderUsersBucket(Bucket):
             'V1ProcessProviderS3EventsHandler',
             description='Process updates to provider s3 objects handler',
             lambda_dir='provider-data-v1',
+            shared=True,
             index=os.path.join('handlers', 'provider_s3_events.py'),
             handler='process_provider_s3_events',
             # we currently don't expect update events to take more than a minute

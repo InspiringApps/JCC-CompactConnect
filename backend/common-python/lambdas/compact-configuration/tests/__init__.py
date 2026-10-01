@@ -1,0 +1,40 @@
+# Copied from backend/cosmetology-app/lambdas/python/compact-configuration/tests/__init__.py
+
+import json
+import os
+from unittest import TestCase
+from unittest.mock import MagicMock
+
+from aws_lambda_powertools.utilities.typing import LambdaContext
+
+
+class TstLambdas(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        os.environ.update(
+            {
+                # Set to 'true' to enable debug logging
+                'DEBUG': 'true',
+                'ALLOWED_ORIGINS': '["https://example.org"]',
+                'AWS_DEFAULT_REGION': 'us-east-1',
+                'COMPACT_CONFIGURATION_TABLE_NAME': 'compact-configuration-table',
+                'COMPACTS': '["cosm"]',
+                'JURISDICTIONS': '["ne", "oh", "ky"]',
+                'ENVIRONMENT_NAME': 'test',
+                'LICENSE_TYPES': json.dumps(
+                    {
+                        'cosm': [
+                            {'name': 'cosmetologist', 'abbreviation': 'cos'},
+                            {'name': 'esthetician', 'abbreviation': 'esth'},
+                        ],
+                    },
+                ),
+            },
+        )
+        # Monkey-patch config object to be sure we have it based
+        # on the env vars we set above
+        from common_lambdas import config
+
+        cls.config = config._Config()  # noqa: SLF001 protected-access
+        config.config = cls.config
+        cls.mock_context = MagicMock(name='MockLambdaContext', spec=LambdaContext)

@@ -15,7 +15,7 @@ from common_constructs.queued_lambda_processor import QueuedLambdaProcessor
 from common_constructs.stack import Stack
 from constructs import Construct
 
-from stacks.persistent_stack import ProviderTable
+from stacks.persistent_stack import CompactConfigurationTable, ProviderTable
 from stacks.vpc_stack import VpcStack
 
 
@@ -41,6 +41,7 @@ class ProviderUpdateIngestHandler(Construct):
         vpc_subnets: SubnetSelection,
         lambda_role: IRole,
         provider_table: ProviderTable,
+        compact_configuration_table: CompactConfigurationTable,
         encryption_key: IKey,
         alarm_topic: ITopic,
     ):
@@ -68,12 +69,14 @@ class ProviderUpdateIngestHandler(Construct):
             'OpenSearch',
             index=os.path.join('handlers', 'provider_update_ingest.py'),
             lambda_dir='search',
+            shared=True,
             handler='provider_update_ingest_handler',
             role=lambda_role,
             log_retention=RetentionDays.ONE_MONTH,
             environment={
                 'OPENSEARCH_HOST_ENDPOINT': opensearch_domain.domain_endpoint,
                 'PROVIDER_TABLE_NAME': provider_table.table_name,
+                'COMPACT_CONFIGURATION_TABLE_NAME': compact_configuration_table.table_name,
                 **stack.common_env_vars,
             },
             # Allow enough time for processing large batches
@@ -137,6 +140,7 @@ class ProviderUpdateIngestHandler(Construct):
 
         # Grant the handler read access to the provider table for fetching full provider records
         provider_table.grant_read_data(self.handler)
+        compact_configuration_table.grant_read_data(self.handler)
 
         # Grant the handler permission to use the encryption key for SQS operations
         encryption_key.grant_encrypt_decrypt(self.handler)

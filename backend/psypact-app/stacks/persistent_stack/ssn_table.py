@@ -211,9 +211,6 @@ class SSNTable(Table):
 
         self._configure_access()
 
-        # Initialize the license preprocessor
-        self._setup_license_preprocessor_queue(data_event_bus, alarm_topic)
-
     def _configure_access(self):
         self.ingest_role = Role(
             self,
@@ -454,6 +451,7 @@ class SSNTable(Table):
             'LicensePreprocessHandler',
             description='Preprocess license data to create SSN Dynamo records before sending licenses to the event bus',
             lambda_dir='provider-data-v1',
+            shared=True,
             index=os.path.join('handlers', 'ingest.py'),
             handler='preprocess_license_ingest',
             role=self.ingest_role,
@@ -521,7 +519,11 @@ class SSNTable(Table):
             suppressions=[
                 {
                     'id': 'AwsSolutions-IAM5',
-                    'appliesTo': [f'Resource::<{stack.get_logical_id(self.node.default_child)}.Arn>/index/*'],
+                    'appliesTo': [
+                        f'Resource::<{stack.get_logical_id(self.node.default_child)}.Arn>/index/*',
+                        'Action::kms:GenerateDataKey*',
+                        'Action::kms:ReEncrypt*',
+                    ],
                     'reason': """
                     This policy contains wild-carded actions and resources but they are scoped to the
                     specific actions, KMS key and Table that this lambda specifically needs access to.

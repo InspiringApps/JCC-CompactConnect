@@ -114,6 +114,7 @@ class UserEmailNotifications(Construct):
             self,
             'DomainVerificationFunction',
             lambda_dir='custom-resources',
+            shared=True,
             index=os.path.join('handlers', 'ses_email_identity_verification_handler.py'),
             handler='on_event',
             description='Verifies that a SES email identity is verified',

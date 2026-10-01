@@ -1,0 +1,4 @@
+# Copied from backend/cosmetology-app/lambdas/python/staff-users/requirements-dev.in
+
+moto[dynamodb, s3, cognitoidp]>=5.2.2, <6
+Faker>=40.36.0, <41

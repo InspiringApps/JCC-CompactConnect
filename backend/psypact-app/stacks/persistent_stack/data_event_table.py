@@ -66,6 +66,7 @@ class DataEventTable(Table):
             'EventHandler',
             description='License data event handler',
             lambda_dir='data-events',
+            shared=True,
             index=os.path.join('handlers', 'data_events.py'),
             handler='handle_data_events',
             environment={'DATA_EVENT_TABLE_NAME': self.table_name, **stack.common_env_vars},

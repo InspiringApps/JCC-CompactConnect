@@ -1,0 +1,4 @@
+# Copied from backend/cosmetology-app/lambdas/python/search/requirements.in
+
+# common requirements are managed in the common requirements.in file
+opensearch-py>=3.1.0, <4.0.0
