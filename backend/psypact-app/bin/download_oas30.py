@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Download OpenAPI v3 specifications from AWS API Gateway for both StateApi and LicenseApi.
+Download OpenAPI v3 specifications from AWS API Gateway for LicenseApi and SearchApi.
 
 This script uses boto3 and CLI-configured credentials to find the APIs and download
 their OpenAPI specifications to the appropriate local files.
@@ -102,9 +102,7 @@ def update_server_urls(spec: dict, api_name: str) -> None:
         return
 
     # Determine the correct base URL based on API name
-    if api_name == 'StateApi':
-        base_url = 'https://state-api.beta.compactconnect.org'
-    elif api_name == 'LicenseApi':
+    if api_name == 'LicenseApi':
         base_url = 'https://api.beta.compactconnect.org'
     elif api_name == 'SearchApi':
         base_url = 'https://search.beta.compactconnect.org'
@@ -155,7 +153,6 @@ def download_api_spec(api_name: str, output_path: str) -> None:
 
 def main():
     parser = argparse.ArgumentParser(description='Download OpenAPI v3 specifications from AWS API Gateway')
-    parser.add_argument('--state-api-only', action='store_true', help='Download only the StateApi specification')
     parser.add_argument('--license-api-only', action='store_true', help='Download only the LicenseApi specification')
     parser.add_argument('--search-api-only', action='store_true', help='Download only the SearchApi specification')
 
@@ -166,22 +163,16 @@ def main():
     workspace_dir = os.path.dirname(script_dir)
 
     # Define output paths
-    state_api_path = os.path.join(workspace_dir, 'docs', 'api-specification', 'latest-oas30.json')
     license_api_path = os.path.join(workspace_dir, 'docs', 'internal', 'api-specification', 'latest-oas30.json')
     search_api_path = os.path.join(workspace_dir, 'docs', 'search-internal', 'api-specification', 'latest-oas30.json')
 
-    # Download StateApi (external API)
-    if not args.license_api_only and not args.search_api_only:
-        sys.stdout.write('\n=== Downloading StateApi specification ===\n')
-        download_api_spec('StateApi', state_api_path)
-
     # Download LicenseApi (internal API)
-    if not args.state_api_only and not args.search_api_only:
+    if not args.search_api_only:
         sys.stdout.write('\n=== Downloading LicenseApi specification ===\n')
         download_api_spec('LicenseApi', license_api_path)
 
     # Download SearchApi (search internal API)
-    if not args.state_api_only and not args.license_api_only:
+    if not args.license_api_only:
         sys.stdout.write('\n=== Downloading SearchApi specification ===\n')
         download_api_spec('SearchApi', search_api_path)
 
