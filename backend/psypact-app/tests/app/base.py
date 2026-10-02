@@ -201,6 +201,12 @@ class TstAppABC(ABC):
 
     def _inspect_ssn_table(self, persistent_stack: PersistentStack, persistent_stack_template: Template):
         ssn_key_logical_id = persistent_stack.get_logical_id(persistent_stack.ssn_table.key.node.default_child)
+        ingest_role_logical_id = persistent_stack.get_logical_id(
+            persistent_stack.ssn_table.ingest_role.node.default_child
+        )
+        license_upload_role_logical_id = persistent_stack.get_logical_id(
+            persistent_stack.ssn_table.license_upload_role.node.default_child
+        )
         api_query_role_logical_id = persistent_stack.get_logical_id(
             persistent_stack.ssn_table.api_query_role.node.default_child
         )
@@ -214,6 +220,8 @@ class TstAppABC(ABC):
         # Build the expected PrincipalArn array, plus optional backup role
         # Note: SSN backup role reference may be a nested stack output, so we use Match.any_value() for flexibility
         principal_arn_array = [
+            {'Fn::GetAtt': [ingest_role_logical_id, 'Arn']},
+            {'Fn::GetAtt': [license_upload_role_logical_id, 'Arn']},
             {'Fn::GetAtt': [api_query_role_logical_id, 'Arn']},
             {'Fn::GetAtt': [disaster_recovery_lambda_role_logical_id, 'Arn']},
             {'Fn::GetAtt': [disaster_recovery_step_function_role_logical_id, 'Arn']},

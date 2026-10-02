@@ -22,6 +22,7 @@ from common_constructs.stack import AppStack
 from constructs import Construct
 
 from stacks.backup_infrastructure_stack import BackupInfrastructureStack
+from stacks.persistent_stack.bulk_uploads_bucket import BulkUploadsBucket
 from stacks.persistent_stack.compact_configuration_table import CompactConfigurationTable
 from stacks.persistent_stack.compact_configuration_upload import CompactConfigurationUpload
 from stacks.persistent_stack.data_event_table import DataEventTable
@@ -207,6 +208,8 @@ class PersistentStack(AppStack):
             self,
             'SSNTable',
             removal_policy=removal_policy,
+            data_event_bus=self._data_event_bus,
+            alarm_topic=self.alarm_topic,
             backup_infrastructure_stack=backup_infrastructure_stack,
             environment_context=self.environment_context,
         )
@@ -218,6 +221,20 @@ class PersistentStack(AppStack):
             removal_policy=removal_policy,
             backup_infrastructure_stack=backup_infrastructure_stack,
             environment_context=self.environment_context,
+        )
+
+        # ApiLambdaStack and StateAPIStack still import this bucket. CloudFormation updates this stack
+        # before those stacks, and it will not delete an export another stack still imports.
+        self.bulk_uploads_bucket = BulkUploadsBucket(
+            self,
+            'BulkUploadsBucket',
+            access_logs_bucket=self.access_logs_bucket,
+            # Note that we're using the ssn key here, which has a much more restrictive policy.
+            # The messages in this bucket include SSN, so we want it just as locked down as our
+            # permanent storage of SSN data.
+            bucket_encryption_key=self.ssn_table.key,
+            removal_policy=removal_policy,
+            auto_delete_objects=removal_policy == RemovalPolicy.DESTROY,
         )
 
         self.transaction_reports_bucket = TransactionReportsBucket(
@@ -234,6 +251,18 @@ class PersistentStack(AppStack):
             encryption_key=self.shared_encryption_key,
             removal_policy=removal_policy,
         )
+
+        # Upload lambdas in ApiLambdaStack and StateAPIStack still use this role, including Query on the
+        # license number index when a row omits the SSN.
+        self.ssn_table.license_upload_role.add_to_policy(
+            PolicyStatement(
+                effect=Effect.ALLOW,
+                actions=['dynamodb:Query'],
+                resources=[f'{self.provider_table.table_arn}/index/{self.provider_table.license_number_gsi_name}'],
+            )
+        )
+        self.shared_encryption_key.grant_decrypt(self.ssn_table.license_upload_role)
+        self._data_event_bus.grant_put_events_to(self.ssn_table.license_upload_role)
 
         # The api query role needs access to the provider table to associate a provider with
         # its jurisdictions, so it can make authorization decisions for the requester.
@@ -291,6 +320,23 @@ class PersistentStack(AppStack):
             backup_infrastructure_stack=backup_infrastructure_stack,
             environment_context=self.environment_context,
         )
+        self._retain_license_upload_exports()
+
+    def _retain_license_upload_exports(self) -> None:
+        """Keep CloudFormation exports that later stacks still import.
+
+        PersistentStack deploys before ApiLambdaStack. StateAPIStack is no longer in the pipeline, so this
+        deploy cannot update it. Deleting these exports while either stack still imports them cancels the
+        update. ApiLambdaStack drops its imports in this deploy; these exports have to stay until
+        StateAPIStack is deleted.
+        """
+        bucket = self.bulk_uploads_bucket
+        self.export_value(bucket.bucket_name)
+        self.export_value(bucket.bucket_arn)
+        self.export_value(self.ssn_table.license_upload_role.role_arn)
+        queue = self.ssn_table.preprocessor_queue.queue
+        self.export_value(queue.queue_url)
+        self.export_value(queue.queue_arn)
 
     def _create_email_notification_service(self) -> None:
         """This lambda is intended to be a general purpose email notification service.
@@ -485,6 +531,7 @@ class PersistentStack(AppStack):
         )
 
         # Add bucket names needed for CSP Lambda
+        frontend_app_config.set_license_bulk_uploads_bucket_name(bucket_name=self.bulk_uploads_bucket.bucket_name)
         frontend_app_config.set_provider_users_bucket_name(bucket_name=self.provider_users_bucket.bucket_name)
 
         # Generate the SSM parameter
