@@ -62,6 +62,9 @@ class ProviderUsersLambdas:
         self.provider_home_jurisdiction_handler = self._create_provider_home_jurisdiction_handler(
             scope, lambda_environment
         )
+        # Test-APIStack still imports the original registration function. The renamed
+        # function is retained in ApiLambdaStack.__init__.
+        self._create_dummy_provider_registration_handler(scope)
 
     def _account_recovery_initiate_function(self, scope: Construct, lambda_environment: dict) -> PythonFunction:
         stack = Stack.of(scope)

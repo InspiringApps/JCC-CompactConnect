@@ -17,7 +17,11 @@ This deploy leaves the exports in place and removes the imports from Test-APISta
 | `ExportsOutputFnGetAttMilitaryAuditHandlerE3C48C36ArnA9AEB6F2` | ApiLambdaStack | `MilitaryAuditHandler` | Test-APIStack |
 | `ExportsOutputFnGetAttDeactivatePrivilegeHandler50A25446Arn240F0B9F` | ApiLambdaStack | `DeactivatePrivilegeHandler` | Test-APIStack |
 | `ExportsOutputFnGetAttGetPrivilegeHistory60AB0634ArnD4E26DC9` | ApiLambdaStack | `GetPrivilegeHistory` | Test-APIStack |
-| Provider registration function ARN and log group name | ApiLambdaStack | `ProviderRegistrationHandler` dummy in `provider_users.py` | Test-APIStack |
+| `ExportsOutputFnGetAttProviderRegistrationHandler27C4CD127Arn3DCE0349` | ApiLambdaStack | `ProviderRegistrationHandler2` | Test-APIStack |
+| `ExportsOutputFnGetAttProviderRegistrationHandler498BC1AEArn3AF431AE` | ApiLambdaStack | `ProviderRegistrationHandler` dummy in `provider_users.py` | Test-APIStack |
+| `ExportsOutputFnGetAttProviderRegistrationHandlerLogRetentionB1FF4555LogGroupNameA8F05A47` | ApiLambdaStack | `ProviderRegistrationHandler` log group | Test-APIStack |
+
+These are every function ARN the original API stack imported that the current API no longer references. The functions the current API still calls keep their exports automatically: compact configuration, credentials, feature flags, provider query/get/SSN, encumbrance, investigation, provider users me, home jurisdiction, account recovery, public lookup, and staff users.
 
 ## Delete only after the stack is removed outside the pipeline
 
