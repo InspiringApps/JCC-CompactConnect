@@ -116,6 +116,12 @@ class SearchPersistentStack(AppStack):
         # public_handler and is not deployed in the beta environment (see api_stack/v1_api/api.py).
         self.export_value(self.search_handler.public_handler.function_arn)
 
+        # ExpirationReminderStack is still deployed and imports the domain endpoint (and the domain ARN
+        # via its search grant). That stack is no longer in the pipeline, so CloudFormation will not
+        # update it in this deploy. Keep the exports until that stack is deleted.
+        self.export_value(self.domain.domain_endpoint)
+        self.export_value(self.domain.domain_arn)
+
         # Create the populate provider documents handler for manual invocation
         # This handler is used to bulk index provider documents from DynamoDB into OpenSearch
         self.populate_provider_documents_handler = PopulateProviderDocumentsHandler(
