@@ -116,6 +116,9 @@ class ApiLambdaStack(AppStack):
         self._retain_removed_api_handler_export('PostPurchasePrivilegesHandler')
         self._retain_removed_api_handler_export('GetPurchasePrivilegeOptionsHandler')
         self._retain_removed_api_handler_export('V1BulkUrlHandler')
+        self._retain_removed_api_handler_export('MilitaryAuditHandler')
+        self._retain_removed_api_handler_export('DeactivatePrivilegeHandler')
+        self._retain_removed_api_handler_export('GetPrivilegeHistory')
 
         # Staff user lambdas
         self.staff_users_lambdas = StaffUsersLambdas(

@@ -14,6 +14,9 @@ This deploy leaves the exports in place and removes the imports from Test-APISta
 | `ExportsOutputFnGetAttPostPurchasePrivilegesHandler439A8988Arn30F43AF7` | ApiLambdaStack | `PostPurchasePrivilegesHandler` | Test-APIStack |
 | `ExportsOutputFnGetAttGetPurchasePrivilegeOptionsHandler5EA95AF5Arn17A30A54` | ApiLambdaStack | `GetPurchasePrivilegeOptionsHandler` | Test-APIStack |
 | `ExportsOutputFnGetAttV1BulkUrlHandler3DA7690CArn6FED5D87` | ApiLambdaStack | `V1BulkUrlHandler` | Test-APIStack |
+| `ExportsOutputFnGetAttMilitaryAuditHandlerE3C48C36ArnA9AEB6F2` | ApiLambdaStack | `MilitaryAuditHandler` | Test-APIStack |
+| `ExportsOutputFnGetAttDeactivatePrivilegeHandler50A25446Arn240F0B9F` | ApiLambdaStack | `DeactivatePrivilegeHandler` | Test-APIStack |
+| `ExportsOutputFnGetAttGetPrivilegeHistory60AB0634ArnD4E26DC9` | ApiLambdaStack | `GetPrivilegeHistory` | Test-APIStack |
 | Provider registration function ARN and log group name | ApiLambdaStack | `ProviderRegistrationHandler` dummy in `provider_users.py` | Test-APIStack |
 
 ## Delete only after the stack is removed outside the pipeline
