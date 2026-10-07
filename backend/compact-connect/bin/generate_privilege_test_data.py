@@ -348,6 +348,16 @@ def main():
         type=str,
         help='Optional: UTC timestamp (ISO 8601 format) to only consider licenses uploaded after this time',
     )
+    parser.add_argument(
+        '--environment',
+        type=str,
+        help='Optional: Environment name (skips interactive prompt when provided with --provider-table)',
+    )
+    parser.add_argument(
+        '--provider-table',
+        type=str,
+        help='Optional: Full provider table name (skips interactive prompt when provided with --environment)',
+    )
 
     args = parser.parse_args()
 
@@ -380,9 +390,11 @@ def main():
             print('Expected ISO 8601 format (e.g., "2024-01-15T10:30:00Z" or "2024-01-15T10:30:00+00:00")')
             sys.exit(1)
 
-    # Prompt for environment name for safety validation
+    # Resolve environment and provider table (CLI args or interactive prompts)
     print('\n⚠️  WARNING: This script will write directly to the database.')
-    environment_name = input('Enter the environment name (e.g., beta, sandbox, test): ').strip()
+    environment_name = args.environment
+    if not environment_name:
+        environment_name = input('Enter the environment name (e.g., beta, sandbox, test): ').strip()
     if not environment_name:
         print('Error: Environment name is required')
         sys.exit(1)
@@ -392,8 +404,9 @@ def main():
         print('Error: This script cannot be run against production environments')
         sys.exit(1)
 
-    # Prompt for full provider table name
-    provider_table_name = input('Enter the full provider table name: ').strip()
+    provider_table_name = args.provider_table
+    if not provider_table_name:
+        provider_table_name = input('Enter the full provider table name: ').strip()
     if not provider_table_name:
         print('Error: Provider table name is required')
         sys.exit(1)
