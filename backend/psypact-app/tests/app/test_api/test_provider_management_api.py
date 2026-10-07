@@ -473,11 +473,11 @@ class TestProviderManagementApi(TestApi):
             overwrite_snapshot=False,
         )
 
-    def test_synth_does_not_wire_deactivate_privilege(self):
+    def test_synth_wires_deactivate_privilege(self):
         api_lambda_stack = self.app.sandbox_backend_stage.api_lambda_stack
-        self.assertFalse(hasattr(api_lambda_stack.provider_management_lambdas, 'deactivate_privilege_handler'))
+        self.assertTrue(hasattr(api_lambda_stack.provider_management_lambdas, 'deactivate_privilege_handler'))
         provider_management = self.app.sandbox_backend_stage.api_stack.api.v1_api.provider_management
-        self.assertFalse(hasattr(provider_management, 'privilege_deactivation_notification_failed_alarm'))
+        self.assertTrue(hasattr(provider_management, 'privilege_deactivation_notification_failed_alarm'))
 
     def test_synth_generates_privilege_encumbrance_endpoint(self):
         """Test that the POST /providers/{providerId}/privileges/jurisdiction/{jurisdiction}

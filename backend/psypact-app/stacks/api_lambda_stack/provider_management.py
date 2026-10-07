@@ -53,6 +53,8 @@ class ProviderManagementLambdas:
         api_lambda_stack.log_groups.append(self.query_providers_handler.log_group)
         self.get_provider_ssn_handler = self._get_provider_ssn_handler(lambda_environment)
         api_lambda_stack.log_groups.append(self.get_provider_ssn_handler.log_group)
+        self.deactivate_privilege_handler = self._deactivate_privilege_handler(lambda_environment)
+        api_lambda_stack.log_groups.append(self.deactivate_privilege_handler.log_group)
         self.provider_encumbrance_handler = self._add_provider_encumbrance_handler(lambda_environment)
         api_lambda_stack.log_groups.append(self.provider_encumbrance_handler.log_group)
 

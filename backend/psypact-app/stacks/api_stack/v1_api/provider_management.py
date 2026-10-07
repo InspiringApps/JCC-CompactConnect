@@ -31,6 +31,7 @@ class ProviderManagement:
         ssn_method_options: MethodOptions,
         api_model: ApiModel,
         api_lambda_stack: ApiLambdaStack,
+        privilege_history_function: PythonFunction,
     ):
         super().__init__()
 
@@ -68,6 +69,10 @@ class ProviderManagement:
             method_options=ssn_method_options,
             get_provider_ssn_handler=api_lambda_stack.provider_management_lambdas.get_provider_ssn_handler,
         )
+        self._add_deactivate_privilege(
+            method_options=admin_method_options,
+            deactivate_privilege_handler=api_lambda_stack.provider_management_lambdas.deactivate_privilege_handler,
+        )
 
         self._add_encumber_privilege(
             method_options=admin_method_options,
@@ -87,6 +92,10 @@ class ProviderManagement:
         self._add_investigation_license(
             method_options=admin_method_options,
             investigation_handler=api_lambda_stack.provider_management_lambdas.provider_investigation_handler,
+        )
+        self._add_get_privilege_history(
+            method_options=method_options,
+            privilege_history_function=privilege_history_function,
         )
 
     def _add_get_provider(

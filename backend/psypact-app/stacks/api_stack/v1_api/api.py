@@ -8,6 +8,7 @@ from stacks import search_persistent_stack as sps
 from stacks.api_lambda_stack import ApiLambdaStack
 
 from .api_model import ApiModel
+from .attestations import Attestations
 from .compact_configuration_api import CompactConfigurationApi
 from .credentials import Credentials
 from .feature_flags import FeatureFlagsApi
@@ -112,6 +113,7 @@ class V1Api:
                 api_model=self.api_model,
                 api_lambda_stack=api_lambda_stack,
                 search_persistent_stack=search_persistent_stack,
+                privilege_history_function=api_lambda_stack.privilege_history_handler,
             )
 
         # /v1/provider-users
@@ -119,6 +121,7 @@ class V1Api:
         self.provider_users = ProviderUsers(
             resource=self.provider_users_resource,
             api_model=self.api_model,
+            privilege_history_function=api_lambda_stack.privilege_history_handler,
             api_lambda_stack=api_lambda_stack,
         )
 
@@ -126,6 +129,14 @@ class V1Api:
         self.compacts_resource = self.resource.add_resource('compacts')
         # /v1/compacts/{compact}
         self.compact_resource = self.compacts_resource.add_resource('{compact}')
+
+        # /v1/compacts/{compact}/attestations
+        self.attestations_resource = self.compact_resource.add_resource('attestations')
+        self.attestations = Attestations(
+            resource=self.attestations_resource,
+            api_model=self.api_model,
+            api_lambda_stack=api_lambda_stack,
+        )
 
         # /v1/compacts/{compact}/credentials
         credentials_resource = self.compact_resource.add_resource('credentials')
@@ -146,6 +157,7 @@ class V1Api:
             ssn_method_options=read_ssn_auth_method_options,
             api_model=self.api_model,
             api_lambda_stack=api_lambda_stack,
+            privilege_history_function=api_lambda_stack.privilege_history_handler,
         )
         # GET  /v1/compacts/{compact}/jurisdictions
         self.jurisdictions_resource = self.compact_resource.add_resource('jurisdictions')

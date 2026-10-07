@@ -15,6 +15,7 @@ from common_lambdas.data_model.provider_record_util import (
     ProviderUserRecords,
 )
 from common_lambdas.data_model.schema.common import (
+    ActiveInactiveStatus,
     CompactEligibilityStatus,
     HomeJurisdictionChangeStatusEnum,
     LicenseEncumberedStatusEnum,
@@ -32,6 +33,8 @@ from common_lambdas.data_model.schema.privilege.jcc_data import (
     PrivilegeData,
     PrivilegeUpdateData,
 )
+from common_lambdas.data_model.schema.privilege.record import PrivilegeUpdateRecordSchema
+from common_lambdas.data_model.update_tier_enum import UpdateTierEnum
 from common_lambdas.data_model.schema.provider.jcc_provider import (
     ProviderData,
     ProviderUpdateData,
@@ -39,6 +42,7 @@ from common_lambdas.data_model.schema.provider.jcc_provider import (
 from common_lambdas.exceptions import (
     CCAwsServiceException,
     CCInternalException,
+    CCInvalidRequestException,
     CCNotFoundException,
 )
 from common_lambdas.psypact_records import ProviderRecordType
@@ -1238,3 +1242,242 @@ class JccDataClientMixin:
                 raise CCInternalException('Provider not found') from e
             logger.error('Failed to clear provider account recovery data', error=str(e))
             raise CCInternalException('Failed to clear provider account recovery data') from e
+
+    def _get_privilege_record_directly(
+        self,
+        *,
+        compact: str,
+        provider_id: str,
+        jurisdiction: str,
+        license_type_abbr: str,
+        consistent_read: bool = False,
+    ) -> PrivilegeData:
+        """
+        Query for a single privilege record directly from DynamoDB.
+
+        This should be used when it is undesirable to get all provider records and
+        filter for the specific privilege record.
+
+        :param str compact: The compact of the privilege
+        :param str provider_id: The provider of the privilege
+        :param str jurisdiction: The jurisdiction of the privilege
+        :param str license_type_abbr: The license type abbreviation of the privilege
+        :param bool consistent_read: If true, performs a consistent read of the record
+        :raises CCNotFoundException: If the privilege record is not found
+        :return: The privilege record as PrivilegeData
+        """
+        pk = f'{compact}#PROVIDER#{provider_id}'
+        sk = f'{compact}#PROVIDER#privilege/{jurisdiction}/{license_type_abbr}#'
+
+        try:
+            response = self.config.provider_table.get_item(
+                Key={'pk': pk, 'sk': sk},
+                ConsistentRead=consistent_read,
+            )
+            if 'Item' not in response:
+                raise CCNotFoundException('Privilege not found')
+
+            return PrivilegeData.from_database_record(response['Item'])
+        except KeyError as e:
+            raise CCNotFoundException('Privilege not found') from e
+
+    def _get_privilege_update_records_directly(
+        self,
+        *,
+        compact: str,
+        provider_id: str,
+        jurisdiction: str,
+        license_type_abbr: str,
+        consistent_read: bool = False,
+    ) -> list[PrivilegeUpdateData]:
+        """
+        Query for all privilege update records for a specific privilege directly from DynamoDB.
+
+        This should be used when it is undesirable to get all provider update records and
+        filter for the specific privilege update records.
+
+        :param str compact: The compact of the privilege
+        :param str provider_id: The provider of the privilege
+        :param str jurisdiction: The jurisdiction of the privilege
+        :param str license_type_abbr: The license type abbreviation of the privilege
+        :param bool consistent_read: If true, performs a consistent read of the records
+        :return: List of privilege update records
+        """
+        pk = f'{compact}#PROVIDER#{provider_id}'
+        sk_prefix = f'{compact}#UPDATE#{UpdateTierEnum.TIER_ONE}#privilege/{jurisdiction}/{license_type_abbr}/'
+
+        response_items = []
+
+        # Query for records using the SK prefix pattern
+        last_evaluated_key = None
+        while True:
+            pagination = {'ExclusiveStartKey': last_evaluated_key} if last_evaluated_key else {}
+
+            query_resp = self.config.provider_table.query(
+                Select='ALL_ATTRIBUTES',
+                KeyConditionExpression=Key('pk').eq(pk) & Key('sk').begins_with(sk_prefix),
+                ConsistentRead=consistent_read,
+                **pagination,
+            )
+
+            response_items.extend(query_resp.get('Items', []))
+
+            last_evaluated_key = query_resp.get('LastEvaluatedKey')
+            if not last_evaluated_key:
+                break
+
+        return [PrivilegeUpdateData.from_database_record(item) for item in response_items]
+
+    @logger_inject_kwargs(logger, 'compact', 'provider_id', 'detail', 'jurisdiction', 'license_type_abbr')
+    def get_privilege_data(
+        self,
+        *,
+        compact: str,
+        provider_id: str,
+        jurisdiction: str,
+        license_type_abbr: str,
+        consistent_read: bool = False,
+        detail: bool = False,
+    ) -> list[dict]:
+        """
+        Get a privilege for a provider in a jurisdiction of the license type.
+
+        This should be used when it is undesirable to pull all provider records and
+        filter for the specific privilege record and associated update records.
+
+        :param str compact: The compact of the privilege
+        :param str provider_id: The provider of the privilege
+        :param str jurisdiction: The jurisdiction of the privilege
+        :param str license_type_abbr: The license type abbreviation of the privilege
+        :param bool consistent_read: If true, performs a consistent read of the records
+        :param bool detail: Boolean determining whether we include associated records or just privilege record itself
+        :raises CCNotFoundException: If the privilege record is not found
+        :return If detail = False list of length one containing privilege item, if detail = True list containing,
+        privilege record and privilege update records
+        """
+        # Query directly for the privilege record
+        privilege = self._get_privilege_record_directly(
+            compact=compact,
+            provider_id=provider_id,
+            jurisdiction=jurisdiction,
+            license_type_abbr=license_type_abbr,
+            consistent_read=consistent_read,
+        )
+
+        # Build return list in the same format as before
+        result = [privilege.to_dict()]
+
+        if detail:
+            # Query directly for privilege update records
+            privilege_updates = self._get_privilege_update_records_directly(
+                compact=compact,
+                provider_id=provider_id,
+                jurisdiction=jurisdiction,
+                license_type_abbr=license_type_abbr,
+                consistent_read=consistent_read,
+            )
+            result.extend([update.to_dict() for update in privilege_updates])
+
+        return result
+
+    @logger_inject_kwargs(logger, 'compact', 'provider_id', 'jurisdiction', 'license_type_abbr')
+    def deactivate_privilege(
+        self, *, compact: str, provider_id: str, jurisdiction: str, license_type_abbr: str, deactivation_details: dict
+    ) -> None:
+        """
+        Deactivate a privilege for a provider in a jurisdiction.
+
+        This will update the privilege record to have a administratorSetStatus of 'inactive'.
+
+        :param str compact: The compact to deactivate the privilege for
+        :param str provider_id: The provider to deactivate the privilege for
+        :param str jurisdiction: The jurisdiction to deactivate the privilege for
+        :param str license_type_abbr: The license type abbreviation to deactivate the privilege for
+        :param dict deactivation_details: The details of the deactivation to be added to the history record
+        :raises CCNotFoundException: If the privilege record is not found
+        """
+        # Get the privilege record
+
+        privilege_data = self.get_privilege_data(
+            compact=compact, provider_id=provider_id, jurisdiction=jurisdiction, license_type_abbr=license_type_abbr
+        )
+
+        privilege_record = privilege_data[0]
+
+        # If already inactive, do nothing
+        if privilege_record.get('administratorSetStatus', ActiveInactiveStatus.ACTIVE) == ActiveInactiveStatus.INACTIVE:
+            logger.info('Provider already inactive. Doing nothing.')
+            raise CCInvalidRequestException('Privilege already deactivated')
+
+        now = config.current_standard_datetime
+
+        # Create the update record
+        # Use the schema to generate the update record with proper pk/sk
+        privilege_update_record = PrivilegeUpdateRecordSchema().dump(
+            {
+                'type': ProviderRecordType.PRIVILEGE_UPDATE,
+                'updateType': UpdateCategory.DEACTIVATION,
+                'providerId': provider_id,
+                'compact': compact,
+                'jurisdiction': jurisdiction,
+                'createDate': now,
+                'effectiveDate': now,
+                'licenseType': privilege_record['licenseType'],
+                'deactivationDetails': deactivation_details,
+                'previous': {
+                    # We're relying on the schema to trim out unneeded fields
+                    **privilege_record,
+                },
+                'updatedValues': {
+                    'administratorSetStatus': ActiveInactiveStatus.INACTIVE,
+                },
+            }
+        )
+
+        # Update the privilege record and create history record
+        logger.info('Deactivating privilege')
+        self.config.dynamodb_client.transact_write_items(
+            TransactItems=[
+                # Set the privilege record's administratorSetStatus to inactive and update the dateOfUpdate
+                {
+                    'Update': {
+                        'TableName': self.config.provider_table.name,
+                        'Key': {
+                            'pk': {'S': f'{compact}#PROVIDER#{provider_id}'},
+                            'sk': {'S': f'{compact}#PROVIDER#privilege/{jurisdiction}/{license_type_abbr}#'},
+                        },
+                        'UpdateExpression': 'SET administratorSetStatus = :status, dateOfUpdate = :dateOfUpdate',
+                        'ExpressionAttributeValues': {
+                            ':status': {'S': ActiveInactiveStatus.INACTIVE},
+                            ':dateOfUpdate': {'S': now.isoformat()},
+                        },
+                    },
+                },
+                # Update dateOfUpdate and providerDateOfUpdate on the top-level provider record
+                {
+                    'Update': {
+                        'TableName': self.config.provider_table.name,
+                        'Key': {
+                            'pk': {'S': f'{compact}#PROVIDER#{provider_id}'},
+                            'sk': {'S': f'{compact}#PROVIDER'},
+                        },
+                        'UpdateExpression': 'SET dateOfUpdate = :dateOfUpdate, '
+                        'providerDateOfUpdate = :providerDateOfUpdate',
+                        'ExpressionAttributeValues': {
+                            ':dateOfUpdate': {'S': now.isoformat()},
+                            ':providerDateOfUpdate': {'S': now.isoformat()},
+                        },
+                        'ConditionExpression': 'attribute_exists(pk)',
+                    },
+                },
+                # Create a history record, reflecting this change
+                {
+                    'Put': {
+                        'TableName': self.config.provider_table.name,
+                        'Item': TypeSerializer().serialize(privilege_update_record)['M'],
+                    },
+                },
+            ],
+        )
+
+        return privilege_record

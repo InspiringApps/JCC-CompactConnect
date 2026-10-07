@@ -18,6 +18,7 @@ class ProviderUsers:
         *,
         resource: Resource,
         api_model: ApiModel,
+        privilege_history_function: PythonFunction,
         api_lambda_stack: ApiLambdaStack,
     ):
         super().__init__()
@@ -59,6 +60,16 @@ class ProviderUsers:
         # /v1/provider-users/me/email/verify
         self.provider_users_me_email_verify_resource = self.provider_users_me_email_resource.add_resource('verify')
         self._add_provider_user_me_email_verify()
+
+        self.provider_jurisdiction_resource = self.provider_users_me_resource.add_resource('jurisdiction').add_resource(
+            '{jurisdiction}'
+        )
+        self.provider_jurisdiction_license_type_resource = self.provider_jurisdiction_resource.add_resource(
+            'licenseType'
+        ).add_resource('{licenseType}')
+        self._add_get_privilege_history(
+            privilege_history_function=privilege_history_function,
+        )
 
     def _add_get_provider_user_me(self):
         self.provider_users_me_resource.add_method(
