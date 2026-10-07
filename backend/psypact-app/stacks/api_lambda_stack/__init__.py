@@ -2,10 +2,8 @@ from __future__ import annotations
 
 import json
 
-from aws_cdk.aws_lambda import Code, Function, Runtime
 from aws_cdk.aws_logs import QueryDefinition, QueryString
 from aws_cdk.aws_secretsmanager import ISecret, Secret
-from cdk_nag import NagSuppressions
 from common_constructs.ssm_parameter_utility import SSMParameterUtility
 from common_constructs.stack import AppStack
 from constructs import Construct
@@ -109,18 +107,6 @@ class ApiLambdaStack(AppStack):
         self.export_value(self.public_lookup_lambdas.get_provider_handler.function_arn)
         self.export_value(self.public_lookup_lambdas.query_providers_handler.function_arn)
 
-        # Test-APIStack still imports these function ARNs. The routes are gone from this app, so the
-        # imports drop in this deploy only if the exports remain. See
-        # docs/temporary-cross-stack-exports.md for when each one can be deleted.
-        self._retain_removed_api_handler_export('AttestationsFunction')
-        self._retain_removed_api_handler_export('PostPurchasePrivilegesHandler')
-        self._retain_removed_api_handler_export('GetPurchasePrivilegeOptionsHandler')
-        self._retain_removed_api_handler_export('V1BulkUrlHandler')
-        self._retain_removed_api_handler_export('MilitaryAuditHandler')
-        self._retain_removed_api_handler_export('DeactivatePrivilegeHandler')
-        self._retain_removed_api_handler_export('GetPrivilegeHistory')
-        self._retain_removed_api_handler_export('ProviderRegistrationHandler2')
-
         # Staff user lambdas
         self.staff_users_lambdas = StaffUsersLambdas(
             scope=self,
@@ -130,43 +116,6 @@ class ApiLambdaStack(AppStack):
 
         # Create the QueryDefinition after all lambda modules have been initialized and added their log groups
         self._create_runtime_query_definition()
-
-    def _retain_removed_api_handler_export(self, construct_id: str) -> None:
-        """Keep a removed API lambda's ARN export until APIStack's deployed template drops the import."""
-        dummy_function = Function(
-            self,
-            construct_id,
-            description=f'{construct_id} retained so its CloudFormation export can be deleted later',
-            handler='handler',
-            code=Code.from_inline('def handler(*args, **kwargs):\n    return'),
-            runtime=Runtime.PYTHON_3_14,
-        )
-        self.export_value(dummy_function.function_arn)
-        NagSuppressions.add_resource_suppressions(
-            dummy_function,
-            suppressions=[
-                {
-                    'id': 'HIPAA.Security-LambdaDLQ',
-                    'reason': 'Temporary function kept so a cross-stack export is not deleted while APIStack '
-                    'still imports it. It is not invoked.',
-                },
-                {
-                    'id': 'HIPAA.Security-LambdaInsideVPC',
-                    'reason': 'Temporary function kept so a cross-stack export is not deleted while APIStack '
-                    'still imports it. It is not invoked.',
-                },
-            ],
-        )
-        NagSuppressions.add_resource_suppressions_by_path(
-            self,
-            path=f'{dummy_function.node.path}/ServiceRole/Resource',
-            suppressions=[
-                {
-                    'id': 'AwsSolutions-IAM4',
-                    'reason': 'The AWSLambdaBasicExecutionRole policy is appropriate for this temporary function.',
-                },
-            ],
-        )
 
     def _get_compact_payment_processor_secrets(self) -> list[ISecret]:
         """

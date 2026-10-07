@@ -6,8 +6,6 @@ from aws_cdk import Duration
 from aws_cdk.aws_cloudwatch import Alarm, CfnAlarm, ComparisonOperator, MathExpression, Metric, Stats, TreatMissingData
 from aws_cdk.aws_cloudwatch_actions import SnsAction
 from aws_cdk.aws_events import EventBus
-from aws_cdk.aws_lambda import Code, Function, Runtime
-from aws_cdk.aws_logs import RetentionDays
 from aws_cdk.aws_secretsmanager import Secret
 from cdk_nag import NagSuppressions
 from common_constructs.python_function import PythonFunction
@@ -62,9 +60,6 @@ class ProviderUsersLambdas:
         self.provider_home_jurisdiction_handler = self._create_provider_home_jurisdiction_handler(
             scope, lambda_environment
         )
-        # Test-APIStack still imports the original registration function. The renamed
-        # function is retained in ApiLambdaStack.__init__.
-        self._create_dummy_provider_registration_handler(scope)
 
     def _account_recovery_initiate_function(self, scope: Construct, lambda_environment: dict) -> PythonFunction:
         stack = Stack.of(scope)
@@ -442,9 +437,6 @@ class ProviderUsersLambdas:
         return handler
 
     def _create_provider_registration_handler(self, scope: Construct, lambda_environment: dict) -> PythonFunction:
-        # TODO: Remove this dummy function once this has been deployed through production  # noqa: FIX002
-        self._create_dummy_provider_registration_handler(scope)
-
         stack = Stack.of(scope)
 
         handler = PythonFunction(
@@ -585,74 +577,3 @@ class ProviderUsersLambdas:
         sustained_registration_failures_alarm.add_alarm_action(SnsAction(self.persistent_stack.alarm_topic))
 
         return handler
-
-    def _create_dummy_provider_registration_handler(self, scope: Construct):
-        """
-        We need to keep a 'dummy' function here to get past a deadly-embrace with cross-stack dependencies
-        We'll create this dummy function, using the old, deprecated LogRetention lambda style log groups
-        just long enough to deploy updates to the ApiStack that remove this dependency.
-        """
-        stack = Stack.of(scope)
-        dummy_function = Function(
-            scope,
-            'ProviderRegistrationHandler',  # Must match original
-            description='Provider registration handler dummy function',
-            handler='handler',
-            code=Code.from_inline('def handler(*args, **kwargs):\n    return'),
-            runtime=Runtime.PYTHON_3_14,
-            log_retention=RetentionDays.ONE_DAY,  # Triggers creation of the LogRetention custom resource
-        )
-        # Pin the exports here until the ApiStack clears it from its template
-        stack.export_value(dummy_function.log_group.log_group_name)
-        stack.export_value(dummy_function.function_arn)
-
-        NagSuppressions.add_resource_suppressions(
-            dummy_function,
-            suppressions=[
-                {
-                    'id': 'HIPAA.Security-LambdaDLQ',
-                    'reason': 'This function is a dummy function to get past a deadly embrace with cross-stack '
-                    'dependencies. It will be removed in a future update. It does not need a DLQ.',
-                },
-                {
-                    'id': 'HIPAA.Security-LambdaInsideVPC',
-                    'reason': 'This function is a dummy function to get past a deadly embrace with cross-stack '
-                    'dependencies. It will be removed in a future update. It does not need to be in a VPC.',
-                },
-            ],
-        )
-        NagSuppressions.add_resource_suppressions_by_path(
-            stack,
-            path=f'{dummy_function.node.path}/ServiceRole/Resource',
-            suppressions=[
-                {
-                    'id': 'AwsSolutions-IAM4',
-                    'reason': 'The AWSBasicExecutionPolicy is suitable for this lambda',
-                },
-            ],
-        )
-
-        # We'll suppress the LogRetention findings here as well, since those resources should be torn down with this
-        # dummy lambda
-        NagSuppressions.add_resource_suppressions_by_path(
-            stack,
-            f'{stack.node.path}/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole/Resource',
-            suppressions=[
-                {
-                    'id': 'AwsSolutions-IAM4',
-                    'reason': 'The actions in this policy are specifically what this lambda needs '
-                    'and is scoped to one table, user pool, and one secret.',
-                },
-            ],
-        )
-        NagSuppressions.add_resource_suppressions_by_path(
-            stack,
-            f'{stack.node.path}/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole/DefaultPolicy/Resource',
-            suppressions=[
-                {
-                    'id': 'AwsSolutions-IAM5',
-                    'reason': 'The actions in this policy are scoped specifically to what this lambda needs to manage'
-                    ' log groups.',
-                },
-            ],
-        )
