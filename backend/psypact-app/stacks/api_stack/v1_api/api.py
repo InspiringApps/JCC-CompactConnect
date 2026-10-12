@@ -113,7 +113,6 @@ class V1Api:
                 api_model=self.api_model,
                 api_lambda_stack=api_lambda_stack,
                 search_persistent_stack=search_persistent_stack,
-                privilege_history_function=api_lambda_stack.privilege_history_handler,
             )
 
         # /v1/provider-users
@@ -121,7 +120,6 @@ class V1Api:
         self.provider_users = ProviderUsers(
             resource=self.provider_users_resource,
             api_model=self.api_model,
-            privilege_history_function=api_lambda_stack.privilege_history_handler,
             api_lambda_stack=api_lambda_stack,
         )
 
@@ -157,7 +155,6 @@ class V1Api:
             ssn_method_options=read_ssn_auth_method_options,
             api_model=self.api_model,
             api_lambda_stack=api_lambda_stack,
-            privilege_history_function=api_lambda_stack.privilege_history_handler,
         )
         # GET  /v1/compacts/{compact}/jurisdictions
         self.jurisdictions_resource = self.compact_resource.add_resource('jurisdictions')

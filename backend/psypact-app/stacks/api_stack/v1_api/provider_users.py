@@ -3,7 +3,6 @@ from __future__ import annotations
 from aws_cdk import Duration
 from aws_cdk.aws_apigateway import LambdaIntegration, MethodResponse, Resource
 from cdk_nag import NagSuppressions
-from common_constructs.python_function import PythonFunction
 from common_constructs.stack import Stack
 
 from common_constructs.cc_api import CCApi
@@ -18,7 +17,6 @@ class ProviderUsers:
         *,
         resource: Resource,
         api_model: ApiModel,
-        privilege_history_function: PythonFunction,
         api_lambda_stack: ApiLambdaStack,
     ):
         super().__init__()
@@ -60,16 +58,6 @@ class ProviderUsers:
         # /v1/provider-users/me/email/verify
         self.provider_users_me_email_verify_resource = self.provider_users_me_email_resource.add_resource('verify')
         self._add_provider_user_me_email_verify()
-
-        self.provider_jurisdiction_resource = self.provider_users_me_resource.add_resource('jurisdiction').add_resource(
-            '{jurisdiction}'
-        )
-        self.provider_jurisdiction_license_type_resource = self.provider_jurisdiction_resource.add_resource(
-            'licenseType'
-        ).add_resource('{licenseType}')
-        self._add_get_privilege_history(
-            privilege_history_function=privilege_history_function,
-        )
 
     def _add_get_provider_user_me(self):
         self.provider_users_me_resource.add_method(
@@ -207,25 +195,6 @@ class ProviderUsers:
                     'authorization',
                 },
             ],
-        )
-
-    def _add_get_privilege_history(
-        self,
-        privilege_history_function: PythonFunction,
-    ):
-        self.privilege_history_resource = self.provider_jurisdiction_license_type_resource.add_resource('history')
-
-        self.privilege_history_resource.add_method(
-            'GET',
-            method_responses=[
-                MethodResponse(
-                    status_code='200',
-                    response_models={'application/json': self.api_model.privilege_history_response_model},
-                ),
-            ],
-            integration=LambdaIntegration(privilege_history_function, timeout=Duration.seconds(29)),
-            request_parameters={'method.request.header.Authorization': True},
-            authorizer=self.api.provider_users_authorizer,
         )
 
     def _add_account_recovery_endpoints(self, *, api_lambda_stack: ApiLambdaStack):

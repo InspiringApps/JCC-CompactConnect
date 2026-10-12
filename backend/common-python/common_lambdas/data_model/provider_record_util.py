@@ -711,6 +711,3 @@ class ProviderUserRecords:
             documents.append(doc)
 
         return documents
-
-
-import common_lambdas.data_model.jcc_privilege_history  # noqa: F401  privilege history helpers

@@ -36,8 +36,6 @@ PSYPACT_REQUIRED_JCC_DATA_CLIENT_METHODS = frozenset(
         'update_provider_account_recovery_data',
         'clear_provider_account_recovery_data',
         'get_privilege_for_transaction_id',
-        'get_privilege_data',
-        'deactivate_privilege',
     }
 )
 
