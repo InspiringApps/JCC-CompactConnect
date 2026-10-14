@@ -156,11 +156,11 @@ def get_provider_data_with_read_private_access_smoke_test(test_staff_user_id: st
 
     # Step 1: Get the provider user profile information.
     test_user_profile = call_provider_users_me_endpoint()
-    provider_id = provider_user_profile['providerId']
-    compact = provider_user_profile['compact']
+    provider_id = test_user_profile['providerId']
+    compact = test_user_profile['compact']
     # Step 1: Update the staff user's permissions using the PATCH '/v1/staff-users/me/permissions' endpoint.
     staff_users_headers = get_staff_user_auth_headers(TEST_STAFF_USER_EMAIL)
-    patch_body = {'permissions': {'aslp': {'actions': {'readPrivate': True}}}}
+    patch_body = {'permissions': {compact: {'actions': {'readPrivate': True}}}}
     patch_response = requests.patch(
         url=config.api_base_url + f'/v1/compacts/{compact}/staff-users/{test_staff_user_id}',
         headers=staff_users_headers,

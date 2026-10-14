@@ -61,6 +61,11 @@ class _Config:
         return os.environ['CC_TEST_COGNITO_PROVIDER_USER_POOL_ID']
 
     @property
+    def test_provider_id(self):
+        """Provider id of a practitioner who already has license records in the test environment."""
+        return os.environ['CC_TEST_PROVIDER_ID']
+
+    @property
     def test_provider_user_username(self):
         return os.environ['CC_TEST_PROVIDER_USER_USERNAME']
 

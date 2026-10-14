@@ -73,6 +73,7 @@ Install the required Python packages. The smoke tests use the same dependencies 
    - `CC_TEST_COGNITO_STAFF_USER_POOL_CLIENT_ID`: Cognito client ID for staff users
    - `CC_TEST_COGNITO_PROVIDER_USER_POOL_ID`: Cognito user pool ID for provider users
    - `CC_TEST_COGNITO_PROVIDER_USER_POOL_CLIENT_ID`: Cognito client ID for provider users
+   - `CC_TEST_PROVIDER_ID`: Provider id of a practitioner who already has license records. Encumbrance, investigation, and public search use this id. Privileges are generated when that provider is read; they are not stored.
    - `CC_TEST_PROVIDER_USER_USERNAME`: Email address of your registered provider user
    - `CC_TEST_PROVIDER_USER_PASSWORD`: Password for your registered provider user
    - `ENVIRONMENT_NAME`: Name of your sandbox environment
@@ -98,8 +99,10 @@ Each test file can be run independently from the psypact-app folder:
 cd backend/psypact-app
 
 # Run a specific test file
-python3 tests/smoke/purchasing_privileges_smoke_tests.py
-python3 tests/smoke/military_affiliation_smoke_tests.py
+python3 tests/smoke/encumbrance_smoke_tests.py
+python3 tests/smoke/investigation_smoke_tests.py
+python3 tests/smoke/public_search_smoke_tests.py
+python3 tests/smoke/home_jurisdiction_change_smoke_tests.py
 python3 tests/smoke/query_provider_smoke_tests.py
 ```
 

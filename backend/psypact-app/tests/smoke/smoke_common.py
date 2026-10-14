@@ -1,7 +1,11 @@
+import base64
+import hashlib
+import hmac
 import json
 import os
+import struct
 import sys
-import uuid
+import time
 
 import boto3
 import requests
@@ -36,8 +40,92 @@ os.environ['LICENSE_TYPES'] = json.dumps(LICENSE_TYPES)
 from cc_common.data_model.provider_record_util import ProviderUserRecords  # noqa: E402
 from cc_common.data_model.schema.user.record import UserRecordSchema  # noqa: E402
 
-_TEST_STAFF_USER_PASSWORD = 'TestPass123!'  # noqa: S105 test credential for test staff user
-_TEMP_STAFF_PASSWORD = 'TempPass123!'  # noqa: S105 temporary password for creating test staff users
+# Cognito advanced security rejects well-known test passwords with PasswordResetRequiredException.
+_TEST_STAFF_USER_PASSWORD = 'PsypactSmokeStaff!2026k7'  # noqa: S105 test credential for test staff user
+_TEMP_STAFF_PASSWORD = 'PsypactSmokeTemp!2026k7'  # noqa: S105 temporary password for creating test staff users
+# Software-token secrets enrolled by this process. The staff and provider pools require MFA.
+_totp_secrets: dict[str, str] = {}
+
+
+def _totp_code(secret_b32: str, for_time: float | None = None) -> str:
+    padded = secret_b32.strip().upper()
+    padded += '=' * ((8 - len(padded) % 8) % 8)
+    key = base64.b32decode(padded, casefold=True)
+    counter = int((time.time() if for_time is None else for_time) // 30)
+    digest = hmac.new(key, struct.pack('>Q', counter), hashlib.sha1).digest()
+    offset = digest[-1] & 0x0F
+    code = struct.unpack('>I', digest[offset : offset + 4])[0] & 0x7FFFFFFF
+    return f'{code % 1_000_000:06d}'
+
+
+def _verify_software_token(session: str, secret: str) -> dict:
+    last_error = None
+    for offset in (0, 30, -30):
+        try:
+            return config.cognito_client.verify_software_token(
+                Session=session,
+                UserCode=_totp_code(secret, time.time() + offset),
+            )
+        except ClientError as error:
+            last_error = error
+            if error.response['Error']['Code'] not in {'EnableSoftwareTokenMFAException', 'CodeMismatchException'}:
+                raise
+    raise last_error
+
+
+def _provider_totp_secret(email: str) -> str | None:
+    if email != os.environ.get('CC_TEST_PROVIDER_USER_USERNAME'):
+        return None
+    return os.environ.get('CC_TEST_PROVIDER_TOTP_SECRET') or None
+
+
+def _remember_provider_totp_secret(email: str, secret: str) -> None:
+    """Keep the practitioner software-token secret for later smoke-test processes."""
+    if email != os.environ.get('CC_TEST_PROVIDER_USER_USERNAME'):
+        return
+    os.environ['CC_TEST_PROVIDER_TOTP_SECRET'] = secret
+    env_path = os.path.join(os.path.dirname(__file__), 'smoke_tests_env.json')
+    with open(env_path) as env_file:
+        env_vars = json.load(env_file)
+    if env_vars.get('CC_TEST_PROVIDER_TOTP_SECRET') == secret:
+        return
+    env_vars['CC_TEST_PROVIDER_TOTP_SECRET'] = secret
+    with open(env_path, 'w') as env_file:
+        json.dump(env_vars, env_file, indent=2)
+        env_file.write('\n')
+    logger.info('Saved practitioner software-token secret to smoke_tests_env.json')
+
+
+def _finish_cognito_mfa(response: dict, *, email: str, user_pool_id: str, client_id: str) -> dict:
+    """Complete MFA setup or a software-token challenge so ADMIN_USER_PASSWORD_AUTH returns tokens."""
+    challenge = response.get('ChallengeName')
+    if challenge == 'MFA_SETUP':
+        associated = config.cognito_client.associate_software_token(Session=response['Session'])
+        secret = associated['SecretCode']
+        _totp_secrets[email] = secret
+        _remember_provider_totp_secret(email, secret)
+        verified = _verify_software_token(associated['Session'], secret)
+        return config.cognito_client.admin_respond_to_auth_challenge(
+            UserPoolId=user_pool_id,
+            ClientId=client_id,
+            ChallengeName='MFA_SETUP',
+            Session=verified['Session'],
+            ChallengeResponses={'USERNAME': email},
+        )
+    if challenge == 'SOFTWARE_TOKEN_MFA':
+        secret = _totp_secrets.get(email) or _provider_totp_secret(email)
+        if secret is None:
+            raise SmokeTestFailureException(
+                f'Cognito requires a software token for {email}, and this process does not have that secret'
+            )
+        return config.cognito_client.admin_respond_to_auth_challenge(
+            UserPoolId=user_pool_id,
+            ClientId=client_id,
+            ChallengeName='SOFTWARE_TOKEN_MFA',
+            Session=response['Session'],
+            ChallengeResponses={'USERNAME': email, 'SOFTWARE_TOKEN_MFA_CODE': _totp_code(secret)},
+        )
+    return response
 
 
 def _create_staff_user_in_cognito(*, email: str) -> str:
@@ -151,12 +239,15 @@ def get_user_tokens(email, password=_TEST_STAFF_USER_PASSWORD, is_staff=False):
     """
     try:
         logger.info('Getting tokens for user: ' + email + ' user type: ' + ('staff' if is_staff else 'provider'))
+        user_pool_id = config.cognito_staff_user_pool_id if is_staff else config.cognito_provider_user_pool_id
+        client_id = config.cognito_staff_user_client_id if is_staff else config.cognito_provider_user_client_id
         response = config.cognito_client.admin_initiate_auth(
-            UserPoolId=config.cognito_staff_user_pool_id if is_staff else config.cognito_provider_user_pool_id,
-            ClientId=config.cognito_staff_user_client_id if is_staff else config.cognito_provider_user_client_id,
+            UserPoolId=user_pool_id,
+            ClientId=client_id,
             AuthFlow='ADMIN_USER_PASSWORD_AUTH',
             AuthParameters={'USERNAME': email, 'PASSWORD': password},
         )
+        response = _finish_cognito_mfa(response, email=email, user_pool_id=user_pool_id, client_id=client_id)
 
         return response['AuthenticationResult']
 
@@ -260,17 +351,115 @@ def call_provider_users_me_endpoint():
     return get_provider_data_response.json()
 
 
-def get_all_provider_database_records():
-    # get the provider id and compact from the response
-    response = call_provider_users_me_endpoint()
-    provider_id = response['providerId']
-    compact = response['compact']
-    # query the provider database for all records
-    query_result = config.provider_user_dynamodb_table.query(
-        KeyConditionExpression=Key('pk').eq(f'{compact}#PROVIDER#{provider_id}')
-    )
+def call_provider_details_endpoint(headers: dict, compact: str, provider_id: str) -> dict:
+    """GET /v1/compacts/{compact}/providers/{provider_id} with staff auth headers."""
+    url = f'{config.api_base_url}/v1/compacts/{compact}/providers/{provider_id}'
+    response = requests.get(url=url, headers=headers, timeout=10)
 
-    return query_result['Items']
+    if response.status_code != 200:
+        try:
+            body = response.json()
+        except Exception:  # noqa: BLE001
+            body = response.text
+        raise SmokeTestFailureException(f'Failed to GET provider details. Response: {body}')
+    return response.json()
+
+
+def wait_for_opensearch_sync() -> None:
+    """Wait for provider table changes to propagate into OpenSearch."""
+    seconds = 30
+    logger.info(f'Waiting {seconds}s for changes to propagate in OpenSearch...')
+    time.sleep(seconds)
+
+
+def get_most_recently_issued_or_renewed_license(licenses: list[dict]) -> dict:
+    """Select the license renewed most recently, otherwise the one issued most recently."""
+    if not licenses:
+        raise SmokeTestFailureException('No licenses found')
+
+    def sort_key(license_record: dict) -> tuple[str, str]:
+        return (license_record.get('dateOfRenewal') or '', license_record.get('dateOfIssuance') or '')
+
+    return sorted(licenses, key=sort_key, reverse=True)[0]
+
+
+def call_public_query_providers(
+    compact: str,
+    *,
+    provider_id_filter: str,
+    first_name_filter: str | None = None,
+    last_name_filter: str | None = None,
+    license_number_filter: str | None = None,
+    page_size: int = 100,
+    timeout: int = 30,
+) -> list[dict]:
+    """POST /v1/public/compacts/{compact}/providers/query and return rows for one provider."""
+    url = f'{config.api_base_url}/v1/public/compacts/{compact}/providers/query'
+    headers = {'Content-Type': 'application/json'}
+    query_parameters: dict = {}
+    if first_name_filter:
+        query_parameters['givenName'] = first_name_filter
+    if last_name_filter:
+        query_parameters['familyName'] = last_name_filter
+    if license_number_filter:
+        query_parameters['licenseNumber'] = license_number_filter
+
+    pagination_state: dict = {'pageSize': page_size}
+    matching_license_rows: list[dict] = []
+
+    for _page_index in range(500):
+        request_body = {'query': query_parameters, 'pagination': pagination_state}
+        response = requests.post(url=url, headers=headers, json=request_body, timeout=timeout)
+        if response.status_code != 200:
+            raise SmokeTestFailureException(f'Failed POST public query providers. Response: {response.json()}')
+        page_response_body = response.json()
+
+        for provider_license_row in page_response_body.get('providers') or []:
+            if provider_id_filter and provider_license_row.get('providerId') == provider_id_filter:
+                matching_license_rows.append(provider_license_row)
+
+        last_pagination_key = (page_response_body.get('pagination') or {}).get('lastKey')
+        if not last_pagination_key:
+            break
+        pagination_state = {**pagination_state, 'lastKey': last_pagination_key}
+
+    return matching_license_rows
+
+
+def call_public_get_provider(compact: str, provider_id: str, *, timeout: int = 30) -> dict:
+    """GET /v1/public/compacts/{compact}/providers/{provider_id}."""
+    url = f'{config.api_base_url}/v1/public/compacts/{compact}/providers/{provider_id}'
+    response = requests.get(url=url, timeout=timeout)
+
+    if response.status_code != 200:
+        raise SmokeTestFailureException(f'Failed GET public provider. Response: {response.json()}')
+    return response.json()
+
+
+def get_all_provider_database_records(compact: str = 'psypact', provider_id: str | None = None):
+    """Query every DynamoDB item stored for a provider.
+
+    Privileges are generated at read time and are not stored here. Pass provider_id, or set
+    CC_TEST_PROVIDER_ID, for the license-backed smoke provider.
+    """
+    if provider_id is None:
+        provider_id = config.test_provider_id
+
+    logger.info('Querying records for provider', provider_id=provider_id)
+    items: list = []
+    last_evaluated_key = None
+    while True:
+        pagination = {'ExclusiveStartKey': last_evaluated_key} if last_evaluated_key else {}
+        query_result = config.provider_user_dynamodb_table.query(
+            KeyConditionExpression=Key('pk').eq(f'{compact}#PROVIDER#{provider_id}'),
+            **pagination,
+        )
+        items.extend(query_result.get('Items', []))
+        last_evaluated_key = query_result.get('LastEvaluatedKey')
+        if not last_evaluated_key:
+            break
+
+    return items
 
 
 def get_provider_user_records(compact: str, provider_id: str) -> ProviderUserRecords:
@@ -301,83 +490,3 @@ def get_provider_user_records(compact: str, provider_id: str) -> ProviderUserRec
             break
 
     return ProviderUserRecords(resp['Items'])
-
-
-def generate_opaque_data(card_number: str):
-    """Generate a payment nonce using Authorize.Net's Secure Payment Container API.
-
-    This allows us to create payment nonces programmatically for testing.
-
-    :param card_number: The test card number to use for generating the opaque data
-    :return: The opaque data object containing the payment nonce
-    """
-
-    # Call the purchase privilege options endpoint and extract the api login id and
-    # public key from the compact configuration object that is returned.
-    headers = get_provider_user_auth_headers_cached()
-    response = requests.get(
-        url=f'{config.api_base_url}/v1/purchases/privileges/options',
-        headers=headers,
-        timeout=10,
-    )
-
-    if response.status_code != 200:
-        raise SmokeTestFailureException(f'Failed to get purchase privilege options. Response: {response.json()}')
-
-    response_body = response.json()
-    compact_data = next((item for item in response_body['items'] if item.get('type') == 'compact'), None)
-
-    if not compact_data:
-        raise SmokeTestFailureException('No compact data found in purchase privilege options response')
-
-    if 'paymentProcessorPublicFields' not in compact_data:
-        raise SmokeTestFailureException('No paymentProcessorPublicFields found in compact data')
-
-    payment_fields = compact_data['paymentProcessorPublicFields']
-    api_login_id = payment_fields.get('apiLoginId')
-    public_client_key = payment_fields.get('publicClientKey')
-
-    if not api_login_id or not public_client_key:
-        raise SmokeTestFailureException(f'Missing credentials in paymentProcessorPublicFields: {payment_fields}')
-
-    # Generate the payment nonce using the secure payment container API
-    unique_id = str(uuid.uuid4())
-
-    # Create the secure payment container request
-    request_data = {
-        'securePaymentContainerRequest': {
-            'merchantAuthentication': {
-                'name': api_login_id,
-                'clientKey': public_client_key,  # Use the public client key
-            },
-            'refId': '12345',
-            'data': {
-                'type': 'TOKEN',
-                'id': unique_id,
-                'token': {
-                    'cardNumber': card_number,
-                    'expirationDate': '122030',
-                    'cardCode': '900',
-                    'fullName': 'SmokeTest User',
-                },
-            },
-        }
-    }
-
-    # Make the API request
-    test_url = 'https://apitest.authorize.net/xml/v1/request.api'
-    headers = {'Content-Type': 'application/json'}
-    response = requests.post(test_url, json=request_data, headers=headers, timeout=30)
-
-    if response.status_code == 200:
-        response_data = json.loads(response.content.decode('utf-8-sig'))
-
-        # Extract the payment nonce from the response
-        # The exact structure may vary, but it should contain the opaque data
-        if 'opaqueData' in response_data:
-            logger.info('Generated opaque data.')
-            return response_data['opaqueData']
-        logger.error(f'No opaqueData in response: {response_data}')
-        raise SmokeTestFailureException(f'No opaqueData in response: {response_data}')
-    logger.error(f'Failed to generate payment nonce: {response.status_code} - {response.text}')
-    raise SmokeTestFailureException(f'Failed to generate payment nonce: {response.status_code} - {response.text}')
