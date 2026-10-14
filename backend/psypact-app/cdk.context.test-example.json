@@ -15,6 +15,7 @@
         "ui_domain_name_override": "app.test.compactconnect.org",
         "backup_enabled": true,
         "allow_local_ui": true,
+        "security_profile": "VULNERABLE",
         "notifications": {
           "ses_operations_support_email": "justin@example.com",
           "email": [
