@@ -2,6 +2,8 @@
 
 This directory contains smoke tests for the Compact Connect API. Smoke tests are end-to-end integration tests that run against a test environment to verify that critical functionality works as expected.
 
+Run them from this directory's entry scripts (`python3 tests/smoke/<file>.py` with the working directory `backend/psypact-app`). Shared bodies that match Cosmetology or Compact Connect live in `backend/common-python/common_smoke_test/`. PsyPact-only replacements stay in the entry scripts. `encumbrance_smoke_tests.py` and `home_jurisdiction_change_smoke_tests.py` are PsyPact scripts; the Compact Connect home-jurisdiction copy is not imported yet.
+
 ## Overview
 
 Smoke tests validate that key features of the Compact Connect API are working correctly in a test environment. They make real API calls and interact with actual AWS services (DynamoDB, Cognito, etc.) to ensure the system behaves correctly end-to-end.
