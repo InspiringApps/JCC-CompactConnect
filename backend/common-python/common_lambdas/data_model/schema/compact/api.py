@@ -10,6 +10,17 @@ from common_lambdas.data_model.schema.compact.common import (
     ConfiguredStateSchema,
     validate_no_duplicates_in_configured_states,
 )
+from common_lambdas.data_model.schema.compact.record import COMPACT_WIDE_LICENSE_DATA_LIVE_DYNAMO_ATTRIBUTE
+
+
+class CompactConfigurationConfiguredStateResponseSchema(ConfiguredStateSchema):
+    """GET configured state. Adverse-action emails are read from the jurisdiction record, not stored on the compact."""
+
+    jurisdictionAdverseActionsNotificationEmails = List(
+        Email(required=True, allow_none=False),
+        required=True,
+        allow_none=False,
+    )
 
 
 class CompactConfigurationResponseSchema(ForgivingSchema):
@@ -23,12 +34,27 @@ class CompactConfigurationResponseSchema(ForgivingSchema):
         required=True,
         allow_none=False,
     )
-    licenseeRegistrationEnabled = Boolean(required=True, allow_none=False)
-    configuredStates = List(Nested(ConfiguredStateSchema()), required=True, allow_none=False)
+    # API contract key stays licenseeRegistrationEnabled. load() is given the internal dict, whose key is
+    # isLicenseDataLiveCompactWide, so data_key is the internal name and the field name is the response key.
+    # No external process uses this value other than storing it.
+    licenseeRegistrationEnabled = Boolean(required=True, allow_none=False, data_key='isLicenseDataLiveCompactWide')
+    configuredStates = List(
+        Nested(CompactConfigurationConfiguredStateResponseSchema()), required=True, allow_none=False
+    )
+
+
+class PutConfiguredStateRequestSchema(ConfiguredStateSchema):
+    """Request-only configured state. Emails are written to the jurisdiction record, not stored on the compact."""
+
+    jurisdictionAdverseActionsNotificationEmails = List(
+        Email(required=True, allow_none=False),
+        required=False,
+        allow_none=False,
+    )
 
 
 class PutCompactConfigurationRequestSchema(Schema):
-    """Schema for the PUT /v1/compacts/{compact} request body"""
+    """Schema for the PUT /v1/compacts/{compact} request body."""
 
     compactOperationsTeamEmails = List(
         Email(required=True, allow_none=False), required=True, allow_none=False, validate=Length(min=1)
@@ -36,8 +62,15 @@ class PutCompactConfigurationRequestSchema(Schema):
     compactAdverseActionsNotificationEmails = List(
         Email(required=True, allow_none=False), required=True, allow_none=False, validate=Length(min=1)
     )
-    licenseeRegistrationEnabled = Boolean(required=True, allow_none=False)
-    configuredStates = List(Nested(ConfiguredStateSchema()), required=True, allow_none=False)
+    # API contract key stays licenseeRegistrationEnabled. loads() reads that JSON key and returns
+    # isLicenseDataLiveCompactWide. No external process uses this value other than storing it.
+    # Once true, the handler rejects setting it back to false.
+    isLicenseDataLiveCompactWide = Boolean(
+        required=True,
+        allow_none=False,
+        data_key=COMPACT_WIDE_LICENSE_DATA_LIVE_DYNAMO_ATTRIBUTE,
+    )
+    configuredStates = List(Nested(PutConfiguredStateRequestSchema()), required=True, allow_none=False)
 
     @validates_schema
     def validate_no_duplicates_in_configured_states(self, data, **kwargs):  # noqa: ARG001 unused-argument

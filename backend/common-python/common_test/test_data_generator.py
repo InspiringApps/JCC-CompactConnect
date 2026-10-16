@@ -351,7 +351,7 @@ class TestDataGenerator:
             'compactName': 'Cosmetology',
             'compactOperationsTeamEmails': ['ops@example.com'],
             'compactAdverseActionsNotificationEmails': ['adverse@example.com'],
-            'licenseeRegistrationEnabled': True,
+            'isLicenseDataLiveCompactWide': True,
             'configuredStates': [],
         }
         if value_overrides:
@@ -389,7 +389,7 @@ class TestDataGenerator:
             'jurisdictionName': 'Kentucky',
             'jurisdictionOperationsTeamEmails': ['state-ops@example.com'],
             'jurisdictionAdverseActionsNotificationEmails': ['state-adverse@example.com'],
-            'licenseeRegistrationEnabled': True,
+            'isLicenseDataLive': True,
         }
         if value_overrides:
             default_jurisdiction_config.update(value_overrides)
