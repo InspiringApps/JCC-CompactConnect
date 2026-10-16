@@ -28,10 +28,13 @@ class TestIaSourceDataStack(TstAppABC, TestCase):
             'AWS::RDS::DBInstance',
             {
                 'PubliclyAccessible': False,
-                'StorageEncrypted': True,
                 'DBSnapshotIdentifier': 'ia-inspiringapps-v1',
             },
         )
+        database = next(iter(template.find_resources('AWS::RDS::DBInstance').values()))
+        self.assertNotIn('StorageEncrypted', database['Properties'])
+        security_group = next(iter(template.find_resources('AWS::EC2::SecurityGroup').values()))
+        self.assertNotIn('|', security_group['Properties']['GroupDescription'])
 
         with open('docs/dynamodb_table_structures_2/_index.json', encoding='utf-8') as schema_index_file:
             schema_index = json.load(schema_index_file)

@@ -225,7 +225,7 @@ class IaSourceDataStack(AppStack):
             self,
             'IaSqlServerSecurityGroup',
             vpc=vpc,
-            description='SQL Server access for the PSY|PRO source database',
+            description='SQL Server access for the Inspiring Apps source database',
             allow_all_outbound=False,
         )
         # Literal CIDR matches VpcStack. A cross-stack token cannot be evaluated by cdk-nag.
@@ -276,10 +276,19 @@ class IaSourceDataStack(AppStack):
             copy_tags_to_snapshot=True,
             **database_kwargs,
         )
-        # Encryption is taken from the copied snapshot. Set it explicitly so the template
-        # shows the instance is encrypted at rest.
-        database.node.default_child.storage_encrypted = True
+        # Do not set StorageEncrypted. CloudFormation rejects it when DBSnapshotIdentifier
+        # is set. The copied snapshot is already encrypted, and the restore keeps that key.
         database_suppressions = [
+            {
+                'id': 'AwsSolutions-RDS2',
+                'reason': 'The instance is restored from an encrypted snapshot, so storage encryption is inherited. '
+                'CloudFormation rejects StorageEncrypted when DBSnapshotIdentifier is set.',
+            },
+            {
+                'id': 'HIPAA.Security-RDSStorageEncrypted',
+                'reason': 'The instance is restored from an encrypted snapshot, so storage encryption is inherited. '
+                'CloudFormation rejects StorageEncrypted when DBSnapshotIdentifier is set.',
+            },
             {
                 'id': 'AwsSolutions-RDS6',
                 'reason': 'Enhanced monitoring is omitted for this restored fixture database.',
