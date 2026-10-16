@@ -1,0 +1,3 @@
+# Copied from backend/cosmetology-app/lambdas/python/custom-resources/requirements.in
+
+# common requirements are managed in the common-python requirements.in file

@@ -45,10 +45,6 @@ class TestSandbox(TstSandbox):
             allow_local_ui=True,
         )
 
-        self._inspect_state_auth_stack(
-            self.app.sandbox_backend_stage.state_auth_stack,
-        )
-
 
 class TestSandboxNoDomain(TstSandbox):
     """
@@ -76,7 +72,6 @@ class TestSandboxNoDomain(TstSandbox):
 
         self._inspect_persistent_stack(self.app.sandbox_backend_stage.persistent_stack, allow_local_ui=True)
         self._inspect_provider_users_stack(self.app.sandbox_backend_stage.provider_users_stack, allow_local_ui=True)
-        self._inspect_state_auth_stack(self.app.sandbox_backend_stage.state_auth_stack)
 
 
 class TestSandboxLocalUiPortOverride(TstSandbox):
@@ -109,7 +104,6 @@ class TestSandboxLocalUiPortOverride(TstSandbox):
         self._inspect_provider_users_stack(
             self.app.sandbox_backend_stage.provider_users_stack, allow_local_ui=True, local_ui_port='5432'
         )
-        self._inspect_state_auth_stack(self.app.sandbox_backend_stage.state_auth_stack)
 
 
 class TestSandboxNoUi(TestCase):

@@ -41,6 +41,7 @@ class FeatureFlagsLambdas:
             'CheckFeatureFlagHandler',
             description='Check feature flag handler',
             lambda_dir='feature-flag',
+            shared=True,
             index=os.path.join('handlers', 'check_feature_flag.py'),
             handler='check_feature_flag',
             environment=lambda_environment,

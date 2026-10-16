@@ -103,6 +103,7 @@ class PostLicenses:
             'V1PostLicensesHandler',
             description='Post licenses handler',
             lambda_dir='provider-data-v1',
+            shared=True,
             index=os.path.join('handlers', 'licenses.py'),
             handler='post_licenses',
             role=license_upload_role,

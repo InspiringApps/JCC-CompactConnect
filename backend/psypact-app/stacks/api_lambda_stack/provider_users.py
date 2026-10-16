@@ -59,9 +59,9 @@ class ProviderUsersLambdas:
         self.account_recovery_initiate_function = self._account_recovery_initiate_function(scope, lambda_environment)
         self.account_recovery_verify_function = self._account_recovery_verify_function(scope, lambda_environment)
         self.provider_users_me_handler = self._create_provider_users_me_handler(scope, lambda_environment)
-        self.provider_registration_handler = self._create_provider_registration_handler(scope, lambda_environment)
-
-        api_lambda_stack.log_groups.append(self.provider_registration_handler.log_group)
+        self.provider_home_jurisdiction_handler = self._create_provider_home_jurisdiction_handler(
+            scope, lambda_environment
+        )
 
     def _account_recovery_initiate_function(self, scope: Construct, lambda_environment: dict) -> PythonFunction:
         stack = Stack.of(scope)
@@ -76,6 +76,7 @@ class ProviderUsersLambdas:
             'ProviderUsersAccountRecoveryInitiate',
             description='Provider users account recovery initiate handler',
             lambda_dir='provider-data-v1',
+            shared=True,
             index=os.path.join('handlers', 'account_recovery.py'),
             handler='initiate_account_recovery',
             environment=env,
@@ -251,6 +252,7 @@ class ProviderUsersLambdas:
             'ProviderUsersAccountRecoveryVerify',
             description='Provider users account recovery verify handler',
             lambda_dir='provider-data-v1',
+            shared=True,
             index=os.path.join('handlers', 'account_recovery.py'),
             handler='verify_account_recovery',
             environment=lambda_environment,
@@ -371,6 +373,7 @@ class ProviderUsersLambdas:
             'ProviderUsersHandler',
             description='Provider users API handler',
             lambda_dir='provider-data-v1',
+            shared=True,
             index=os.path.join('handlers', 'provider_users.py'),
             handler='provider_users_api_handler',
             environment=lambda_environment,
@@ -404,6 +407,37 @@ class ProviderUsersLambdas:
 
         return provider_users_me_handler
 
+    def _create_provider_home_jurisdiction_handler(self, scope: Construct, lambda_environment: dict) -> PythonFunction:
+        stack = Stack.of(scope)
+        handler = PythonFunction(
+            scope,
+            'ProviderHomeJurisdictionHandler',
+            description='PSYPACT provider home jurisdiction handler',
+            lambda_dir='provider-data-v1',
+            shared=True,
+            index=os.path.join('handlers', 'psypact_home_jurisdiction.py'),
+            handler='put_psypact_provider_home_jurisdiction',
+            environment=lambda_environment,
+            alarm_topic=self.persistent_stack.alarm_topic,
+        )
+        self.persistent_stack.shared_encryption_key.grant_decrypt(handler)
+        self.persistent_stack.provider_table.grant_read_write_data(handler)
+        self.persistent_stack.email_notification_service_lambda.grant_invoke(handler)
+        self.persistent_stack.compact_configuration_table.grant_read_data(handler)
+        self.data_event_bus.grant_put_events_to(handler)
+        NagSuppressions.add_resource_suppressions_by_path(
+            stack,
+            path=f'{handler.role.node.path}/DefaultPolicy/Resource',
+            suppressions=[
+                {
+                    'id': 'AwsSolutions-IAM5',
+                    'reason': 'The actions in this policy are specifically what this lambda needs '
+                    'and is scoped to one table and encryption key.',
+                },
+            ],
+        )
+        return handler
+
     def _create_provider_registration_handler(self, scope: Construct, lambda_environment: dict) -> PythonFunction:
         # TODO: Remove this dummy function once this has been deployed through production  # noqa: FIX002
         self._create_dummy_provider_registration_handler(scope)
@@ -415,6 +449,7 @@ class ProviderUsersLambdas:
             'ProviderRegistrationHandler2',
             description='Provider registration handler',
             lambda_dir='provider-data-v1',
+            shared=True,
             index=os.path.join('handlers', 'registration.py'),
             handler='register_provider',
             environment=lambda_environment,

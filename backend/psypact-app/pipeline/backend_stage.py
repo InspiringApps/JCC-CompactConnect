@@ -5,11 +5,8 @@ from constructs import Construct
 from stacks.api_lambda_stack import ApiLambdaStack
 from stacks.api_stack import ApiStack
 from stacks.disaster_recovery_stack import DisasterRecoveryStack
-from stacks.event_listener_stack import EventListenerStack
 from stacks.event_state_stack import EventStateStack
-from stacks.expiration_reminder_stack import ExpirationReminderStack
 from stacks.feature_flag_stack import FeatureFlagStack
-from stacks.ingest_stack import IngestStack
 from stacks.managed_login_stack import ManagedLoginStack
 from stacks.notification_stack import NotificationStack
 from stacks.persistent_stack import PersistentStack
@@ -17,8 +14,6 @@ from stacks.provider_users import ProviderUsersStack
 from stacks.reporting_stack import ReportingStack
 from stacks.search_api_stack import SearchApiStack
 from stacks.search_persistent_stack import SearchPersistentStack
-from stacks.state_api_stack import StateApiStack
-from stacks.state_auth import StateAuthStack
 from stacks.transaction_monitoring_stack import TransactionMonitoringStack
 from stacks.vpc_stack import VpcStack
 
@@ -88,31 +83,9 @@ class BackendStage(Stage):
             persistent_stack=self.persistent_stack,
         )
 
-        self.state_auth_stack = StateAuthStack(
-            self,
-            'StateAuthStack',
-            env=environment,
-            environment_context=environment_context,
-            standard_tags=standard_tags,
-            app_name=app_name,
-            environment_name=environment_name,
-            persistent_stack=self.persistent_stack,
-        )
-
         self.managed_login_stack = ManagedLoginStack(
             self,
             'ManagedLoginStack',
-            env=environment,
-            environment_context=environment_context,
-            environment_name=environment_name,
-            standard_tags=standard_tags,
-            persistent_stack=self.persistent_stack,
-            provider_users_stack=self.provider_users_stack,
-        )
-
-        self.ingest_stack = IngestStack(
-            self,
-            'IngestStack',
             env=environment,
             environment_context=environment_context,
             environment_name=environment_name,
@@ -132,6 +105,18 @@ class BackendStage(Stage):
             provider_users_stack=self.provider_users_stack,
         )
 
+        # Search Persistent Stack - OpenSearch Domain (created before ApiStack for public search wiring)
+        self.search_persistent_stack = SearchPersistentStack(
+            self,
+            'SearchPersistentStack',
+            env=environment,
+            environment_context=environment_context,
+            standard_tags=standard_tags,
+            environment_name=environment_name,
+            vpc_stack=self.vpc_stack,
+            persistent_stack=self.persistent_stack,
+        )
+
         self.api_stack = ApiStack(
             self,
             'APIStack',
@@ -142,39 +127,7 @@ class BackendStage(Stage):
             persistent_stack=self.persistent_stack,
             provider_users_stack=self.provider_users_stack,
             api_lambda_stack=self.api_lambda_stack,
-        )
-
-        self.state_api_stack = StateApiStack(
-            self,
-            'StateAPIStack',
-            env=environment,
-            environment_context=environment_context,
-            standard_tags=standard_tags,
-            environment_name=environment_name,
-            persistent_stack=self.persistent_stack,
-            state_auth_stack=self.state_auth_stack,
-        )
-
-        self.event_listener_stack = EventListenerStack(
-            self,
-            'EventListenerStack',
-            env=environment,
-            environment_context=environment_context,
-            standard_tags=standard_tags,
-            environment_name=environment_name,
-            persistent_stack=self.persistent_stack,
-        )
-
-        # Search Persistent Stack - OpenSearch Domain for advanced provider search
-        self.search_persistent_stack = SearchPersistentStack(
-            self,
-            'SearchPersistentStack',
-            env=environment,
-            environment_context=environment_context,
-            standard_tags=standard_tags,
-            environment_name=environment_name,
-            vpc_stack=self.vpc_stack,
-            persistent_stack=self.persistent_stack,
+            search_persistent_stack=self.search_persistent_stack,
         )
 
         self.transaction_monitoring_stack = TransactionMonitoringStack(
@@ -242,19 +195,3 @@ class BackendStage(Stage):
                 standard_tags=standard_tags,
                 persistent_stack=self.persistent_stack,
             )
-
-            # Expiration reminder stack is not deployed in beta
-            # to reduce noise in that environment.
-            if environment_name != 'beta':
-                self.expiration_reminder_stack = ExpirationReminderStack(
-                    self,
-                    'ExpirationReminderStack',
-                    env=environment,
-                    environment_context=environment_context,
-                    standard_tags=standard_tags,
-                    environment_name=environment_name,
-                    persistent_stack=self.persistent_stack,
-                    event_state_stack=self.event_state_stack,
-                    search_persistent_stack=self.search_persistent_stack,
-                    vpc_stack=self.vpc_stack,
-                )

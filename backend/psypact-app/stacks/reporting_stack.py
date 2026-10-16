@@ -30,7 +30,6 @@ class ReportingStack(AppStack):
         **kwargs,
     ):
         super().__init__(scope, construct_id, environment_name=environment_name, **kwargs)
-        self._add_ingest_event_reporting_chain(persistent_stack)
         self._add_transaction_reporting_chain(persistent_stack)
 
     def _add_ingest_event_reporting_chain(self, persistent_stack: ps.PersistentStack):
@@ -141,6 +140,7 @@ class ReportingStack(AppStack):
             handler='generate_transaction_reports',
             runtime=Runtime.PYTHON_3_12,
             lambda_dir='purchases',
+            shared=True,
             index=os.path.join('handlers', 'transaction_reporting.py'),
             timeout=Duration.minutes(15),
             # This lambda sends email notifications, so we do not want it to retry in the event of a failure

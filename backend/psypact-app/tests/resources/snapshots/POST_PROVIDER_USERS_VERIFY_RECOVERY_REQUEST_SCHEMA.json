@@ -4,9 +4,7 @@
     "compact": {
       "description": "Compact abbreviation",
       "enum": [
-        "aslp",
-        "octp",
-        "coun"
+        "psypact"
       ],
       "type": "string"
     },

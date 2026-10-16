@@ -36,6 +36,7 @@ class PopulateProviderDocumentsHandler(Construct):
         vpc_subnets: SubnetSelection,
         lambda_role: IRole,
         provider_table: ITable,
+        compact_configuration_table: ITable,
         alarm_topic: ITopic,
     ):
         """
@@ -60,6 +61,7 @@ class PopulateProviderDocumentsHandler(Construct):
             description='Populates OpenSearch indices with provider documents from DynamoDB',
             index=os.path.join('handlers', 'populate_provider_documents.py'),
             lambda_dir='search',
+            shared=True,
             handler='populate_provider_documents',
             role=lambda_role,
             log_retention=RetentionDays.ONE_MONTH,
@@ -67,6 +69,7 @@ class PopulateProviderDocumentsHandler(Construct):
                 'OPENSEARCH_HOST_ENDPOINT': opensearch_domain.domain_endpoint,
                 'PROVIDER_TABLE_NAME': provider_table.table_name,
                 'PROV_DATE_OF_UPDATE_INDEX_NAME': provider_table.provider_date_of_update_index_name,
+                'COMPACT_CONFIGURATION_TABLE_NAME': compact_configuration_table.table_name,
                 **stack.common_env_vars,
             },
             # Longer timeout for processing large datasets
@@ -83,6 +86,7 @@ class PopulateProviderDocumentsHandler(Construct):
 
         # Grant the handler read access to the provider table
         provider_table.grant_read_data(self.handler)
+        compact_configuration_table.grant_read_data(self.handler)
 
         # Add CDK Nag suppressions for the Lambda function's IAM role
         NagSuppressions.add_resource_suppressions_by_path(

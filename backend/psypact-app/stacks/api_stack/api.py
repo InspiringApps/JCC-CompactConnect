@@ -6,6 +6,7 @@ from constructs import Construct
 
 from common_constructs.cc_api import CCApi
 from stacks import persistent_stack as ps
+from stacks import search_persistent_stack as sps
 from stacks.api_lambda_stack import ApiLambdaStack
 from stacks.provider_users import ProviderUsersStack
 
@@ -19,6 +20,7 @@ class LicenseApi(CCApi):
         persistent_stack: ps.PersistentStack,
         provider_users_stack: ProviderUsersStack,
         api_lambda_stack: ApiLambdaStack,
+        search_persistent_stack: sps.SearchPersistentStack,
         **kwargs,
     ):
         super().__init__(
@@ -36,6 +38,7 @@ class LicenseApi(CCApi):
             self.root,
             persistent_stack=persistent_stack,
             api_lambda_stack=api_lambda_stack,
+            search_persistent_stack=search_persistent_stack,
         )
 
     @cached_property

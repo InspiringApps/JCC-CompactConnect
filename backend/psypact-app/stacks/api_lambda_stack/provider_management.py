@@ -40,7 +40,7 @@ class ProviderManagementLambdas:
             'USER_POOL_ID': persistent_stack.staff_users.user_pool_id,
             'EMAIL_NOTIFICATION_SERVICE_LAMBDA_NAME': persistent_stack.email_notification_service_lambda.function_name,
             'USERS_TABLE_NAME': persistent_stack.staff_users.user_table.table_name,
-            'PROVIDER_USER_BUCKET_NAME': persistent_stack.provider_users_bucket.bucket_name,
+            'COMPACT_CONFIGURATION_TABLE_NAME': persistent_stack.compact_configuration_table.table_name,
             **self.stack.common_env_vars,
         }
 
@@ -53,12 +53,8 @@ class ProviderManagementLambdas:
         api_lambda_stack.log_groups.append(self.query_providers_handler.log_group)
         self.get_provider_ssn_handler = self._get_provider_ssn_handler(lambda_environment)
         api_lambda_stack.log_groups.append(self.get_provider_ssn_handler.log_group)
-        self.deactivate_privilege_handler = self._deactivate_privilege_handler(lambda_environment)
-        api_lambda_stack.log_groups.append(self.deactivate_privilege_handler.log_group)
         self.provider_encumbrance_handler = self._add_provider_encumbrance_handler(lambda_environment)
         api_lambda_stack.log_groups.append(self.provider_encumbrance_handler.log_group)
-        self.military_audit_handler = self._add_military_audit_handler(lambda_environment)
-        api_lambda_stack.log_groups.append(self.military_audit_handler.log_group)
 
     def _create_provider_investigation_handler(self, lambda_environment: dict) -> PythonFunction:
         """Create and configure the Lambda handler for investigating a provider's privilege or license."""
@@ -67,6 +63,7 @@ class ProviderManagementLambdas:
             'ProviderInvestigationHandler',
             description='Provider investigation handler',
             lambda_dir='provider-data-v1',
+            shared=True,
             index=os.path.join('handlers', 'investigation.py'),
             handler='investigation_handler',
             environment=lambda_environment,
@@ -101,6 +98,7 @@ class ProviderManagementLambdas:
             'GetProviderHandler',
             description='Get provider handler',
             lambda_dir='provider-data-v1',
+            shared=True,
             index=os.path.join('handlers', 'providers.py'),
             handler='get_provider',
             environment=lambda_environment,
@@ -108,6 +106,7 @@ class ProviderManagementLambdas:
         )
         self.persistent_stack.shared_encryption_key.grant_decrypt(handler)
         self.persistent_stack.provider_table.grant_read_data(handler)
+        self.persistent_stack.compact_configuration_table.grant_read_data(handler)
         self.persistent_stack.provider_users_bucket.grant_read(handler)
 
         NagSuppressions.add_resource_suppressions_by_path(
@@ -132,6 +131,7 @@ class ProviderManagementLambdas:
             'QueryProvidersHandler',
             description='Query providers handler',
             lambda_dir='provider-data-v1',
+            shared=True,
             index=os.path.join('handlers', 'providers.py'),
             handler='query_providers',
             environment=lambda_environment,
@@ -139,6 +139,7 @@ class ProviderManagementLambdas:
         )
         self.persistent_stack.shared_encryption_key.grant_decrypt(handler)
         self.persistent_stack.provider_table.grant_read_data(handler)
+        self.persistent_stack.compact_configuration_table.grant_read_data(handler)
 
         NagSuppressions.add_resource_suppressions_by_path(
             Stack.of(handler.role),
@@ -168,6 +169,7 @@ class ProviderManagementLambdas:
             'GetProviderSSNHandler',
             description='Get provider SSN handler',
             lambda_dir='provider-data-v1',
+            shared=True,
             index=os.path.join('handlers', 'providers.py'),
             handler='get_provider_ssn',
             role=self.persistent_stack.ssn_table.api_query_role,
@@ -316,6 +318,7 @@ class ProviderManagementLambdas:
             'DeactivatePrivilegeHandler',
             description='Deactivate provider privilege handler',
             lambda_dir='provider-data-v1',
+            shared=True,
             index=os.path.join('handlers', 'privileges.py'),
             handler='deactivate_privilege',
             environment=lambda_environment,
@@ -349,6 +352,7 @@ class ProviderManagementLambdas:
             'ProviderEncumbranceHandler',
             description='Provider encumbrance handler',
             lambda_dir='provider-data-v1',
+            shared=True,
             index=os.path.join('handlers', 'encumbrance.py'),
             handler='encumbrance_handler',
             environment=lambda_environment,
@@ -356,6 +360,7 @@ class ProviderManagementLambdas:
         )
         self.persistent_stack.provider_table.grant_read_write_data(handler)
         self.persistent_stack.staff_users.user_table.grant_read_data(handler)
+        self.persistent_stack.compact_configuration_table.grant_read_data(handler)
         self.data_event_bus.grant_put_events_to(handler)
 
         NagSuppressions.add_resource_suppressions_by_path(
@@ -382,6 +387,7 @@ class ProviderManagementLambdas:
             'MilitaryAuditHandler',
             description='Military audit handler',
             lambda_dir='provider-data-v1',
+            shared=True,
             index=os.path.join('handlers', 'military_audit.py'),
             handler='military_audit_handler',
             environment=lambda_environment,

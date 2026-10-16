@@ -33,6 +33,7 @@ class CompactConfigurationUpload(Construct):
             scope,
             'CompactConfigurationUploadFunction',
             lambda_dir='custom-resources',
+            shared=True,
             index=os.path.join('handlers', 'compact_config_uploader.py'),
             handler='on_event',
             description='Uploads configurations to the compact configuration Dynamo table',

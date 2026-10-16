@@ -1,0 +1,53 @@
+# Copied from backend/cosmetology-app/lambdas/python/common/cc_common/data_model/schema/jurisdiction/record.py
+
+# ruff: noqa: N801, N815, ARG002 invalid-name unused-kwargs
+from marshmallow import pre_dump
+from marshmallow.fields import Boolean, Email, List, String
+from marshmallow.validate import Length, OneOf
+
+from common_lambdas.config import config
+from common_lambdas.data_model.schema.base_record import BaseRecordSchema
+from common_lambdas.data_model.schema.jurisdiction.common import JURISDICTION_TYPE
+
+# DynamoDB attribute for the state-admin data-live flag. Internal Python uses isLicenseDataLive.
+# The API JSON key is also licenseeRegistrationEnabled, so the contract is unchanged.
+#
+# This attribute stays named licenseeRegistrationEnabled. We are not renaming it to avoid migrating to a new field.
+# This field name was copied from other compacts that allowed registration - On those compacts the flag meant a
+# licensee could register for a privilege. Cosmetology has no registration flow. The same stored flag now means
+# the state's license data is live (public license search and public provider detail include that state's licenses).
+LICENSE_DATA_LIVE_DYNAMO_ATTRIBUTE = 'licenseeRegistrationEnabled'
+
+
+@BaseRecordSchema.register_schema(JURISDICTION_TYPE)
+class JurisdictionRecordSchema(BaseRecordSchema):
+    """Schema for the root jurisdiction configuration records"""
+
+    _record_type = JURISDICTION_TYPE
+
+    # Provided fields
+    jurisdictionName = String(required=True, allow_none=False)
+    postalAbbreviation = String(required=True, allow_none=False, validate=OneOf(config.jurisdictions))
+    compact = String(required=True, allow_none=False, validate=OneOf(config.compacts))
+    jurisdictionOperationsTeamEmails = List(Email(required=True, allow_none=False), required=True, allow_none=False)
+    jurisdictionAdverseActionsNotificationEmails = List(
+        Email(required=True, allow_none=False),
+        required=True,
+        allow_none=False,
+    )
+    # See LICENSE_DATA_LIVE_DYNAMO_ATTRIBUTE. data_key is the stored attribute name; the field name is the model name.
+    isLicenseDataLive = Boolean(
+        required=True,
+        allow_none=False,
+        data_key=LICENSE_DATA_LIVE_DYNAMO_ATTRIBUTE,
+    )
+
+    # Generated fields
+    pk = String(required=True, allow_none=False)
+    sk = String(required=True, allow_none=False, validate=Length(2, 100))
+
+    @pre_dump
+    def generate_pk_sk(self, in_data, **kwargs):  # noqa: ARG001 unused-argument
+        in_data['pk'] = f'{in_data["compact"]}#CONFIGURATION'
+        in_data['sk'] = f'{in_data["compact"]}#JURISDICTION#{in_data["postalAbbreviation"].lower()}'
+        return in_data

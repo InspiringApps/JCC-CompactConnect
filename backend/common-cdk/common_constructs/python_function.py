@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 
 from aws_cdk import Duration
 from aws_cdk.aws_cloudwatch import Alarm, ComparisonOperator, Stats, TreatMissingData
@@ -14,6 +15,8 @@ from cdk_nag import NagSuppressions
 from constructs import Construct
 
 from common_constructs.python_common_layer_versions import PythonCommonLayerVersions
+
+_SHARED_LAMBDAS_ROOT = Path(__file__).resolve().parents[2] / 'common-python' / 'lambdas'
 
 
 class PythonFunction(CdkPythonFunction):
@@ -34,6 +37,8 @@ class PythonFunction(CdkPythonFunction):
         alarm_topic: ITopic = None,
         role: IRole = None,
         log_group: ILogGroup = None,
+        shared: bool = False,
+        entry: str | None = None,
         **kwargs,
     ):
         if self._common_layer_versions is None:
@@ -104,10 +109,16 @@ class PythonFunction(CdkPythonFunction):
         # circular dependency with the stack the role came from. The role creator will have to be responsible for
         # setting its permissions.
 
+        if entry is None:
+            if shared:
+                entry = str(_SHARED_LAMBDAS_ROOT / lambda_dir)
+            else:
+                entry = os.path.join('lambdas', 'python', lambda_dir)
+
         super().__init__(
             scope,
             construct_id,
-            entry=os.path.join('lambdas', 'python', lambda_dir),
+            entry=entry,
             runtime=runtime,
             log_group=log_group,
             role=role,

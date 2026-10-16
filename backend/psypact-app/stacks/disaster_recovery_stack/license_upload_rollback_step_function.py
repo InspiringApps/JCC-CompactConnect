@@ -127,6 +127,7 @@ class LicenseUploadRollbackStepFunctionConstruct(Construct):
             'LicenseUploadRollbackFunction',
             description='Rollback invalid license uploads for a compact/jurisdiction/time window',
             lambda_dir='disaster-recovery',
+            shared=True,
             index=os.path.join('handlers', 'rollback_license_upload.py'),
             handler='rollback_license_upload',
             timeout=Duration.minutes(15),

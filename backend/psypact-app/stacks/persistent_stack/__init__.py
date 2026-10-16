@@ -235,10 +235,6 @@ class PersistentStack(AppStack):
             bucket_encryption_key=self.ssn_table.key,
             removal_policy=removal_policy,
             auto_delete_objects=removal_policy == RemovalPolicy.DESTROY,
-            event_bus=self._data_event_bus,
-            license_preprocessing_queue=self.ssn_table.preprocessor_queue.queue,
-            license_upload_role=self.ssn_table.license_upload_role,
-            provider_table=self.provider_table,
         )
 
         self.transaction_reports_bucket = TransactionReportsBucket(

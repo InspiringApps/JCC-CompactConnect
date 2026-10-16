@@ -131,6 +131,7 @@ class BackendPipeline(BasePipeline):
                 primary_output_directory=os.path.join(cdk_path, 'cdk.out'),
                 commands=[
                     f'cd {cdk_path}',
+                    '../common-python/bin/run_copy_sync_tests.sh',
                     'npm install -g aws-cdk',
                     'python -m pip install -r requirements.txt',
                     '( cd lambdas/nodejs; yarn install --frozen-lockfile )',

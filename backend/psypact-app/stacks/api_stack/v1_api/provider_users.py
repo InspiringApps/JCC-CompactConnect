@@ -18,7 +18,6 @@ class ProviderUsers:
         *,
         resource: Resource,
         api_model: ApiModel,
-        privilege_history_function: PythonFunction,
         api_lambda_stack: ApiLambdaStack,
     ):
         super().__init__()
@@ -26,12 +25,7 @@ class ProviderUsers:
         self.provider_users_resource = resource
         self.api_model = api_model
         self.api: CCApi = resource.api
-
-        # /v1/provider-users/registration
-        self.provider_users_registration_resource = self.provider_users_resource.add_resource('registration')
-        self._add_provider_registration(
-            api_lambda_stack=api_lambda_stack,
-        )
+        self.api_lambda_stack = api_lambda_stack
 
         # /v1/provider-users/initiateRecovery
         # /v1/provider-users/verifyRecovery
@@ -50,14 +44,6 @@ class ProviderUsers:
         # Add the GET method for /v1/provider-users/me
         self._add_get_provider_user_me()
 
-        # /v1/provider-users/me/military-affiliation
-        self.provider_users_me_military_affiliation_resource = self.provider_users_me_resource.add_resource(
-            'military-affiliation'
-        )
-
-        # Add the POST and PATCH methods for /v1/provider-users/me/military-affiliation
-        self._add_provider_user_me_military_affiliation()
-
         # /v1/provider-users/me/home-jurisdiction
         self.provider_users_me_home_jurisdiction_resource = self.provider_users_me_resource.add_resource(
             'home-jurisdiction'
@@ -73,17 +59,6 @@ class ProviderUsers:
         # /v1/provider-users/me/email/verify
         self.provider_users_me_email_verify_resource = self.provider_users_me_email_resource.add_resource('verify')
         self._add_provider_user_me_email_verify()
-
-        self.provider_jurisdiction_resource = self.provider_users_me_resource.add_resource('jurisdiction').add_resource(
-            '{jurisdiction}'
-        )
-        self.provider_jurisdiction_license_type_resource = self.provider_jurisdiction_resource.add_resource(
-            'licenseType'
-        ).add_resource('{licenseType}')
-
-        self._add_get_privilege_history(
-            privilege_history_function=privilege_history_function,
-        )
 
     def _add_get_provider_user_me(self):
         self.provider_users_me_resource.add_method(
@@ -144,7 +119,10 @@ class ProviderUsers:
                     response_models={'application/json': self.api_model.message_response_model},
                 ),
             ],
-            integration=LambdaIntegration(self.provider_users_me_handler, timeout=Duration.seconds(29)),
+            integration=LambdaIntegration(
+                self.api_lambda_stack.provider_users_lambdas.provider_home_jurisdiction_handler,
+                timeout=Duration.seconds(29),
+            ),
             request_parameters={'method.request.header.Authorization': True},
             authorizer=self.api.provider_users_authorizer,
         )

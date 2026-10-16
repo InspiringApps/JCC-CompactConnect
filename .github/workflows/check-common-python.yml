@@ -1,0 +1,27 @@
+name: Check-Common-Python
+
+on:
+  pull_request:
+    paths:
+      - backend/common-python/**
+      - .github/workflows/check-common-python.yml
+
+env:
+  AWS_REGION: "us-east-1"
+
+permissions:
+  contents: read
+
+jobs:
+  CopySync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.14'
+
+      - name: Run copy-sync tests
+        run: backend/common-python/bin/run_copy_sync_tests.sh
