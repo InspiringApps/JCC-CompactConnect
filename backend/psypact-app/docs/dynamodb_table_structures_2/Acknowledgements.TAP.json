@@ -1,0 +1,73 @@
+{
+  "tableName": "Acknowledgements.TAP",
+  "description": "Structure for the 'Acknowledgements.TAP' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+  "partitionKey": "userId",
+  "sortKey": null,
+  "attributes": {
+    "question5": "String",
+    "UpdatedAt": "String",
+    "legalAgree": "String",
+    "question3": "String",
+    "question4": "String",
+    "question1": "String",
+    "question2": "String",
+    "userId": "Number",
+    "attestationDate": "String",
+    "AttestationType": "String",
+    "legalName": "String",
+    "validated": "String"
+  },
+  "sampleItemShape": {
+    "question5": "example-string",
+    "UpdatedAt": "example-string",
+    "legalAgree": "example-string",
+    "question3": "example-string",
+    "question4": "example-string",
+    "question1": "example-string",
+    "question2": "example-string",
+    "userId": 12345,
+    "attestationDate": "example-string",
+    "AttestationType": "example-string",
+    "legalName": "example-string",
+    "validated": "example-string"
+  },
+  "sampleItemDynamoDBFormat": {
+    "question5": {
+      "S": "example-string"
+    },
+    "UpdatedAt": {
+      "S": "example-string"
+    },
+    "legalAgree": {
+      "S": "example-string"
+    },
+    "question3": {
+      "S": "example-string"
+    },
+    "question4": {
+      "S": "example-string"
+    },
+    "question1": {
+      "S": "example-string"
+    },
+    "question2": {
+      "S": "example-string"
+    },
+    "userId": {
+      "N": "12345"
+    },
+    "attestationDate": {
+      "S": "example-string"
+    },
+    "AttestationType": {
+      "S": "example-string"
+    },
+    "legalName": {
+      "S": "example-string"
+    },
+    "validated": {
+      "S": "example-string"
+    }
+  },
+  "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+}

@@ -1,0 +1,123 @@
+{
+  "tableName": "PostLicensureWorkExperience",
+  "description": "Structure for the 'PostLicensureWorkExperience' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+  "partitionKey": "userId",
+  "sortKey": "entryId",
+  "attributes": {
+    "readyForAttestation": "String",
+    "endDate": "String",
+    "attesterName": "String",
+    "AttestationType": "String",
+    "validated": "String",
+    "entryId": "Number",
+    "employerName": "String",
+    "isFullTime": "String",
+    "userId": "Number",
+    "startDate": "String",
+    "HasAttestation": "Number",
+    "isSelfEmployed": "String",
+    "address1": "String",
+    "title": "String",
+    "dutiesDescription": "String",
+    "zip": "String",
+    "attesterPhone": "String",
+    "hoursPerWeek": "Number",
+    "attesterEmail": "String",
+    "state": "String",
+    "city": "String",
+    "attesterTitle": "String"
+  },
+  "sampleItemShape": {
+    "readyForAttestation": "example-string",
+    "endDate": "example-string",
+    "attesterName": "example-string",
+    "AttestationType": "example-string",
+    "validated": "example-string",
+    "entryId": 12345,
+    "employerName": "example-string",
+    "isFullTime": "example-string",
+    "userId": 12345,
+    "startDate": "example-string",
+    "HasAttestation": 12345,
+    "isSelfEmployed": "example-string",
+    "address1": "example-string",
+    "title": "example-string",
+    "dutiesDescription": "example-string",
+    "zip": "example-string",
+    "attesterPhone": "example-string",
+    "hoursPerWeek": 12345,
+    "attesterEmail": "example-string",
+    "state": "example-string",
+    "city": "example-string",
+    "attesterTitle": "example-string"
+  },
+  "sampleItemDynamoDBFormat": {
+    "readyForAttestation": {
+      "S": "example-string"
+    },
+    "endDate": {
+      "S": "example-string"
+    },
+    "attesterName": {
+      "S": "example-string"
+    },
+    "AttestationType": {
+      "S": "example-string"
+    },
+    "validated": {
+      "S": "example-string"
+    },
+    "entryId": {
+      "N": "12345"
+    },
+    "employerName": {
+      "S": "example-string"
+    },
+    "isFullTime": {
+      "S": "example-string"
+    },
+    "userId": {
+      "N": "12345"
+    },
+    "startDate": {
+      "S": "example-string"
+    },
+    "HasAttestation": {
+      "N": "12345"
+    },
+    "isSelfEmployed": {
+      "S": "example-string"
+    },
+    "address1": {
+      "S": "example-string"
+    },
+    "title": {
+      "S": "example-string"
+    },
+    "dutiesDescription": {
+      "S": "example-string"
+    },
+    "zip": {
+      "S": "example-string"
+    },
+    "attesterPhone": {
+      "S": "example-string"
+    },
+    "hoursPerWeek": {
+      "N": "12345"
+    },
+    "attesterEmail": {
+      "S": "example-string"
+    },
+    "state": {
+      "S": "example-string"
+    },
+    "city": {
+      "S": "example-string"
+    },
+    "attesterTitle": {
+      "S": "example-string"
+    }
+  },
+  "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+}

@@ -1,0 +1,83 @@
+{
+  "tableName": "Accommodations",
+  "description": "Structure for the 'Accommodations' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+  "partitionKey": "userId",
+  "sortKey": null,
+  "attributes": {
+    "provided_accommodations": "String",
+    "UpdatedAt": "String",
+    "legalAgree": "String",
+    "special_accommodations": "String",
+    "userId": "Number",
+    "attestationDate": "String",
+    "AttestationType": "String",
+    "legalName": "String",
+    "validated": "String",
+    "provided_accommodations_desc": "String",
+    "special_accommodations_desc": "String",
+    "place_holder_2": "String",
+    "place_holder_3": "String",
+    "place_holder_4": "String"
+  },
+  "sampleItemShape": {
+    "provided_accommodations": "example-string",
+    "UpdatedAt": "example-string",
+    "legalAgree": "example-string",
+    "special_accommodations": "example-string",
+    "userId": 12345,
+    "attestationDate": "example-string",
+    "AttestationType": "example-string",
+    "legalName": "example-string",
+    "validated": "example-string",
+    "provided_accommodations_desc": "example-string",
+    "special_accommodations_desc": "example-string",
+    "place_holder_2": "example-string",
+    "place_holder_3": "example-string",
+    "place_holder_4": "example-string"
+  },
+  "sampleItemDynamoDBFormat": {
+    "provided_accommodations": {
+      "S": "example-string"
+    },
+    "UpdatedAt": {
+      "S": "example-string"
+    },
+    "legalAgree": {
+      "S": "example-string"
+    },
+    "special_accommodations": {
+      "S": "example-string"
+    },
+    "userId": {
+      "N": "12345"
+    },
+    "attestationDate": {
+      "S": "example-string"
+    },
+    "AttestationType": {
+      "S": "example-string"
+    },
+    "legalName": {
+      "S": "example-string"
+    },
+    "validated": {
+      "S": "example-string"
+    },
+    "provided_accommodations_desc": {
+      "S": "example-string"
+    },
+    "special_accommodations_desc": {
+      "S": "example-string"
+    },
+    "place_holder_2": {
+      "S": "example-string"
+    },
+    "place_holder_3": {
+      "S": "example-string"
+    },
+    "place_holder_4": {
+      "S": "example-string"
+    }
+  },
+  "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+}

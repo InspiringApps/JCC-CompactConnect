@@ -1,0 +1,68 @@
+{
+  "tableName": "Licensures",
+  "description": "Structure for the 'Licensures' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+  "partitionKey": "userId",
+  "sortKey": "entryId",
+  "attributes": {
+    "licensureNumber": "String",
+    "professionalType": "String",
+    "issueDate": "String",
+    "licenseType": "String",
+    "userId": "Number",
+    "status": "String",
+    "jurisdiction": "String",
+    "validated": "String",
+    "entryId": "Number",
+    "licenseTypeEntry": "String",
+    "profession": "String"
+  },
+  "sampleItemShape": {
+    "licensureNumber": "example-string",
+    "professionalType": "example-string",
+    "issueDate": "example-string",
+    "licenseType": "example-string",
+    "userId": 12345,
+    "status": "example-string",
+    "jurisdiction": "example-string",
+    "validated": "example-string",
+    "entryId": 12345,
+    "licenseTypeEntry": "example-string",
+    "profession": "example-string"
+  },
+  "sampleItemDynamoDBFormat": {
+    "licensureNumber": {
+      "S": "example-string"
+    },
+    "professionalType": {
+      "S": "example-string"
+    },
+    "issueDate": {
+      "S": "example-string"
+    },
+    "licenseType": {
+      "S": "example-string"
+    },
+    "userId": {
+      "N": "12345"
+    },
+    "status": {
+      "S": "example-string"
+    },
+    "jurisdiction": {
+      "S": "example-string"
+    },
+    "validated": {
+      "S": "example-string"
+    },
+    "entryId": {
+      "N": "12345"
+    },
+    "licenseTypeEntry": {
+      "S": "example-string"
+    },
+    "profession": {
+      "S": "example-string"
+    }
+  },
+  "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+}

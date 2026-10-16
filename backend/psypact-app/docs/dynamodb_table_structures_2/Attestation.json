@@ -1,0 +1,118 @@
+{
+  "tableName": "Attestation",
+  "description": "Structure for the 'Attestation' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+  "partitionKey": "attestationId",
+  "sortKey": null,
+  "attributes": {
+    "question5": "String",
+    "question3": "String",
+    "generalComments": "String",
+    "question4": "String",
+    "question1": "String",
+    "question2": "String",
+    "attestationId": "Number",
+    "question6": "String",
+    "question9": "String",
+    "question7": "String",
+    "question8": "String",
+    "question11": "String",
+    "question10": "String",
+    "question19": "String",
+    "question18": "String",
+    "question17": "String",
+    "question16": "String",
+    "question15": "String",
+    "question14": "String",
+    "numberSupervisors": "String",
+    "numberInterns": "String"
+  },
+  "sampleItemShape": {
+    "question5": "example-string",
+    "question3": "example-string",
+    "generalComments": "example-string",
+    "question4": "example-string",
+    "question1": "example-string",
+    "question2": "example-string",
+    "attestationId": 12345,
+    "question6": "example-string",
+    "question9": "example-string",
+    "question7": "example-string",
+    "question8": "example-string",
+    "question11": "example-string",
+    "question10": "example-string",
+    "question19": "example-string",
+    "question18": "example-string",
+    "question17": "example-string",
+    "question16": "example-string",
+    "question15": "example-string",
+    "question14": "example-string",
+    "numberSupervisors": "example-string",
+    "numberInterns": "example-string"
+  },
+  "sampleItemDynamoDBFormat": {
+    "question5": {
+      "S": "example-string"
+    },
+    "question3": {
+      "S": "example-string"
+    },
+    "generalComments": {
+      "S": "example-string"
+    },
+    "question4": {
+      "S": "example-string"
+    },
+    "question1": {
+      "S": "example-string"
+    },
+    "question2": {
+      "S": "example-string"
+    },
+    "attestationId": {
+      "N": "12345"
+    },
+    "question6": {
+      "S": "example-string"
+    },
+    "question9": {
+      "S": "example-string"
+    },
+    "question7": {
+      "S": "example-string"
+    },
+    "question8": {
+      "S": "example-string"
+    },
+    "question11": {
+      "S": "example-string"
+    },
+    "question10": {
+      "S": "example-string"
+    },
+    "question19": {
+      "S": "example-string"
+    },
+    "question18": {
+      "S": "example-string"
+    },
+    "question17": {
+      "S": "example-string"
+    },
+    "question16": {
+      "S": "example-string"
+    },
+    "question15": {
+      "S": "example-string"
+    },
+    "question14": {
+      "S": "example-string"
+    },
+    "numberSupervisors": {
+      "S": "example-string"
+    },
+    "numberInterns": {
+      "S": "example-string"
+    }
+  },
+  "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+}

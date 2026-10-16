@@ -1,0 +1,78 @@
+{
+  "tableName": "DidacticEducation.Extension",
+  "description": "Structure for the 'DidacticEducation.Extension' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+  "partitionKey": "userId",
+  "sortKey": null,
+  "attributes": {
+    "UpdatedAt": "String",
+    "zip": "String",
+    "admissionDate": "String",
+    "completionDate": "String",
+    "telephoneNumber": "String",
+    "institution": "String",
+    "email": "String",
+    "state": "String",
+    "city": "String",
+    "program": "String",
+    "contactName": "String",
+    "userId": "Number",
+    "addressLine1": "String"
+  },
+  "sampleItemShape": {
+    "UpdatedAt": "example-string",
+    "zip": "example-string",
+    "admissionDate": "example-string",
+    "completionDate": "example-string",
+    "telephoneNumber": "example-string",
+    "institution": "example-string",
+    "email": "example-string",
+    "state": "example-string",
+    "city": "example-string",
+    "program": "example-string",
+    "contactName": "example-string",
+    "userId": 12345,
+    "addressLine1": "example-string"
+  },
+  "sampleItemDynamoDBFormat": {
+    "UpdatedAt": {
+      "S": "example-string"
+    },
+    "zip": {
+      "S": "example-string"
+    },
+    "admissionDate": {
+      "S": "example-string"
+    },
+    "completionDate": {
+      "S": "example-string"
+    },
+    "telephoneNumber": {
+      "S": "example-string"
+    },
+    "institution": {
+      "S": "example-string"
+    },
+    "email": {
+      "S": "example-string"
+    },
+    "state": {
+      "S": "example-string"
+    },
+    "city": {
+      "S": "example-string"
+    },
+    "program": {
+      "S": "example-string"
+    },
+    "contactName": {
+      "S": "example-string"
+    },
+    "userId": {
+      "N": "12345"
+    },
+    "addressLine1": {
+      "S": "example-string"
+    }
+  },
+  "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+}

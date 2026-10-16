@@ -1,0 +1,148 @@
+{
+  "tableName": "Conduct",
+  "description": "Structure for the 'Conduct' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+  "partitionKey": "userId",
+  "sortKey": null,
+  "attributes": {
+    "rejected": "String",
+    "ethicsCommittee": "String",
+    "incapable": "String",
+    "convicted": "String",
+    "thirdPartyRevoked": "String",
+    "deniedMembership": "String",
+    "censured": "String",
+    "refusedRenewal": "String",
+    "malpractice": "String",
+    "governmentAllegations": "String",
+    "userId": "Number",
+    "aidedPracticeWithoutLicense": "String",
+    "limited": "String",
+    "disciplined": "String",
+    "sexOffender": "String",
+    "drugsAlcohol": "String",
+    "surrendered": "String",
+    "disciplinedWhileHolding": "String",
+    "outstandingInvestigation": "String",
+    "liablityCancelled": "String",
+    "practicedWithoutLicense": "String",
+    "validated": "String",
+    "attestationDate": "String",
+    "AttestationType": "String",
+    "legalAgree": "String",
+    "legalName": "String",
+    "censured_desc": "String"
+  },
+  "sampleItemShape": {
+    "rejected": "example-string",
+    "ethicsCommittee": "example-string",
+    "incapable": "example-string",
+    "convicted": "example-string",
+    "thirdPartyRevoked": "example-string",
+    "deniedMembership": "example-string",
+    "censured": "example-string",
+    "refusedRenewal": "example-string",
+    "malpractice": "example-string",
+    "governmentAllegations": "example-string",
+    "userId": 12345,
+    "aidedPracticeWithoutLicense": "example-string",
+    "limited": "example-string",
+    "disciplined": "example-string",
+    "sexOffender": "example-string",
+    "drugsAlcohol": "example-string",
+    "surrendered": "example-string",
+    "disciplinedWhileHolding": "example-string",
+    "outstandingInvestigation": "example-string",
+    "liablityCancelled": "example-string",
+    "practicedWithoutLicense": "example-string",
+    "validated": "example-string",
+    "attestationDate": "example-string",
+    "AttestationType": "example-string",
+    "legalAgree": "example-string",
+    "legalName": "example-string",
+    "censured_desc": "example-string"
+  },
+  "sampleItemDynamoDBFormat": {
+    "rejected": {
+      "S": "example-string"
+    },
+    "ethicsCommittee": {
+      "S": "example-string"
+    },
+    "incapable": {
+      "S": "example-string"
+    },
+    "convicted": {
+      "S": "example-string"
+    },
+    "thirdPartyRevoked": {
+      "S": "example-string"
+    },
+    "deniedMembership": {
+      "S": "example-string"
+    },
+    "censured": {
+      "S": "example-string"
+    },
+    "refusedRenewal": {
+      "S": "example-string"
+    },
+    "malpractice": {
+      "S": "example-string"
+    },
+    "governmentAllegations": {
+      "S": "example-string"
+    },
+    "userId": {
+      "N": "12345"
+    },
+    "aidedPracticeWithoutLicense": {
+      "S": "example-string"
+    },
+    "limited": {
+      "S": "example-string"
+    },
+    "disciplined": {
+      "S": "example-string"
+    },
+    "sexOffender": {
+      "S": "example-string"
+    },
+    "drugsAlcohol": {
+      "S": "example-string"
+    },
+    "surrendered": {
+      "S": "example-string"
+    },
+    "disciplinedWhileHolding": {
+      "S": "example-string"
+    },
+    "outstandingInvestigation": {
+      "S": "example-string"
+    },
+    "liablityCancelled": {
+      "S": "example-string"
+    },
+    "practicedWithoutLicense": {
+      "S": "example-string"
+    },
+    "validated": {
+      "S": "example-string"
+    },
+    "attestationDate": {
+      "S": "example-string"
+    },
+    "AttestationType": {
+      "S": "example-string"
+    },
+    "legalAgree": {
+      "S": "example-string"
+    },
+    "legalName": {
+      "S": "example-string"
+    },
+    "censured_desc": {
+      "S": "example-string"
+    }
+  },
+  "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+}

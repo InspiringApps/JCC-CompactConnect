@@ -1,0 +1,178 @@
+{
+  "tableName": "Internship",
+  "description": "Structure for the 'Internship' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+  "partitionKey": "userId",
+  "sortKey": "entryId",
+  "attributes": {
+    "tbDirectServices": "String",
+    "tbIndirectServices": "String",
+    "tbhoursPerWeekSupervisionOther": "String",
+    "APPICMember": "String",
+    "gSupervisionList": "String",
+    "duties": "String",
+    "endDate": "String",
+    "clienteleDescription": "String",
+    "validated": "String",
+    "agencyAddress1": "String",
+    "entryId": "Number",
+    "APAAccredited": "String",
+    "userId": "Number",
+    "specialty": "String",
+    "startDate": "String",
+    "agencyState": "String",
+    "attesterPhone": "String",
+    "iSupervisionList": "String",
+    "attesterName": "String",
+    "attesterEmail": "String",
+    "CPAAccredited": "String",
+    "AttestationType": "String",
+    "agencyCity": "String",
+    "totalHoursGeneralServices": "String",
+    "agencyName": "String",
+    "applicantTitle": "String",
+    "tbAvgHoursWeek": "String",
+    "tbTotalWeeks": "String",
+    "trainingRequired": "String",
+    "HasAttestation": "Number",
+    "agencyZip": "String",
+    "internCount": "Number",
+    "remarks": "String"
+  },
+  "sampleItemShape": {
+    "tbDirectServices": "example-string",
+    "tbIndirectServices": "example-string",
+    "tbhoursPerWeekSupervisionOther": "example-string",
+    "APPICMember": "example-string",
+    "gSupervisionList": "example-string",
+    "duties": "example-string",
+    "endDate": "example-string",
+    "clienteleDescription": "example-string",
+    "validated": "example-string",
+    "agencyAddress1": "example-string",
+    "entryId": 12345,
+    "APAAccredited": "example-string",
+    "userId": 12345,
+    "specialty": "example-string",
+    "startDate": "example-string",
+    "agencyState": "example-string",
+    "attesterPhone": "example-string",
+    "iSupervisionList": "example-string",
+    "attesterName": "example-string",
+    "attesterEmail": "example-string",
+    "CPAAccredited": "example-string",
+    "AttestationType": "example-string",
+    "agencyCity": "example-string",
+    "totalHoursGeneralServices": "example-string",
+    "agencyName": "example-string",
+    "applicantTitle": "example-string",
+    "tbAvgHoursWeek": "example-string",
+    "tbTotalWeeks": "example-string",
+    "trainingRequired": "example-string",
+    "HasAttestation": 12345,
+    "agencyZip": "example-string",
+    "internCount": 12345,
+    "remarks": "example-string"
+  },
+  "sampleItemDynamoDBFormat": {
+    "tbDirectServices": {
+      "S": "example-string"
+    },
+    "tbIndirectServices": {
+      "S": "example-string"
+    },
+    "tbhoursPerWeekSupervisionOther": {
+      "S": "example-string"
+    },
+    "APPICMember": {
+      "S": "example-string"
+    },
+    "gSupervisionList": {
+      "S": "example-string"
+    },
+    "duties": {
+      "S": "example-string"
+    },
+    "endDate": {
+      "S": "example-string"
+    },
+    "clienteleDescription": {
+      "S": "example-string"
+    },
+    "validated": {
+      "S": "example-string"
+    },
+    "agencyAddress1": {
+      "S": "example-string"
+    },
+    "entryId": {
+      "N": "12345"
+    },
+    "APAAccredited": {
+      "S": "example-string"
+    },
+    "userId": {
+      "N": "12345"
+    },
+    "specialty": {
+      "S": "example-string"
+    },
+    "startDate": {
+      "S": "example-string"
+    },
+    "agencyState": {
+      "S": "example-string"
+    },
+    "attesterPhone": {
+      "S": "example-string"
+    },
+    "iSupervisionList": {
+      "S": "example-string"
+    },
+    "attesterName": {
+      "S": "example-string"
+    },
+    "attesterEmail": {
+      "S": "example-string"
+    },
+    "CPAAccredited": {
+      "S": "example-string"
+    },
+    "AttestationType": {
+      "S": "example-string"
+    },
+    "agencyCity": {
+      "S": "example-string"
+    },
+    "totalHoursGeneralServices": {
+      "S": "example-string"
+    },
+    "agencyName": {
+      "S": "example-string"
+    },
+    "applicantTitle": {
+      "S": "example-string"
+    },
+    "tbAvgHoursWeek": {
+      "S": "example-string"
+    },
+    "tbTotalWeeks": {
+      "S": "example-string"
+    },
+    "trainingRequired": {
+      "S": "example-string"
+    },
+    "HasAttestation": {
+      "N": "12345"
+    },
+    "agencyZip": {
+      "S": "example-string"
+    },
+    "internCount": {
+      "N": "12345"
+    },
+    "remarks": {
+      "S": "example-string"
+    }
+  },
+  "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+}

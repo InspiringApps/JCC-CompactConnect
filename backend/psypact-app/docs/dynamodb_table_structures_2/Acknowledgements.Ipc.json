@@ -1,0 +1,68 @@
+{
+  "tableName": "Acknowledgements.Ipc",
+  "description": "Structure for the 'Acknowledgements.Ipc' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+  "partitionKey": "userId",
+  "sortKey": null,
+  "attributes": {
+    "legalAgree": "String",
+    "post_licensure": "String",
+    "legal_requirements": "String",
+    "userId": "Number",
+    "attestationDate": "String",
+    "asppb_mobility": "String",
+    "30_day_conduct": "String",
+    "AttestationType": "String",
+    "legalName": "String",
+    "validated": "String",
+    "UpdatedAt": "String"
+  },
+  "sampleItemShape": {
+    "legalAgree": "example-string",
+    "post_licensure": "example-string",
+    "legal_requirements": "example-string",
+    "userId": 12345,
+    "attestationDate": "example-string",
+    "asppb_mobility": "example-string",
+    "30_day_conduct": "example-string",
+    "AttestationType": "example-string",
+    "legalName": "example-string",
+    "validated": "example-string",
+    "UpdatedAt": "example-string"
+  },
+  "sampleItemDynamoDBFormat": {
+    "legalAgree": {
+      "S": "example-string"
+    },
+    "post_licensure": {
+      "S": "example-string"
+    },
+    "legal_requirements": {
+      "S": "example-string"
+    },
+    "userId": {
+      "N": "12345"
+    },
+    "attestationDate": {
+      "S": "example-string"
+    },
+    "asppb_mobility": {
+      "S": "example-string"
+    },
+    "30_day_conduct": {
+      "S": "example-string"
+    },
+    "AttestationType": {
+      "S": "example-string"
+    },
+    "legalName": {
+      "S": "example-string"
+    },
+    "validated": {
+      "S": "example-string"
+    },
+    "UpdatedAt": {
+      "S": "example-string"
+    }
+  },
+  "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+}

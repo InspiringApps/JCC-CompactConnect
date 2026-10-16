@@ -1,0 +1,88 @@
+{
+  "tableName": "Acknowledgements.Epassport_v2",
+  "description": "Structure for the 'Acknowledgements.Epassport_v2' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+  "partitionKey": "userId",
+  "sortKey": "activityId",
+  "attributes": {
+    "UpdatedAt": "String",
+    "competence_area": "String",
+    "post_licensure": "String",
+    "legal_requirements": "String",
+    "asppb_guidelines": "String",
+    "asppb_mobility": "String",
+    "activityId": "Number",
+    "AttestationType": "String",
+    "telecom_tech": "String",
+    "validated": "String",
+    "legalAgree": "String",
+    "userId": "Number",
+    "attestationDate": "String",
+    "relevant_training_3hrs": "String",
+    "legalName": "String"
+  },
+  "sampleItemShape": {
+    "UpdatedAt": "example-string",
+    "competence_area": "example-string",
+    "post_licensure": "example-string",
+    "legal_requirements": "example-string",
+    "asppb_guidelines": "example-string",
+    "asppb_mobility": "example-string",
+    "activityId": 12345,
+    "AttestationType": "example-string",
+    "telecom_tech": "example-string",
+    "validated": "example-string",
+    "legalAgree": "example-string",
+    "userId": 12345,
+    "attestationDate": "example-string",
+    "relevant_training_3hrs": "example-string",
+    "legalName": "example-string"
+  },
+  "sampleItemDynamoDBFormat": {
+    "UpdatedAt": {
+      "S": "example-string"
+    },
+    "competence_area": {
+      "S": "example-string"
+    },
+    "post_licensure": {
+      "S": "example-string"
+    },
+    "legal_requirements": {
+      "S": "example-string"
+    },
+    "asppb_guidelines": {
+      "S": "example-string"
+    },
+    "asppb_mobility": {
+      "S": "example-string"
+    },
+    "activityId": {
+      "N": "12345"
+    },
+    "AttestationType": {
+      "S": "example-string"
+    },
+    "telecom_tech": {
+      "S": "example-string"
+    },
+    "validated": {
+      "S": "example-string"
+    },
+    "legalAgree": {
+      "S": "example-string"
+    },
+    "userId": {
+      "N": "12345"
+    },
+    "attestationDate": {
+      "S": "example-string"
+    },
+    "relevant_training_3hrs": {
+      "S": "example-string"
+    },
+    "legalName": {
+      "S": "example-string"
+    }
+  },
+  "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+}

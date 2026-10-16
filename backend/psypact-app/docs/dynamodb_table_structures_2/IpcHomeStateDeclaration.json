@@ -1,0 +1,78 @@
+{
+  "tableName": "IpcHomeStateDeclaration",
+  "description": "Structure for the 'IpcHomeStateDeclaration' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+  "partitionKey": "userId",
+  "sortKey": "entryId",
+  "attributes": {
+    "StateAbbreviation": "String",
+    "HasAttested": "String",
+    "CreatedOn": "String",
+    "StartDate": "String",
+    "userId": "Number",
+    "CreatedByUserId": "String",
+    "AttestationType": "String",
+    "validated": "String",
+    "StateFullName": "String",
+    "entryId": "Number",
+    "UpdatedAt": "String",
+    "UpdatedOn": "String",
+    "UpdatedByUserId": "String"
+  },
+  "sampleItemShape": {
+    "StateAbbreviation": "example-string",
+    "HasAttested": "example-string",
+    "CreatedOn": "example-string",
+    "StartDate": "example-string",
+    "userId": 12345,
+    "CreatedByUserId": "example-string",
+    "AttestationType": "example-string",
+    "validated": "example-string",
+    "StateFullName": "example-string",
+    "entryId": 12345,
+    "UpdatedAt": "example-string",
+    "UpdatedOn": "example-string",
+    "UpdatedByUserId": "example-string"
+  },
+  "sampleItemDynamoDBFormat": {
+    "StateAbbreviation": {
+      "S": "example-string"
+    },
+    "HasAttested": {
+      "S": "example-string"
+    },
+    "CreatedOn": {
+      "S": "example-string"
+    },
+    "StartDate": {
+      "S": "example-string"
+    },
+    "userId": {
+      "N": "12345"
+    },
+    "CreatedByUserId": {
+      "S": "example-string"
+    },
+    "AttestationType": {
+      "S": "example-string"
+    },
+    "validated": {
+      "S": "example-string"
+    },
+    "StateFullName": {
+      "S": "example-string"
+    },
+    "entryId": {
+      "N": "12345"
+    },
+    "UpdatedAt": {
+      "S": "example-string"
+    },
+    "UpdatedOn": {
+      "S": "example-string"
+    },
+    "UpdatedByUserId": {
+      "S": "example-string"
+    }
+  },
+  "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+}
