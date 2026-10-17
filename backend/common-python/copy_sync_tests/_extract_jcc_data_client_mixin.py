@@ -30,7 +30,7 @@ MODULE_REWRITES = {
     'common_lambdas.data_model.schema.provider': 'common_lambdas.data_model.schema.provider.jcc_provider',
 }
 NAME_MODULE_OVERRIDES = {
-    'ProviderRecordType': 'common_lambdas.psypact_records',
+    'ProviderRecordType': 'common_lambdas.data_model.jcc_record_type',
 }
 
 ORIGIN = (

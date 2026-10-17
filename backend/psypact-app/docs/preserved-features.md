@@ -7,7 +7,7 @@ Two source apps supply the copied code:
 - **Cosmetology** (`backend/cosmetology-app`) is the provider model. Privileges are generated when a provider is read, from the home license plus privilege encumbrances and investigations. Privilege and privilege-update records are not stored.
 - **Compact Connect** (`backend/compact-connect`), the JCC app, supplies practitioner login, attestations, and the Authorize.Net client. Selected JCC data-client methods are mixed onto the Cosmetology data client.
 
-`PsypactDataClient` is the composition of those two: Cosmetology `DataClient` plus `JccDataClientMixin`. It is defined in `backend/common-python/common_lambdas/psypact_data_client.py`.
+`PsypactDataClient` is the composition of those two: Cosmetology `DataClient` plus `JccDataClientMixin`. It is defined in `backend/psypact-app/lambdas/python/common/cc_common/psypact_data_client.py`.
 
 ## Practitioner account
 

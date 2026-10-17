@@ -51,9 +51,8 @@ class CompactConfigurationApiLambdas:
         handler = PythonFunction(
             scope,
             'CompactConfigurationApiFunction',
-            index=os.path.join('handlers', 'compact_configuration.py'),
-            lambda_dir='compact-configuration',
-            shared=True,
+            index='handler.py',
+            lambda_dir='compact-configuration-api',
             handler='compact_configuration_api_handler',
             environment=env_vars,
             timeout=Duration.seconds(28),

@@ -32,10 +32,9 @@ class CompactConfigurationUpload(Construct):
         self.compact_configuration_upload_function = PythonFunction(
             scope,
             'CompactConfigurationUploadFunction',
-            lambda_dir='custom-resources',
-            shared=True,
-            index=os.path.join('handlers', 'compact_config_uploader.py'),
-            handler='on_event',
+            lambda_dir='upload-compact-configuration',
+            index='handler.py',
+            handler='upload_compact_configuration',
             description='Uploads configurations to the compact configuration Dynamo table',
             timeout=Duration.minutes(5),
             log_retention=RetentionDays.THREE_MONTHS,

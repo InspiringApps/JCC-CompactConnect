@@ -127,9 +127,8 @@ class StaffUsers(UserPool, ResourceScopeMixin):
             self,
             'ScopeCustomizationHandler',
             description='Auth scope customization handler',
-            lambda_dir='staff-user-pre-token',
-            shared=True,
-            index='main.py',
+            lambda_dir='customize-scopes',
+            index='handler.py',
             handler='customize_scopes',
             alarm_topic=stack.alarm_topic,
             environment={

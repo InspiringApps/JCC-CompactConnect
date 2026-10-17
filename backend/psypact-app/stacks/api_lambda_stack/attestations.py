@@ -44,9 +44,8 @@ class AttestationsLambdas:
         handler = PythonFunction(
             scope,
             'AttestationsFunction',
-            index=os.path.join('handlers', 'attestations.py'),
-            lambda_dir='compact-configuration',
-            shared=True,
+            index='handler.py',
+            lambda_dir='attestations',
             handler='attestations',
             environment=env_vars,
             timeout=Duration.seconds(30),

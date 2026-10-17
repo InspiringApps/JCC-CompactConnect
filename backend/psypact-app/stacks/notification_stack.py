@@ -80,7 +80,6 @@ class NotificationStack(AppStack):
             'PrivilegePurchaseHandler',
             description='Privilege purchase notification handler',
             lambda_dir='provider-data-v1',
-            shared=True,
             index=os.path.join('handlers', 'privileges.py'),
             handler='privilege_purchase_message_handler',
             timeout=Duration.minutes(1),
@@ -178,6 +177,8 @@ class NotificationStack(AppStack):
         *,
         index: str,
         handler: str,
+        shared: bool = True,
+        lambda_dir: str = 'data-events',
         listener_detail_type: str,
         persistent_stack: ps.PersistentStack,
         data_event_bus: EventBus,
@@ -192,9 +193,9 @@ class NotificationStack(AppStack):
             self,
             f'{construct_id_prefix}Handler',
             description=f'{construct_id_prefix} Emailer Event Listener Handler',
-            lambda_dir='data-events',
-            shared=True,
-            index=os.path.join('handlers', index),
+            lambda_dir=lambda_dir,
+            shared=shared,
+            index=index if index == 'handler.py' else os.path.join('handlers', index),
             handler=handler,
             timeout=Duration.minutes(1),
             environment={
@@ -244,8 +245,10 @@ class NotificationStack(AppStack):
         """Add the license encumbrance notification listener lambda, queues, and event rules."""
         self._add_emailer_event_listener(
             construct_id_prefix='LicenseEncumbranceNotificationListener',
-            index='encumbrance_events.py',
+            lambda_dir='license-encumbrance-notification',
+            index='handler.py',
             handler='license_encumbrance_notification_listener',
+            shared=False,
             listener_detail_type='license.encumbrance',
             persistent_stack=persistent_stack,
             data_event_bus=data_event_bus,
@@ -258,8 +261,10 @@ class NotificationStack(AppStack):
         """Add the license encumbrance lifting notification listener lambda, queues, and event rules."""
         self._add_emailer_event_listener(
             construct_id_prefix='LicenseEncumbranceLiftingNotificationListener',
-            index='encumbrance_events.py',
+            lambda_dir='license-encumbrance-lifting-notification',
+            index='handler.py',
             handler='license_encumbrance_lifting_notification_listener',
+            shared=False,
             listener_detail_type='license.encumbranceLifted',
             persistent_stack=persistent_stack,
             data_event_bus=data_event_bus,
@@ -272,8 +277,10 @@ class NotificationStack(AppStack):
         """Add the privilege encumbrance notification listener lambda, queues, and event rules."""
         self._add_emailer_event_listener(
             construct_id_prefix='PrivilegeEncumbranceNotificationListener',
-            index='encumbrance_events.py',
+            lambda_dir='privilege-encumbrance-notification',
+            index='handler.py',
             handler='privilege_encumbrance_notification_listener',
+            shared=False,
             listener_detail_type='privilege.encumbrance',
             persistent_stack=persistent_stack,
             data_event_bus=data_event_bus,
@@ -286,8 +293,10 @@ class NotificationStack(AppStack):
         """Add the privilege encumbrance lifting notification listener lambda, queues, and event rules."""
         self._add_emailer_event_listener(
             construct_id_prefix='PrivilegeEncumbranceLiftingNotificationListener',
-            index='encumbrance_events.py',
+            lambda_dir='privilege-encumbrance-lifting-notification',
+            index='handler.py',
             handler='privilege_encumbrance_lifting_notification_listener',
+            shared=False,
             listener_detail_type='privilege.encumbranceLifted',
             persistent_stack=persistent_stack,
             data_event_bus=data_event_bus,
@@ -300,8 +309,10 @@ class NotificationStack(AppStack):
         """Add the license investigation notification listener lambda, queues, and event rules."""
         self._add_emailer_event_listener(
             construct_id_prefix='LicenseInvestigationNotificationListener',
-            index='investigation_events.py',
+            lambda_dir='license-investigation-notification',
+            index='handler.py',
             handler='license_investigation_notification_listener',
+            shared=False,
             listener_detail_type='license.investigation',
             persistent_stack=persistent_stack,
             data_event_bus=data_event_bus,
@@ -314,8 +325,10 @@ class NotificationStack(AppStack):
         """Add the license investigation closed notification listener lambda, queues, and event rules."""
         self._add_emailer_event_listener(
             construct_id_prefix='LicenseInvestigationClosedNotificationListener',
-            index='investigation_events.py',
+            lambda_dir='license-investigation-closed-notification',
+            index='handler.py',
             handler='license_investigation_closed_notification_listener',
+            shared=False,
             listener_detail_type='license.investigationClosed',
             persistent_stack=persistent_stack,
             data_event_bus=data_event_bus,
@@ -328,8 +341,10 @@ class NotificationStack(AppStack):
         """Add the privilege investigation notification listener lambda, queues, and event rules."""
         self._add_emailer_event_listener(
             construct_id_prefix='PrivilegeInvestigationNotificationListener',
-            index='investigation_events.py',
+            lambda_dir='privilege-investigation-notification',
+            index='handler.py',
             handler='privilege_investigation_notification_listener',
+            shared=False,
             listener_detail_type='privilege.investigation',
             persistent_stack=persistent_stack,
             data_event_bus=data_event_bus,
@@ -342,8 +357,10 @@ class NotificationStack(AppStack):
         """Add the privilege investigation closed notification listener lambda, queues, and event rules."""
         self._add_emailer_event_listener(
             construct_id_prefix='PrivilegeInvestigationClosedNotificationListener',
-            index='investigation_events.py',
+            lambda_dir='privilege-investigation-closed-notification',
+            index='handler.py',
             handler='privilege_investigation_closed_notification_listener',
+            shared=False,
             listener_detail_type='privilege.investigationClosed',
             persistent_stack=persistent_stack,
             data_event_bus=data_event_bus,
@@ -358,6 +375,7 @@ class NotificationStack(AppStack):
             construct_id_prefix='MilitaryAuditNotificationListener',
             index='military_audit_events.py',
             handler='military_audit_notification_listener',
+            shared=False,
             listener_detail_type='militaryAffiliation.audit',
             persistent_stack=persistent_stack,
             data_event_bus=data_event_bus,
@@ -370,8 +388,10 @@ class NotificationStack(AppStack):
         """Add the home jurisdiction change notification listener lambda, queues, and event rules."""
         self._add_emailer_event_listener(
             construct_id_prefix='HomeJurisdictionChangeNotificationListener',
-            index='home_jurisdiction_events.py',
+            lambda_dir='home-jurisdiction-change-notification',
+            index='handler.py',
             handler='home_jurisdiction_change_notification_listener',
+            shared=False,
             listener_detail_type='provider.homeJurisdictionChange',
             persistent_stack=persistent_stack,
             data_event_bus=data_event_bus,

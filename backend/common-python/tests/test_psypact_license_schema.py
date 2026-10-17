@@ -1,15 +1,23 @@
 # ruff: noqa: SLF001
 import json
 import os
+import sys
 import unittest
 from datetime import date
+from pathlib import Path
 from unittest.mock import Mock
 from uuid import UUID
 
 from marshmallow import ValidationError
 
+_PSYPACT_COMMON = Path(__file__).resolve().parents[2] / 'psypact-app' / 'lambdas' / 'python' / 'common'
+
 
 def _configure_common_lambdas_for_tests():
+    if str(_PSYPACT_COMMON) not in sys.path:
+        # Keep backend/common-python ahead of this entry. A local synth copy of
+        # common_lambdas can sit beside cc_common and would otherwise shadow the source.
+        sys.path.append(str(_PSYPACT_COMMON))
     os.environ.setdefault('AWS_DEFAULT_REGION', 'us-east-1')
     os.environ.setdefault('COMPACTS', '["psypact"]')
     os.environ.setdefault('JURISDICTIONS', json.dumps(['co', 'oh', 'ut']))
@@ -100,9 +108,10 @@ class TestPsypactPrivilegeGeneration(unittest.TestCase):
         _configure_common_lambdas_for_tests()
 
     def test_privileges_use_selected_home_jurisdiction_not_most_recent_license(self):
-        from common_lambdas import psypact_records
+        import cc_common.psypact_records as psypact_records
+        from cc_common.psypact_records import PsypactProviderUserRecords
+
         from common_lambdas.data_model.schema.common import CompactEligibilityStatus
-        from common_lambdas.psypact_records import PsypactProviderUserRecords
 
         provider_id = UUID('89a6377e-c3a5-40e5-bca5-317ec854c570')
         older_home = Mock(
@@ -143,9 +152,10 @@ class TestPsypactPrivilegeGeneration(unittest.TestCase):
         self.assertTrue(all(privilege['licenseJurisdiction'] == 'co' for privilege in privileges))
 
     def test_expired_home_license_does_not_generate_privileges(self):
-        from common_lambdas import psypact_records
+        import cc_common.psypact_records as psypact_records
+        from cc_common.psypact_records import PsypactProviderUserRecords
+
         from common_lambdas.data_model.schema.common import CompactEligibilityStatus
-        from common_lambdas.psypact_records import PsypactProviderUserRecords
 
         provider_id = UUID('89a6377e-c3a5-40e5-bca5-317ec854c570')
         expired_home = Mock(
@@ -182,7 +192,7 @@ class TestPsypactHomeJurisdictionValidation(unittest.TestCase):
             sys.path.insert(0, str(handler_dir))
 
         _configure_common_lambdas_for_tests()
-        from handlers.psypact_home_jurisdiction import _selected_jurisdiction_has_valid_license
+        from cc_common.psypact_home_jurisdiction import _selected_jurisdiction_has_valid_license
 
         self.assertFalse(
             _selected_jurisdiction_has_valid_license(
@@ -209,7 +219,7 @@ class TestPsypactHomeJurisdictionValidation(unittest.TestCase):
             sys.path.insert(0, str(handler_dir))
 
         _configure_common_lambdas_for_tests()
-        from handlers.psypact_home_jurisdiction import _selected_jurisdiction_has_valid_license
+        from cc_common.psypact_home_jurisdiction import _selected_jurisdiction_has_valid_license
 
         from common_lambdas.data_model.schema.common import CompactEligibilityStatus
 
@@ -230,7 +240,7 @@ class TestPsypactHomeJurisdictionValidation(unittest.TestCase):
         )
         provider_records = Mock()
 
-        with patch('handlers.psypact_home_jurisdiction.config') as mock_config:
+        with patch('cc_common.psypact_home_jurisdiction.config') as mock_config:
             mock_config.data_client.get_provider_user_records.return_value = provider_records
 
             provider_records.get_license_records.return_value = [expired]

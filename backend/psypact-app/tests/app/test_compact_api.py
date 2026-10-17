@@ -77,7 +77,7 @@ class TestCompactsApi(TestApi):
 
         self.assertEqual(
             post_credentials_payment_processor_handler['Handler'],
-            'handlers.credentials.post_payment_processor_credentials',
+            'handler.post_payment_processor_credentials',
         )
 
         handler_role_logical_id = api_lambda_stack.get_logical_id(

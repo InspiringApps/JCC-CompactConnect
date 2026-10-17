@@ -1,14 +1,18 @@
-import json
+from cc_common.runtime import install
 
-from aws_lambda_powertools.utilities.typing import LambdaContext
-from common_lambdas.config import config, logger
-from common_lambdas.data_model.schema.common import CompactEligibilityStatus
-from common_lambdas.data_model.schema.fields import OTHER_JURISDICTION, UNKNOWN_JURISDICTION
-from common_lambdas.exceptions import CCInvalidRequestException
-from common_lambdas.psypact_records import license_is_unexpired
-from common_lambdas.utils import api_handler, get_provider_user_attributes_from_authorizer_claims
+install()
 
-from .provider_users import _put_provider_home_jurisdiction
+import json  # noqa: E402
+
+from aws_lambda_powertools.utilities.typing import LambdaContext  # noqa: E402
+from common_lambdas.config import config, logger  # noqa: E402
+from common_lambdas.data_model.schema.common import CompactEligibilityStatus  # noqa: E402
+from common_lambdas.data_model.schema.fields import OTHER_JURISDICTION, UNKNOWN_JURISDICTION  # noqa: E402
+from common_lambdas.exceptions import CCInvalidRequestException  # noqa: E402
+from common_lambdas.utils import api_handler, get_provider_user_attributes_from_authorizer_claims  # noqa: E402
+from handlers.provider_users import _put_provider_home_jurisdiction  # noqa: E402
+
+from cc_common.psypact_records import license_is_unexpired  # noqa: E402
 
 
 def _selected_jurisdiction_has_valid_license(*, compact: str, provider_id: str, selected_jurisdiction: str) -> bool:

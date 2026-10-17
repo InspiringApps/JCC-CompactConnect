@@ -18,9 +18,12 @@ import ast
 import difflib
 import unittest
 
-from copy_sync_tests.copied_file_text import COMMON_PYTHON_ROOT, all_copied_files, comparable_method_sources
+from copy_sync_tests.copied_file_text import REPO_ROOT, CopiedFile, comparable_method_sources
 
-DATA_CLIENT_MIXIN_DEST = 'common_lambdas/data_model/jcc_data_client_mixin.py'
+DATA_CLIENT_MIXIN = REPO_ROOT / 'backend/common-python/common_lambdas/data_model/jcc_data_client_mixin.py'
+JCC_DATA_CLIENT = (
+    REPO_ROOT / 'backend/compact-connect/lambdas/python/common/cc_common/data_model/data_client.py'
+)
 
 # JCC DataClient methods that selected PSYPACT handlers call and Cosmetology
 # DataClient does not implement. Extraction starts here and pulls in JCC-only
@@ -59,16 +62,9 @@ def _unified_diff(source: str | bytes, copy: str | bytes, source_path: str, copy
 
 
 class TestJccDataClientMixin(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.copied_files = all_copied_files()
-
-    def _dest_rel(self, copied) -> str:
-        return copied.dest.relative_to(COMMON_PYTHON_ROOT).as_posix()
-
     def test_data_client_mixin_methods_match_jcc_data_client(self):
         """Mixin includes the PSYPACT-required JCC methods, and every mixin method body equals JCC DataClient."""
-        mixin = next(copied for copied in self.copied_files if self._dest_rel(copied) == DATA_CLIENT_MIXIN_DEST)
+        mixin = CopiedFile(dest=DATA_CLIENT_MIXIN, source=JCC_DATA_CLIENT, kind='method_bodies')
         compared = comparable_method_sources(
             mixin,
             dest_class='JccDataClientMixin',
@@ -98,7 +94,7 @@ class TestJccDataClientMixin(unittest.TestCase):
 
     def test_data_client_mixin_imports_cover_names_used_in_methods(self):
         """Mixin method bodies still resolve after extraction; truncated imports like the old email mixin fail here."""
-        source = (COMMON_PYTHON_ROOT / DATA_CLIENT_MIXIN_DEST).read_text(encoding='utf-8')
+        source = DATA_CLIENT_MIXIN.read_text(encoding='utf-8')
         tree = ast.parse(source)
         builtins_ns = __builtins__ if isinstance(__builtins__, dict) else __builtins__.__dict__
         available: set[str] = set(builtins_ns)

@@ -119,9 +119,8 @@ class StaffUsersLambdas:
         handler = PythonFunction(
             scope,
             'GetMeStaffUserHandler',
-            lambda_dir='staff-users',
-            shared=True,
-            index=os.path.join('handlers', 'me.py'),
+            lambda_dir='staff-get-me',
+            index='handler.py',
             handler='get_me',
             environment=env_vars,
         )
@@ -149,9 +148,8 @@ class StaffUsersLambdas:
         handler = PythonFunction(
             scope,
             'PatchMeStaffUserHandler',
-            lambda_dir='staff-users',
-            shared=True,
-            index=os.path.join('handlers', 'me.py'),
+            lambda_dir='staff-patch-me',
+            index='handler.py',
             handler='patch_me',
             environment=env_vars,
         )
@@ -178,9 +176,8 @@ class StaffUsersLambdas:
         handler = PythonFunction(
             scope,
             'GetStaffUsersHandler',
-            lambda_dir='staff-users',
-            shared=True,
-            index=os.path.join('handlers', 'users.py'),
+            lambda_dir='staff-get-users',
+            index='handler.py',
             handler='get_users',
             environment=env_vars,
         )
@@ -206,9 +203,8 @@ class StaffUsersLambdas:
         handler = PythonFunction(
             scope,
             'GetStaffUserHandler',
-            lambda_dir='staff-users',
-            shared=True,
-            index=os.path.join('handlers', 'users.py'),
+            lambda_dir='staff-get-one-user',
+            index='handler.py',
             handler='get_one_user',
             environment=env_vars,
         )
@@ -241,9 +237,8 @@ class StaffUsersLambdas:
         handler = PythonFunction(
             scope,
             'PatchUserHandler',
-            lambda_dir='staff-users',
-            shared=True,
-            index=os.path.join('handlers', 'users.py'),
+            lambda_dir='staff-patch-user',
+            index='handler.py',
             handler='patch_user',
             environment=env_vars,
         )
@@ -272,9 +267,8 @@ class StaffUsersLambdas:
         handler = PythonFunction(
             scope,
             'DeleteStaffUserFunction',
-            lambda_dir='staff-users',
-            shared=True,
-            index=os.path.join('handlers', 'users.py'),
+            lambda_dir='staff-delete-user',
+            index='handler.py',
             handler='delete_user',
             environment=env_vars,
         )
@@ -396,9 +390,8 @@ class StaffUsersLambdas:
         handler = PythonFunction(
             scope,
             'PostStaffUserHandler',
-            lambda_dir='staff-users',
-            shared=True,
-            index=os.path.join('handlers', 'users.py'),
+            lambda_dir='staff-post-user',
+            index='handler.py',
             handler='post_user',
             environment=env_vars,
         )
@@ -439,9 +432,8 @@ class StaffUsersLambdas:
         handler = PythonFunction(
             scope,
             'ReinviteStaffUserFunction',
-            lambda_dir='staff-users',
-            shared=True,
-            index=os.path.join('handlers', 'users.py'),
+            lambda_dir='staff-reinvite-user',
+            index='handler.py',
             handler='reinvite_user',
             environment=env_vars,
         )

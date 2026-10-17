@@ -39,9 +39,8 @@ class ReportingStack(AppStack):
             description='Transaction report generator',
             handler='generate_transaction_reports',
             runtime=Runtime.PYTHON_3_12,
-            lambda_dir='purchases',
-            shared=True,
-            index=os.path.join('handlers', 'transaction_reporting.py'),
+            lambda_dir='generate-transaction-reports',
+            index='handler.py',
             timeout=Duration.minutes(15),
             # This lambda sends email notifications, so we do not want it to retry in the event of a failure
             # we will instead trigger an alert for support to investigate and address as needed.

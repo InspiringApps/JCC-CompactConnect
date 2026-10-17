@@ -1,0 +1,29 @@
+---
+description: Put a feature in the compact app that owns it. Edit backend/common-python only when every compact needs it or the behavior cannot be extended.
+alwaysApply: true
+---
+
+# Where compact changes go
+
+`backend/common-python` is the shared lambda runtime. Files that start with `# Copied from` must stay identical to their source in `backend/cosmetology-app` or `backend/compact-connect`. Editing one forces the same edit into that other app.
+
+Put a feature in the app that owns it: `backend/psypact-app`, `backend/cosmetology-app`, `backend/compact-connect`, or `backend/social-work-app`. Do not edit `backend/common-python` unless one of these is true:
+
+1. The behavior cannot be added any other way. There is no subclass, wrapper, or override in the owning app that can supply it.
+2. The feature is explicitly meant for every compact. Update the copied source in the same change so copy-sync still matches.
+
+`backend/common-python` must not import a compact app. No import of `cc_common`, and no import of a module under any app directory above. Compact code imports `common_lambdas`. The shared package does not import the compact.
+
+Do not edit a second compact's app to carry a field that only one compact uses.
+
+Extend a shared schema from the owning app. Do not add the field to the copied class, and do not add a new schema module under `backend/common-python` for one compact. Compact-only config, clients, records, and handlers live in that compact's app and run before a shared handler is imported.
+
+```python
+# In the owning app, for example backend/psypact-app/.../psypact_privilege_schema.py
+class PsypactPrivilegeGeneralResponseSchema(PrivilegeGeneralResponseSchema):
+    privilegeAuthorizationType = String(
+        required=False, allow_none=False, validate=OneOf(['APIT', 'TAP'])
+    )
+```
+
+A field used by one compact belongs on that subclass.
