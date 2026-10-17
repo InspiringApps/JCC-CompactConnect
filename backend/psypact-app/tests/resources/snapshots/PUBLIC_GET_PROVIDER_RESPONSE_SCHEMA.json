@@ -178,6 +178,13 @@
             ],
             "type": "string"
           },
+          "privilegeAuthorizationType": {
+            "enum": [
+              "APIT",
+              "TAP"
+            ],
+            "type": "string"
+          },
           "history": {
             "items": {
               "properties": {

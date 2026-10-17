@@ -1150,6 +1150,13 @@
                       ],
                       "type": "string"
                     },
+                    "privilegeAuthorizationType": {
+                      "enum": [
+                        "APIT",
+                        "TAP"
+                      ],
+                      "type": "string"
+                    },
                     "attestations": {
                       "items": {
                         "properties": {
@@ -1354,6 +1361,13 @@
                       "enum": [
                         "active",
                         "inactive"
+                      ],
+                      "type": "string"
+                    },
+                    "privilegeAuthorizationType": {
+                      "enum": [
+                        "APIT",
+                        "TAP"
                       ],
                       "type": "string"
                     },
@@ -1832,6 +1846,13 @@
             "enum": [
               "active",
               "inactive"
+            ],
+            "type": "string"
+          },
+          "privilegeAuthorizationType": {
+            "enum": [
+              "APIT",
+              "TAP"
             ],
             "type": "string"
           },
