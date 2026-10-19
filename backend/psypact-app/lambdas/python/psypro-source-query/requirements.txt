@@ -1,0 +1,6 @@
+certifi==2025.8.3
+    # via psypro-source-query
+pyOpenSSL==26.4.0
+    # via psypro-source-query
+python-tds==1.17.1
+    # via psypro-source-query
