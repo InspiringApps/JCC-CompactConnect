@@ -3,6 +3,7 @@ from unittest import TestCase
 
 from aws_cdk.assertions import Template
 
+from stacks.ia_source_data_stack import RDS_CA_BUNDLE_FILENAME, RDS_CA_BUNDLE_URL, RdsCaBundleHooks
 from tests.app.base import TstAppABC
 from tests.app.test_sandbox import TstSandbox
 
@@ -55,6 +56,11 @@ class TestIaSourceDataStack(TstAppABC, TestCase):
             'Psypro.',
             query_function['Properties']['Environment']['Variables']['PSYPRO_TABLE_PREFIX'],
         )
+        hooks = RdsCaBundleHooks()
+        self.assertEqual([], hooks.before_bundling('/input', '/output'))
+        bundle_command = hooks.after_bundling('/input', '/output')[0]
+        self.assertIn(RDS_CA_BUNDLE_URL, bundle_command)
+        self.assertIn(f'/output/{RDS_CA_BUNDLE_FILENAME}', bundle_command)
 
         with open('docs/dynamodb_table_structures_2/_index.json', encoding='utf-8') as schema_index_file:
             schema_index = json.load(schema_index_file)

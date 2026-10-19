@@ -2,11 +2,13 @@ import json
 import os
 from datetime import date, datetime
 from decimal import Decimal
+from pathlib import Path
 from uuid import UUID
 
 import boto3
 
 MAX_ROWS = 200
+RDS_CA_BUNDLE_FILENAME = 'rds-global-bundle.pem'
 
 
 def query_psypro_source(event, _context):
@@ -64,9 +66,10 @@ def _connect(secret: dict):
 
 
 def _certificate_bundle() -> str:
-    import certifi
-
-    return certifi.where()
+    bundle = Path(__file__).with_name(RDS_CA_BUNDLE_FILENAME)
+    if not bundle.is_file():
+        raise FileNotFoundError(f'{RDS_CA_BUNDLE_FILENAME} was not packaged with this function')
+    return str(bundle)
 
 
 def _json_row(row: dict) -> dict:

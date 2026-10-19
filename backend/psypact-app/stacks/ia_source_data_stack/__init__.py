@@ -1,6 +1,7 @@
 import json
 import os
 
+import jsii
 from aws_cdk import Duration, RemovalPolicy
 from aws_cdk.aws_dynamodb import (
     Attribute,
@@ -25,6 +26,7 @@ from aws_cdk.aws_ec2 import (
 from aws_cdk.aws_iam import PolicyStatement
 from aws_cdk.aws_kms import Key
 from aws_cdk.aws_lambda import Runtime
+from aws_cdk.aws_lambda_python_alpha import BundlingOptions, ICommandHooks
 from aws_cdk.aws_rds import (
     DatabaseInstanceEngine,
     DatabaseInstanceFromSnapshot,
@@ -54,6 +56,10 @@ SOURCE_MULTI_AZ = False
 # RDS cannot change the master username of a restored snapshot. This must be that username.
 SOURCE_MASTER_USERNAME = 'admin'
 TABLE_NAME_PREFIX = 'Psypro.'
+# Public Amazon RDS trust bundle. It is not a credential, so it is fetched into the
+# lambda asset at build time and is not stored in git or Secrets Manager.
+RDS_CA_BUNDLE_FILENAME = 'rds-global-bundle.pem'
+RDS_CA_BUNDLE_URL = 'https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem'
 
 _SCHEMA_INDEX_PATH = os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..', '..', 'docs', 'dynamodb_table_structures_2', '_index.json')
@@ -125,6 +131,21 @@ def _instance_type(instance_class: str) -> InstanceType:
         return InstanceType.of(_INSTANCE_CLASSES[family], _INSTANCE_SIZES[size])
     except KeyError as exc:
         raise ValueError(f'Unsupported RDS instance class {instance_class}') from exc
+
+
+@jsii.implements(ICommandHooks)
+class RdsCaBundleHooks:
+    """Fetch the public RDS CA into the packaged lambda asset."""
+
+    def before_bundling(self, _input_dir: str, _output_dir: str) -> list[str]:
+        return []
+
+    def after_bundling(self, _input_dir: str, output_dir: str) -> list[str]:
+        destination = f'{output_dir}/{RDS_CA_BUNDLE_FILENAME}'
+        return [
+            'python -c "import urllib.request; urllib.request.urlretrieve('
+            f"'{RDS_CA_BUNDLE_URL}', '{destination}')\""
+        ]
 
 
 class IaSourceDataStack(AppStack):
@@ -447,6 +468,7 @@ class IaSourceDataStack(AppStack):
             vpc=vpc,
             vpc_subnets=SubnetSelection(subnet_type=SubnetType.PRIVATE_ISOLATED),
             security_groups=[query_security_group],
+            bundling=BundlingOptions(command_hooks=RdsCaBundleHooks()),
             environment={
                 'PSYPRO_SQL_SECRET_ARN': self.database.secret.secret_arn,
                 'PSYPRO_SQL_HOST': self.database.db_instance_endpoint_address,

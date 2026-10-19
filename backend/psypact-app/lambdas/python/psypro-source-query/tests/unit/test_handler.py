@@ -1,4 +1,5 @@
 import importlib.util
+import tempfile
 import unittest
 from datetime import date
 from decimal import Decimal
@@ -37,3 +38,16 @@ class TestPsyproSourceQuery(unittest.TestCase):
             {'rowCount': 1, 'rows': [{'Status': 'Approved', 'When': '2026-01-02', 'Count': '3'}]},
             result,
         )
+
+    def test_certificate_bundle_is_the_packaged_rds_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            bundle = Path(directory) / handler.RDS_CA_BUNDLE_FILENAME
+            bundle.write_text('-----BEGIN CERTIFICATE-----\n', encoding='utf-8')
+            with patch.object(handler, '__file__', str(Path(directory) / 'handler.py')):
+                self.assertEqual(str(bundle), handler._certificate_bundle())  # noqa: SLF001
+
+    def test_missing_certificate_bundle_raises(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.object(handler, '__file__', str(Path(directory) / 'handler.py')):
+                with self.assertRaises(FileNotFoundError):
+                    handler._certificate_bundle()  # noqa: SLF001
