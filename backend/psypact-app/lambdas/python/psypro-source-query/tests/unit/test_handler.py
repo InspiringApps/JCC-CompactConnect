@@ -111,11 +111,14 @@ class TestPsyproSourceQuery(unittest.TestCase):
         self.assertEqual(1, result['authorizations'])
         self.assertEqual(1, result['providers'])
         self.assertEqual(1, result['licenses'])
+        from migrate import provider_id_for_email
+
         authorization = next(item for item in written if item['type'] == 'authorization')
-        self.assertEqual('psypact#MIGRATION#7', authorization['pk'])
-        self.assertNotIn('providerId', authorization)
+        provider_id = provider_id_for_email('ada@example.com')
+        self.assertEqual(f'psypact#PROVIDER#{provider_id}', authorization['pk'])
+        self.assertEqual(provider_id, authorization['providerId'])
         self.assertEqual('Active', authorization['renewalStatus'])
-        self.assertTrue(all('providerId' not in item for item in written))
+        self.assertTrue(all(item['providerId'] == provider_id for item in written))
 
     def test_migrate_dry_run_does_not_write(self):
         cursor = MagicMock()
@@ -137,6 +140,24 @@ class TestPsyproSourceQuery(unittest.TestCase):
         write_items.assert_not_called()
         self.assertTrue(result['dryRun'])
         self.assertEqual(0, result['wrote'])
+
+    def test_write_deletes_temporary_migration_keys_before_putting(self):
+        table = MagicMock()
+        table.scan.side_effect = [
+            {'Items': [{'pk': 'psypact#MIGRATION#7', 'sk': 'psypact#PROVIDER'}], 'LastEvaluatedKey': {'pk': 'more'}},
+            {'Items': [{'pk': 'psypact#MIGRATION#8', 'sk': 'psypact#PROVIDER'}]},
+        ]
+        batch = MagicMock()
+        table.batch_writer.return_value.__enter__.return_value = batch
+        with (
+            patch.object(handler.boto3, 'resource') as resource,
+            patch.dict(handler.os.environ, {'PROVIDER_TABLE_NAME': 'providers'}, clear=False),
+        ):
+            resource.return_value.Table.return_value = table
+            handler._write_items([{'pk': 'psypact#PROVIDER#abc', 'sk': 'psypact#PROVIDER'}])  # noqa: SLF001
+
+        self.assertEqual(2, batch.delete_item.call_count)
+        batch.put_item.assert_called_once()
 
     def test_missing_certificate_bundle_raises(self):
         with tempfile.TemporaryDirectory() as directory:

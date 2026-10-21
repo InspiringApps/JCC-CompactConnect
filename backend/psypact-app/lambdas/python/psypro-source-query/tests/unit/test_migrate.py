@@ -81,7 +81,7 @@ class TestPsyproMigration(unittest.TestCase):
             chosen[7],
         )
 
-    def test_past_expiration_stays_active_and_omits_provider_id(self):
+    def test_past_expiration_stays_active_and_keys_by_email(self):
         result = migrate.plan_migration(
             approval_rows=[
                 {
@@ -99,7 +99,9 @@ class TestPsyproMigration(unittest.TestCase):
             updated_at=UPDATED,
         )
         by_type = {item['type']: item for item in result['items']}
-        partition_key = 'psypact#MIGRATION#7'
+        provider_id = migrate.provider_id_for_email('ada@example.com')
+        partition_key = f'psypact#PROVIDER#{provider_id}'
+        self.assertEqual(provider_id, migrate.provider_id_for_email('Ada@Example.com'))
         self.assertTrue(by_type['authorization']['isActive'])
         self.assertEqual('Suspended', by_type['authorization']['renewalStatus'])
         self.assertEqual('2020-01-01', by_type['authorization']['dateOfExpiration'])
@@ -110,7 +112,7 @@ class TestPsyproMigration(unittest.TestCase):
         self.assertEqual('psypact#PROVIDER#authorization/APIT#', by_type['authorization']['sk'])
         for item in result['items']:
             self.assertEqual(partition_key, item['pk'])
-            self.assertNotIn('providerId', item)
+            self.assertEqual(provider_id, item['providerId'])
             if item['type'] != 'authorization':
                 self.assertNotIn('renewalStatus', item)
 
@@ -126,7 +128,7 @@ class TestPsyproMigration(unittest.TestCase):
             ],
             home_rows=[{'UserId': 7, 'Abbreviation': 'CO'}],
             demographics={7: _demographic()},
-            emails={},
+            emails={7: 'ada@example.com'},
             licenses=[_license_row()],
             updated_at=UPDATED,
         )
@@ -146,10 +148,64 @@ class TestPsyproMigration(unittest.TestCase):
             ],
             home_rows=[],
             demographics={},
-            emails={},
+            emails={7: 'ada@example.com'},
             licenses=[],
             updated_at=UPDATED,
         )
         self.assertEqual(['authorization'], [item['type'] for item in result['items']])
         self.assertEqual(1, result['skippedProviders'])
-        self.assertEqual('psypact#MIGRATION#7', result['items'][0]['pk'])
+        provider_id = migrate.provider_id_for_email('ada@example.com')
+        self.assertEqual(f'psypact#PROVIDER#{provider_id}', result['items'][0]['pk'])
+        self.assertEqual(provider_id, result['items'][0]['providerId'])
+
+    def test_missing_email_writes_nothing(self):
+        result = migrate.plan_migration(
+            approval_rows=[
+                {
+                    'UserId': 7,
+                    'authorizationType': 'TAP',
+                    'ApprovalDate': '2026-10-11',
+                    'dateOfExpiration': '2027-10-11',
+                },
+            ],
+            home_rows=[{'UserId': 7, 'Abbreviation': 'CO'}],
+            demographics={7: _demographic()},
+            emails={},
+            licenses=[_license_row()],
+            updated_at=UPDATED,
+        )
+        self.assertEqual([], result['items'])
+        self.assertEqual(1, result['skippedNoEmail'])
+
+    def test_duplicate_email_keeps_the_higher_user_id(self):
+        demographic = _demographic()
+        result = migrate.plan_migration(
+            approval_rows=[
+                {
+                    'UserId': 7,
+                    'authorizationType': 'APIT',
+                    'ApprovalDate': '2026-10-11',
+                    'dateOfExpiration': '2027-10-11',
+                },
+                {
+                    'UserId': 9,
+                    'authorizationType': 'TAP',
+                    'ApprovalDate': '2026-10-11',
+                    'dateOfExpiration': '2027-10-11',
+                },
+            ],
+            home_rows=[
+                {'UserId': 7, 'Abbreviation': 'CO'},
+                {'UserId': 9, 'Abbreviation': 'CO'},
+            ],
+            demographics={7: demographic, 9: _demographic(9)},
+            emails={7: 'Ada@Example.com', 9: 'ada@example.com'},
+            licenses=[_license_row(), {**_license_row(), 'userId': 9, 'licensureNumber': 'PSY-9'}],
+            updated_at=UPDATED,
+        )
+        provider_id = migrate.provider_id_for_email('ada@example.com')
+        self.assertEqual(1, result['skippedDuplicateEmails'])
+        self.assertTrue(all(item['providerId'] == provider_id for item in result['items']))
+        authorization_types = [item['authorizationType'] for item in result['items'] if item['type'] == 'authorization']
+        self.assertEqual(['TAP'], authorization_types)
+        self.assertEqual(['PSY-9'], [item['licenseNumber'] for item in result['items'] if item['type'] == 'license'])

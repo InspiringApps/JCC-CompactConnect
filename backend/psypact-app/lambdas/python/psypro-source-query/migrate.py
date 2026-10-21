@@ -11,10 +11,12 @@ A past expiration still migrates and does not by itself clear isActive.
 RenewalProcessTypeState.Status is the stored authorization standing. Its
 display name is written on the authorization and is not used to decide
 isActive, license standing, or provider standing. GetTrueStatus is not applied.
-There is no Cognito user yet, so these items omit providerId and are keyed by
-the PSYPRO user id.
+providerId is a uuid5 of the lower-cased PSYPRO email. The same address
+always maps to the same provider, license, and authorization keys, so a later
+run replaces those items.
 """
 
+import uuid
 from datetime import date, datetime
 from urllib.parse import quote
 
@@ -43,9 +45,18 @@ RENEWAL_STATUS_NAMES = {
 }
 
 
-def migration_partition_key(user_id: int) -> str:
-    """Partition key a later Cognito signup can find and rewrite."""
-    return f'{COMPACT}#MIGRATION#{user_id}'
+# Stable namespace so the same email always produces the same provider id.
+EMAIL_PROVIDER_NAMESPACE = uuid.UUID('a3c1e7b2-4d58-4f0a-9c6e-2b7d1a0e5f34')
+
+
+def provider_id_for_email(email: str) -> str:
+    """UUID string from the stripped, lower-cased email."""
+    return str(uuid.uuid5(EMAIL_PROVIDER_NAMESPACE, email.strip().lower()))
+
+
+def migration_partition_key(provider_id: str) -> str:
+    """Partition key shared by a provider and that provider's child records."""
+    return f'{COMPACT}#PROVIDER#{provider_id}'
 
 
 def _as_date(value) -> date:
@@ -122,10 +133,11 @@ def _name_key(family_name: str, given_name: str, middle_name: str = '') -> str:
     )
 
 
-def _authorization_item(user_id: int, authorization: dict, updated_at: datetime) -> dict:
+def _authorization_item(provider_id: str, authorization: dict, updated_at: datetime) -> dict:
     authorization_type = authorization['authorizationType']
     item = {
-        'pk': migration_partition_key(user_id),
+        'pk': migration_partition_key(provider_id),
+        'providerId': provider_id,
         'sk': f'{COMPACT}#PROVIDER#authorization/{authorization_type}#',
         'type': 'authorization',
         'compact': COMPACT,
@@ -148,7 +160,7 @@ def _required_text(record: dict, key: str) -> str | None:
 
 
 def _provider_item(
-    user_id: int,
+    provider_id: str,
     demographic: dict,
     home_jurisdiction: str,
     expiration: date,
@@ -168,7 +180,8 @@ def _provider_item(
     standing = 'active' if has_active_home_license else 'inactive'
     eligibility = 'eligible' if has_active_home_license else 'ineligible'
     item = {
-        'pk': migration_partition_key(user_id),
+        'pk': migration_partition_key(provider_id),
+        'providerId': provider_id,
         'sk': f'{COMPACT}#PROVIDER',
         'type': 'provider',
         'compact': COMPACT,
@@ -202,7 +215,7 @@ def _provider_item(
 
 
 def _license_item(
-    user_id: int,
+    provider_id: str,
     license_row: dict,
     demographic: dict,
     expiration: date,
@@ -216,7 +229,7 @@ def _license_item(
     if not all([abbreviation, jurisdiction, license_number, issue_date]):
         return None
     provider = _provider_item(
-        user_id,
+        provider_id,
         demographic,
         jurisdiction,
         expiration,
@@ -229,7 +242,8 @@ def _license_item(
     given_name = provider['givenName']
     standing = 'active' if (_required_text(license_row, 'status') or '').lower() == 'active' else 'inactive'
     return {
-        'pk': migration_partition_key(user_id),
+        'pk': migration_partition_key(provider_id),
+        'providerId': provider_id,
         'sk': f'{COMPACT}#PROVIDER#license/{jurisdiction}/{abbreviation}#',
         'type': 'license',
         'compact': COMPACT,
@@ -275,13 +289,38 @@ def plan_migration(
             license_jurisdictions.setdefault(user_id, set()).add(jurisdiction)
     homes = home_jurisdictions(home_rows, license_jurisdictions)
 
+    selected_users: dict[int, str] = {}
+    email_owner: dict[str, int] = {}
+    skipped_no_email = 0
+    skipped_duplicate_emails = 0
+    for user_id in authorizations:
+        demographic = dict(demographics.get(user_id) or {})
+        if emails.get(user_id):
+            demographic['email'] = emails[user_id]
+        email = _required_text(demographic, 'email')
+        if email is None:
+            skipped_no_email += 1
+            continue
+        normalized = email.lower()
+        previous = email_owner.get(normalized)
+        if previous is not None:
+            skipped_duplicate_emails += 1
+            if user_id < previous:
+                continue
+            selected_users.pop(previous, None)
+        email_owner[normalized] = user_id
+        selected_users[user_id] = provider_id_for_email(normalized)
+
     items = []
     skipped_providers = 0
     skipped_licenses = 0
     for user_id, user_authorizations in authorizations.items():
+        provider_id = selected_users.get(user_id)
+        if provider_id is None:
+            continue
         expiration = min(entry['dateOfExpiration'] for entry in user_authorizations)
         for authorization in user_authorizations:
-            items.append(_authorization_item(user_id, authorization, updated_at))
+            items.append(_authorization_item(provider_id, authorization, updated_at))
         demographic = dict(demographics.get(user_id) or {})
         if emails.get(user_id):
             demographic['email'] = emails[user_id]
@@ -295,13 +334,13 @@ def plan_migration(
         if home is None:
             skipped_providers += 1
         else:
-            provider = _provider_item(user_id, demographic, home, expiration, active_home_license, updated_at)
+            provider = _provider_item(provider_id, demographic, home, expiration, active_home_license, updated_at)
             if provider is None:
                 skipped_providers += 1
             else:
                 items.append(provider)
         for license_row in licenses_by_user.get(user_id, []):
-            license_item = _license_item(user_id, license_row, demographic, expiration, updated_at)
+            license_item = _license_item(provider_id, license_row, demographic, expiration, updated_at)
             if license_item is None:
                 skipped_licenses += 1
             else:
@@ -314,4 +353,6 @@ def plan_migration(
         'licenses': sum(1 for item in items if item['type'] == 'license'),
         'skippedProviders': skipped_providers,
         'skippedLicenses': skipped_licenses,
+        'skippedNoEmail': skipped_no_email,
+        'skippedDuplicateEmails': skipped_duplicate_emails,
     }

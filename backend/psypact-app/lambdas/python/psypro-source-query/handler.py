@@ -101,6 +101,8 @@ def _migrate_approved_records(dry_run: bool) -> dict:
         'licenses': planned['licenses'],
         'skippedProviders': planned['skippedProviders'],
         'skippedLicenses': planned['skippedLicenses'],
+        'skippedNoEmail': planned['skippedNoEmail'],
+        'skippedDuplicateEmails': planned['skippedDuplicateEmails'],
         'wrote': wrote,
     }
 
@@ -130,9 +132,34 @@ def _scan_table(table_name: str) -> list[dict]:
 
 def _write_items(items: list[dict]) -> None:
     table = boto3.resource('dynamodb').Table(os.environ['PROVIDER_TABLE_NAME'])
+    _delete_migration_partitions(table)
     with table.batch_writer() as batch:
         for item in items:
             batch.put_item(Item=item)
+
+
+def _delete_migration_partitions(table) -> None:
+    """Remove the temporary PSYPRO user-id keys. They cannot match the email keys."""
+    start_key = None
+    keys = []
+    while True:
+        scan_kwargs = {
+            'ProjectionExpression': 'pk, sk',
+            'FilterExpression': 'begins_with(pk, :prefix)',
+            'ExpressionAttributeValues': {':prefix': 'psypact#MIGRATION#'},
+        }
+        if start_key is not None:
+            scan_kwargs['ExclusiveStartKey'] = start_key
+        response = table.scan(**scan_kwargs)
+        keys.extend(response.get('Items', []))
+        start_key = response.get('LastEvaluatedKey')
+        if not start_key:
+            break
+    if not keys:
+        return
+    with table.batch_writer() as batch:
+        for key in keys:
+            batch.delete_item(Key={'pk': key['pk'], 'sk': key['sk']})
 
 
 def _plain(value):
