@@ -29,8 +29,7 @@
     ],
     "license_types": {
       "psypact": [
-        {"name": "Psychologist", "abbreviation": "psych"},
-        {"name": "School Psychologist", "abbreviation": "schpsych"}
+        {"name": "psychologist", "abbreviation": "psych"}
       ]
     },
     "compacts": [

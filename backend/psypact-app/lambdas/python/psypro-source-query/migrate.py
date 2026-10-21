@@ -17,16 +17,11 @@ run replaces those items.
 """
 
 import uuid
-from datetime import date, datetime
-from urllib.parse import quote
+from datetime import UTC, date, datetime
 
 COMPACT = 'psypact'
+LICENSE_TYPE = 'psychologist'
 AUTHORIZATION_PROCESS_TYPES = {11: 'APIT', 12: 'TAP'}
-LICENSE_TYPE_ABBREVIATIONS = {
-    'Doctoral Psychologist': 'doc-psych',
-    'Masters Psychologist': 'ma-psych',
-    'Psychologist': 'psych',
-}
 # RenewalStatus in the IA data dictionary. These are stored values, not the
 # Expired 1/2/Permanently Expired values GetTrueStatus derives from DueOn.
 RENEWAL_STATUS_NAMES = {
@@ -52,11 +47,6 @@ EMAIL_PROVIDER_NAMESPACE = uuid.UUID('a3c1e7b2-4d58-4f0a-9c6e-2b7d1a0e5f34')
 def provider_id_for_email(email: str) -> str:
     """UUID string from the stripped, lower-cased email."""
     return str(uuid.uuid5(EMAIL_PROVIDER_NAMESPACE, email.strip().lower()))
-
-
-def migration_partition_key(provider_id: str) -> str:
-    """Partition key shared by a provider and that provider's child records."""
-    return f'{COMPACT}#PROVIDER#{provider_id}'
 
 
 def _as_date(value) -> date:
@@ -123,32 +113,143 @@ def home_jurisdictions(rows: list[dict], license_jurisdictions: dict[int, set[st
     return chosen
 
 
-def _name_key(family_name: str, given_name: str, middle_name: str = '') -> str:
-    return '#'.join(
-        (
-            quote(family_name.lower()),
-            quote(given_name.lower()),
-            quote((middle_name or '').lower()),
-        )
-    )
+def _record_schemas():
+    """Schemas live in the shared layer, which is not on the path until runtime."""
+    from cc_common.data_model.psypact_authorization_schema import PsypactAuthorizationRecordSchema
+    from cc_common.data_model.schema.license.record import LicenseRecordSchema
+    from cc_common.data_model.schema.provider.record import ProviderRecordSchema
+
+    return ProviderRecordSchema(), LicenseRecordSchema(), PsypactAuthorizationRecordSchema()
 
 
-def _authorization_item(provider_id: str, authorization: dict, updated_at: datetime) -> dict:
-    authorization_type = authorization['authorizationType']
-    item = {
-        'pk': migration_partition_key(provider_id),
-        'providerId': provider_id,
-        'sk': f'{COMPACT}#PROVIDER#authorization/{authorization_type}#',
-        'type': 'authorization',
+def _dump_record(schema, data: dict) -> dict | None:
+    from marshmallow import ValidationError
+
+    try:
+        dumped = schema.dump(data)
+        schema.load(dumped)
+    except ValidationError:
+        return None
+    return dumped
+
+
+def _valid_email(email: str) -> bool:
+    from marshmallow import ValidationError
+    from marshmallow.validate import Email
+
+    try:
+        Email()(email)
+    except ValidationError:
+        return False
+    return True
+
+
+def _e164_us_phone(value: str | None) -> str | None:
+    """Map NNN-NNN-NNNN to E.164. Other shapes are omitted."""
+    if not value:
+        return None
+    digits = ''.join(character for character in value if character.isdigit())
+    if len(digits) == 10:
+        return f'+1{digits}'
+    if len(digits) == 11 and digits.startswith('1'):
+        return f'+{digits}'
+    return None
+
+
+def _ssn_last_four(demographic: dict) -> str | None:
+    value = _required_text(demographic, 'ssn')
+    if value is None or len(value) != 4:
+        return None
+    return value
+
+
+def _parse_declaration_time(value) -> datetime:
+    if value is None or value == '':
+        return datetime.min.replace(tzinfo=UTC)
+    text = str(value).strip()
+    if 'T' in text:
+        try:
+            parsed = datetime.fromisoformat(text)
+        except ValueError:
+            return datetime.min.replace(tzinfo=UTC)
+        return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
+    date_part, _, rest = text.partition(' ')
+    try:
+        month, day, year = (int(part) for part in date_part.split('/'))
+        clock = rest.split(' ')[0] if rest else '00:00:00'
+        hour_text, minute_text, second_text = (clock.split(':') + ['0', '0'])[:3]
+        return datetime(year, month, day, int(hour_text), int(minute_text), int(second_text), tzinfo=UTC)
+    except ValueError:
+        return datetime.min.replace(tzinfo=UTC)
+
+
+def _is_validated(row: dict) -> bool:
+    value = row.get('validated')
+    if value is True:
+        return True
+    return str(value).strip().lower() == 'true'
+
+
+def current_home_jurisdictions(rows: list[dict]) -> dict[int, str]:
+    """Latest validated APIT or TAP home-state declaration for each user."""
+    grouped: dict[int, list[dict]] = {}
+    for row in rows:
+        if row.get('userId') is None or not _required_text(row, 'StateAbbreviation'):
+            continue
+        grouped.setdefault(int(row['userId']), []).append(row)
+    chosen = {}
+    for user_id, declarations in grouped.items():
+        validated = [row for row in declarations if _is_validated(row)]
+        if not validated:
+            continue
+        latest = max(validated, key=lambda row: _parse_declaration_time(row.get('UpdatedAt') or row.get('CreatedOn')))
+        abbreviation = _required_text(latest, 'StateAbbreviation')
+        if abbreviation:
+            chosen[user_id] = abbreviation.lower()
+    return chosen
+
+
+def _license_preference(row: dict) -> tuple:
+    standing = (_required_text(row, 'status') or '').lower()
+    issue_text = _required_text(row, 'issueDate')
+    issued = _as_date(issue_text) if issue_text else date.min
+    try:
+        entry_id = int(row['entryId']) if row.get('entryId') is not None else 0
+    except (TypeError, ValueError):
+        entry_id = 0
+    return (1 if standing == 'active' else 0, issued, entry_id)
+
+
+def _chosen_licenses(rows: list[dict]) -> list[dict]:
+    """One license per jurisdiction. Every row is stored as the psychologist type."""
+    by_jurisdiction: dict[str, dict] = {}
+    for row in rows:
+        jurisdiction = (_required_text(row, 'jurisdiction') or '').lower()
+        if not jurisdiction:
+            continue
+        current = by_jurisdiction.get(jurisdiction)
+        if current is None or _license_preference(row) > _license_preference(current):
+            by_jurisdiction[jurisdiction] = row
+    return list(by_jurisdiction.values())
+
+
+def _optional(record: dict, key: str, target: dict, field: str) -> None:
+    value = _required_text(record, key)
+    if value:
+        target[field] = value
+
+
+def _authorization_item(schema, provider_id: str, authorization: dict) -> dict | None:
+    data = {
+        'providerId': uuid.UUID(provider_id),
         'compact': COMPACT,
-        'authorizationType': authorization_type,
-        'dateOfExpiration': authorization['dateOfExpiration'].isoformat(),
+        'authorizationType': authorization['authorizationType'],
+        'dateOfExpiration': authorization['dateOfExpiration'],
         'isActive': True,
-        'dateOfUpdate': updated_at.isoformat(),
     }
     if authorization.get('renewalStatus'):
-        item['renewalStatus'] = authorization['renewalStatus']
-    return item
+        data['renewalStatus'] = authorization['renewalStatus']
+    return _dump_record(schema, data)
 
 
 def _required_text(record: dict, key: str) -> str | None:
@@ -160,30 +261,24 @@ def _required_text(record: dict, key: str) -> str | None:
 
 
 def _provider_item(
+    schema,
     provider_id: str,
     demographic: dict,
     home_jurisdiction: str,
+    current_home: str | None,
     expiration: date,
     has_active_home_license: bool,
-    updated_at: datetime,
 ) -> dict | None:
     given_name = _required_text(demographic, 'firstName')
     family_name = _required_text(demographic, 'lastName')
-    birth_date = _required_text(demographic, 'birthDate')
-    ssn_last_four = _required_text(demographic, 'ssn')
-    street = _required_text(demographic, 'mailingAddress1')
-    city = _required_text(demographic, 'mailingCity')
-    state = _required_text(demographic, 'mailingState')
-    postal_code = _required_text(demographic, 'mailingZip')
-    if not all([given_name, family_name, birth_date, ssn_last_four, street, city, state, postal_code]):
+    birth_text = _required_text(demographic, 'birthDate')
+    ssn_last_four = _ssn_last_four(demographic)
+    if not all([given_name, family_name, birth_text, ssn_last_four]):
         return None
     standing = 'active' if has_active_home_license else 'inactive'
     eligibility = 'eligible' if has_active_home_license else 'ineligible'
-    item = {
-        'pk': migration_partition_key(provider_id),
-        'providerId': provider_id,
-        'sk': f'{COMPACT}#PROVIDER',
-        'type': 'provider',
+    data = {
+        'providerId': uuid.UUID(provider_id),
         'compact': COMPACT,
         'licenseJurisdiction': home_jurisdiction,
         'jurisdictionUploadedLicenseStatus': standing,
@@ -191,81 +286,82 @@ def _provider_item(
         'ssnLastFour': ssn_last_four,
         'givenName': given_name,
         'familyName': family_name,
-        'dateOfExpiration': expiration.isoformat(),
-        'dateOfBirth': birth_date,
-        'birthMonthDay': birth_date[5:10],
-        'homeAddressStreet1': street,
-        'homeAddressCity': city,
-        'homeAddressState': state,
-        'homeAddressPostalCode': postal_code,
-        'providerFamGivMid': _name_key(family_name, given_name, demographic.get('middleName') or ''),
-        'providerDateOfUpdate': updated_at.isoformat(),
-        'dateOfUpdate': updated_at.isoformat(),
+        'dateOfExpiration': expiration,
+        'dateOfBirth': _as_date(birth_text),
     }
-    middle_name = _required_text(demographic, 'middleName')
-    if middle_name:
-        item['middleName'] = middle_name
-    suffix = _required_text(demographic, 'suffix')
-    if suffix:
-        item['suffix'] = suffix
-    email = _required_text(demographic, 'email')
-    if email:
-        item['emailAddress'] = email
-    return item
+    if current_home:
+        data['currentHomeJurisdiction'] = current_home
+    _optional(demographic, 'middleName', data, 'middleName')
+    _optional(demographic, 'suffix', data, 'suffix')
+    return _dump_record(schema, data)
 
 
 def _license_item(
+    schema,
     provider_id: str,
     license_row: dict,
     demographic: dict,
     expiration: date,
-    updated_at: datetime,
 ) -> dict | None:
-    license_type = _required_text(license_row, 'licenseType')
-    abbreviation = LICENSE_TYPE_ABBREVIATIONS.get(license_type or '')
     jurisdiction = (_required_text(license_row, 'jurisdiction') or '').lower()
     license_number = _required_text(license_row, 'licensureNumber')
-    issue_date = _required_text(license_row, 'issueDate')
-    if not all([abbreviation, jurisdiction, license_number, issue_date]):
+    issue_text = _required_text(license_row, 'issueDate')
+    given_name = _required_text(demographic, 'firstName')
+    family_name = _required_text(demographic, 'lastName')
+    birth_text = _required_text(demographic, 'birthDate')
+    ssn_last_four = _ssn_last_four(demographic)
+    street = _required_text(demographic, 'mailingAddress1')
+    city = _required_text(demographic, 'mailingCity')
+    state = _required_text(demographic, 'mailingState')
+    postal_code = _required_text(demographic, 'mailingZip')
+    if not all(
+        [
+            jurisdiction,
+            license_number,
+            issue_text,
+            given_name,
+            family_name,
+            birth_text,
+            ssn_last_four,
+            street,
+            city,
+            state,
+            postal_code,
+        ]
+    ):
         return None
-    provider = _provider_item(
-        provider_id,
-        demographic,
-        jurisdiction,
-        expiration,
-        has_active_home_license=True,
-        updated_at=updated_at,
-    )
-    if provider is None:
-        return None
-    family_name = provider['familyName']
-    given_name = provider['givenName']
     standing = 'active' if (_required_text(license_row, 'status') or '').lower() == 'active' else 'inactive'
-    return {
-        'pk': migration_partition_key(provider_id),
-        'providerId': provider_id,
-        'sk': f'{COMPACT}#PROVIDER#license/{jurisdiction}/{abbreviation}#',
-        'type': 'license',
+    data = {
+        'providerId': uuid.UUID(provider_id),
         'compact': COMPACT,
         'jurisdiction': jurisdiction,
-        'licenseType': license_type,
+        'licenseType': LICENSE_TYPE,
         'licenseNumber': license_number,
-        'dateOfIssuance': issue_date,
-        'dateOfExpiration': expiration.isoformat(),
-        'dateOfBirth': provider['dateOfBirth'],
         'givenName': given_name,
         'familyName': family_name,
-        'ssnLastFour': provider['ssnLastFour'],
-        'homeAddressStreet1': provider['homeAddressStreet1'],
-        'homeAddressCity': provider['homeAddressCity'],
-        'homeAddressState': provider['homeAddressState'],
-        'homeAddressPostalCode': provider['homeAddressPostalCode'],
+        'dateOfIssuance': _as_date(issue_text),
+        'dateOfExpiration': expiration,
+        'dateOfBirth': _as_date(birth_text),
+        'homeAddressStreet1': street,
+        'homeAddressCity': city,
+        'homeAddressState': state,
+        'homeAddressPostalCode': postal_code,
+        'ssnLastFour': ssn_last_four,
         'jurisdictionUploadedLicenseStatus': standing,
         'jurisdictionUploadedCompactEligibility': 'eligible' if standing == 'active' else 'ineligible',
-        'licenseGSIPK': f'C#{COMPACT}#J#{jurisdiction}',
-        'licenseGSISK': f'FN#{quote(family_name.lower())}#GN#{quote(given_name.lower())}',
-        'dateOfUpdate': updated_at.isoformat(),
     }
+    _optional(demographic, 'middleName', data, 'middleName')
+    _optional(demographic, 'suffix', data, 'suffix')
+    _optional(demographic, 'mailingAddress2', data, 'homeAddressStreet2')
+    _optional(demographic, 'email', data, 'emailAddress')
+    _optional(license_row, 'professionalType', data, 'professionalType')
+    _optional(license_row, 'profession', data, 'profession')
+    _optional(license_row, 'licenseTypeEntry', data, 'licenseTypeEntry')
+    _optional(license_row, 'status', data, 'licenseStatusName')
+    phone = _e164_us_phone(_required_text(demographic, 'primaryPhone'))
+    if phone:
+        data['phoneNumber'] = phone
+    return _dump_record(schema, data)
 
 
 def plan_migration(
@@ -275,9 +371,11 @@ def plan_migration(
     demographics: dict[int, dict],
     emails: dict[int, str],
     licenses: list[dict],
-    updated_at: datetime,
+    home_declarations: list[dict] | None = None,
 ) -> dict:
     """Return provider-table items for approved users, plus skip counts."""
+    provider_schema, license_schema, authorization_schema = _record_schemas()
+    declared_homes = current_home_jurisdictions(home_declarations or [])
     authorizations = approved_authorizations(approval_rows)
     licenses_by_user: dict[int, list[dict]] = {}
     license_jurisdictions: dict[int, set[str]] = {}
@@ -298,7 +396,7 @@ def plan_migration(
         if emails.get(user_id):
             demographic['email'] = emails[user_id]
         email = _required_text(demographic, 'email')
-        if email is None:
+        if email is None or not _valid_email(email):
             skipped_no_email += 1
             continue
         normalized = email.lower()
@@ -320,7 +418,9 @@ def plan_migration(
             continue
         expiration = min(entry['dateOfExpiration'] for entry in user_authorizations)
         for authorization in user_authorizations:
-            items.append(_authorization_item(provider_id, authorization, updated_at))
+            item = _authorization_item(authorization_schema, provider_id, authorization)
+            if item is not None:
+                items.append(item)
         demographic = dict(demographics.get(user_id) or {})
         if emails.get(user_id):
             demographic['email'] = emails[user_id]
@@ -334,13 +434,21 @@ def plan_migration(
         if home is None:
             skipped_providers += 1
         else:
-            provider = _provider_item(provider_id, demographic, home, expiration, active_home_license, updated_at)
+            provider = _provider_item(
+                provider_schema,
+                provider_id,
+                demographic,
+                home,
+                declared_homes.get(user_id),
+                expiration,
+                active_home_license,
+            )
             if provider is None:
                 skipped_providers += 1
             else:
                 items.append(provider)
-        for license_row in licenses_by_user.get(user_id, []):
-            license_item = _license_item(provider_id, license_row, demographic, expiration, updated_at)
+        for license_row in _chosen_licenses(user_licenses):
+            license_item = _license_item(license_schema, provider_id, license_row, demographic, expiration)
             if license_item is None:
                 skipped_licenses += 1
             else:

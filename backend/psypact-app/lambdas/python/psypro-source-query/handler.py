@@ -1,6 +1,6 @@
 import json
 import os
-from datetime import UTC, date, datetime
+from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
 from uuid import UUID
@@ -75,11 +75,11 @@ def _migrate_approved_records(dry_run: bool) -> dict:
             home_rows = _fetch_all(cursor)
     prefix = os.environ['PSYPRO_TABLE_PREFIX']
     demographics = {
-        int(item['userId']): item
-        for item in _scan_table(f'{prefix}Demographics')
-        if item.get('userId') is not None
+        int(item['userId']): item for item in _scan_table(f'{prefix}Demographics') if item.get('userId') is not None
     }
     licenses = _scan_table(f'{prefix}Licensures')
+    home_declarations = _scan_table(f'{prefix}EPassportHomeStateDeclaration')
+    home_declarations.extend(_scan_table(f'{prefix}IpcHomeStateDeclaration'))
     emails = {int(row['UserId']): row['Email'] for row in approval_rows if row.get('Email')}
     planned = plan_migration(
         approval_rows=approval_rows,
@@ -87,7 +87,7 @@ def _migrate_approved_records(dry_run: bool) -> dict:
         demographics=demographics,
         emails=emails,
         licenses=licenses,
-        updated_at=datetime.now(UTC),
+        home_declarations=home_declarations,
     )
     wrote = 0
     if not dry_run:

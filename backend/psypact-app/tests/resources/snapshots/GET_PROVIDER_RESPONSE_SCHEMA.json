@@ -79,8 +79,7 @@
           },
           "licenseType": {
             "enum": [
-              "Psychologist",
-              "School Psychologist"
+              "psychologist"
             ],
             "type": "string"
           },
@@ -211,8 +210,7 @@
                 },
                 "licenseType": {
                   "enum": [
-                    "Psychologist",
-                    "School Psychologist"
+                    "psychologist"
                   ],
                   "type": "string"
                 },
@@ -968,8 +966,7 @@
                 },
                 "licenseType": {
                   "enum": [
-                    "Psychologist",
-                    "School Psychologist"
+                    "psychologist"
                   ],
                   "type": "string"
                 },
@@ -1416,8 +1413,7 @@
           },
           "licenseType": {
             "enum": [
-              "Psychologist",
-              "School Psychologist"
+              "psychologist"
             ],
             "type": "string"
           },

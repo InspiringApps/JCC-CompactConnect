@@ -1,4 +1,6 @@
 import importlib.util
+import json
+import os
 import sys
 import tempfile
 import unittest
@@ -8,7 +10,20 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 _LAMBDA_DIR = Path(__file__).resolve().parents[2]
+_PSYPACT_APP = Path(__file__).resolve().parents[5]
 sys.path.insert(0, str(_LAMBDA_DIR))
+for _entry in (
+    _PSYPACT_APP.parent / 'common-python',
+    _PSYPACT_APP / 'lambdas' / 'python' / 'common',
+):
+    if str(_entry) not in sys.path:
+        sys.path.append(str(_entry))
+os.environ.setdefault('AWS_DEFAULT_REGION', 'us-east-1')
+os.environ['COMPACTS'] = '["psypact"]'
+os.environ['JURISDICTIONS'] = json.dumps(['co', 'oh', 'ut', 'wa'])
+os.environ['LICENSE_TYPES'] = json.dumps(
+    {'psypact': [{'name': 'psychologist', 'abbreviation': 'psych'}]},
+)
 _HANDLER_PATH = _LAMBDA_DIR / 'handler.py'
 _SPEC = importlib.util.spec_from_file_location('psypro_source_query_handler', _HANDLER_PATH)
 handler = importlib.util.module_from_spec(_SPEC)

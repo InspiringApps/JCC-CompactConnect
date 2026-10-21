@@ -106,8 +106,7 @@
     "licenseType": {
       "description": "Type of license",
       "enum": [
-        "Psychologist",
-        "School Psychologist"
+        "psychologist"
       ],
       "type": "string"
     },
