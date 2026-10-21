@@ -56,6 +56,16 @@ class TestIaSourceDataStack(TstAppABC, TestCase):
             'Psypro.',
             query_function['Properties']['Environment']['Variables']['PSYPRO_TABLE_PREFIX'],
         )
+        self.assertIn('PROVIDER_TABLE_NAME', query_function['Properties']['Environment']['Variables'])
+        policy_actions = []
+        for policy in template.find_resources('AWS::IAM::Policy').values():
+            statements = policy['Properties']['PolicyDocument']['Statement']
+            if isinstance(statements, dict):
+                statements = [statements]
+            for statement in statements:
+                action = statement.get('Action', [])
+                policy_actions.extend([action] if isinstance(action, str) else action)
+        self.assertIn('dynamodb:PutItem', policy_actions)
         hooks = RdsCaBundleHooks()
         self.assertEqual([], hooks.before_bundling('/input', '/output'))
         bundle_command = hooks.after_bundling('/input', '/output')[0]

@@ -7,6 +7,7 @@ from aws_cdk.aws_dynamodb import (
     Attribute,
     AttributeType,
     BillingMode,
+    ITable,
     PointInTimeRecoverySpecification,
     Table,
     TableEncryption,
@@ -166,6 +167,7 @@ class IaSourceDataStack(AppStack):
         environment_context: dict,
         vpc_stack: VpcStack,
         snapshot_identifier: str,
+        provider_table: ITable,
         **kwargs,
     ):
         super().__init__(
@@ -191,7 +193,7 @@ class IaSourceDataStack(AppStack):
             removal_policy=removal_policy,
             environment_name=environment_name,
         )
-        self.query_function = self._create_query_function(vpc_stack)
+        self.query_function = self._create_query_function(vpc_stack, provider_table)
 
     def _create_tables(self, removal_policy: RemovalPolicy) -> dict[str, Table]:
         with open(_SCHEMA_INDEX_PATH, encoding='utf-8') as schema_index_file:
@@ -372,7 +374,7 @@ class IaSourceDataStack(AppStack):
         NagSuppressions.add_resource_suppressions(database, suppressions=database_suppressions, apply_to_children=True)
         return database
 
-    def _create_query_function(self, vpc_stack: VpcStack) -> PythonFunction:
+    def _create_query_function(self, vpc_stack: VpcStack, provider_table: ITable) -> PythonFunction:
         """Lambda in the database subnets that can query SQL Server and read Psypro tables."""
         vpc = vpc_stack.vpc
         secrets_endpoint = InterfaceVpcEndpoint(
@@ -474,6 +476,7 @@ class IaSourceDataStack(AppStack):
                 'PSYPRO_SQL_HOST': self.database.db_instance_endpoint_address,
                 'PSYPRO_SQL_PORT': self.database.db_instance_endpoint_port,
                 'PSYPRO_TABLE_PREFIX': TABLE_NAME_PREFIX,
+                'PROVIDER_TABLE_NAME': provider_table.table_name,
                 **self.common_env_vars,
             },
         )
@@ -492,6 +495,7 @@ class IaSourceDataStack(AppStack):
                 resources=[table.table_arn for table in self.tables.values()],
             )
         )
+        provider_table.grant_read_write_data(query_function)
         NagSuppressions.add_resource_suppressions_by_path(
             self,
             f'{query_function.role.node.path}/DefaultPolicy/Resource',
@@ -499,7 +503,7 @@ class IaSourceDataStack(AppStack):
                 {
                     'id': 'AwsSolutions-IAM5',
                     'reason': 'Reading the generated database secret includes its version suffix. DynamoDB access is '
-                    'limited to the Psypro source tables.',
+                    'limited to the Psypro source tables and the provider table, including its indexes.',
                 },
             ],
         )

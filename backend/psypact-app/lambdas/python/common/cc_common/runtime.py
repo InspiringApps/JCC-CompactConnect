@@ -16,7 +16,9 @@ def install() -> None:
     if not isinstance(config_module.config, PsypactConfig):
         config_module.config = PsypactConfig()
 
+    from cc_common.data_model.psypact_authorization_schema import install_psypact_authorization_schema
     from cc_common.data_model.psypact_privilege_schema import install_psypact_privilege_schemas
 
+    install_psypact_authorization_schema()
     install_psypact_privilege_schemas()
     _installed = True
