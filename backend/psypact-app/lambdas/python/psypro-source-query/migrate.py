@@ -49,12 +49,24 @@ def provider_id_for_email(email: str) -> str:
     return str(uuid.uuid5(EMAIL_PROVIDER_NAMESPACE, email.strip().lower()))
 
 
-def _as_date(value) -> date:
+def _as_date(value) -> date | None:
+    """ISO dates from SQL, or month/day/year strings stored on PSYPRO items."""
     if isinstance(value, datetime):
         return value.date()
     if isinstance(value, date):
         return value
-    return date.fromisoformat(str(value)[:10])
+    text = str(value).strip()
+    if not text:
+        return None
+    try:
+        return date.fromisoformat(text[:10])
+    except ValueError:
+        pass
+    try:
+        month, day, year = (int(part) for part in text.split(' ', 1)[0].split('/'))
+        return date(year, month, day)
+    except ValueError:
+        return None
 
 
 def _renewal_status_name(value) -> str | None:
@@ -82,6 +94,8 @@ def approved_authorizations(rows: list[dict]) -> dict[int, list[dict]]:
             continue
         user_id = int(row['UserId'])
         expiration = _as_date(row['dateOfExpiration'])
+        if expiration is None:
+            continue
         key = (user_id, authorization_type)
         current = chosen.get(key)
         if current is not None and expiration <= current['dateOfExpiration']:
@@ -212,7 +226,9 @@ def current_home_jurisdictions(rows: list[dict]) -> dict[int, str]:
 def _license_preference(row: dict) -> tuple:
     standing = (_required_text(row, 'status') or '').lower()
     issue_text = _required_text(row, 'issueDate')
-    issued = _as_date(issue_text) if issue_text else date.min
+    issued = _as_date(issue_text) if issue_text else None
+    if issued is None:
+        issued = date.min
     try:
         entry_id = int(row['entryId']) if row.get('entryId') is not None else 0
     except (TypeError, ValueError):
@@ -271,9 +287,9 @@ def _provider_item(
 ) -> dict | None:
     given_name = _required_text(demographic, 'firstName')
     family_name = _required_text(demographic, 'lastName')
-    birth_text = _required_text(demographic, 'birthDate')
+    birth_date = _as_date(_required_text(demographic, 'birthDate'))
     ssn_last_four = _ssn_last_four(demographic)
-    if not all([given_name, family_name, birth_text, ssn_last_four]):
+    if not all([given_name, family_name, birth_date, ssn_last_four]):
         return None
     standing = 'active' if has_active_home_license else 'inactive'
     eligibility = 'eligible' if has_active_home_license else 'ineligible'
@@ -287,7 +303,7 @@ def _provider_item(
         'givenName': given_name,
         'familyName': family_name,
         'dateOfExpiration': expiration,
-        'dateOfBirth': _as_date(birth_text),
+        'dateOfBirth': birth_date,
     }
     if current_home:
         data['currentHomeJurisdiction'] = current_home
@@ -305,10 +321,10 @@ def _license_item(
 ) -> dict | None:
     jurisdiction = (_required_text(license_row, 'jurisdiction') or '').lower()
     license_number = _required_text(license_row, 'licensureNumber')
-    issue_text = _required_text(license_row, 'issueDate')
+    issue_date = _as_date(_required_text(license_row, 'issueDate'))
     given_name = _required_text(demographic, 'firstName')
     family_name = _required_text(demographic, 'lastName')
-    birth_text = _required_text(demographic, 'birthDate')
+    birth_date = _as_date(_required_text(demographic, 'birthDate'))
     ssn_last_four = _ssn_last_four(demographic)
     street = _required_text(demographic, 'mailingAddress1')
     city = _required_text(demographic, 'mailingCity')
@@ -318,10 +334,10 @@ def _license_item(
         [
             jurisdiction,
             license_number,
-            issue_text,
+            issue_date,
             given_name,
             family_name,
-            birth_text,
+            birth_date,
             ssn_last_four,
             street,
             city,
@@ -339,9 +355,9 @@ def _license_item(
         'licenseNumber': license_number,
         'givenName': given_name,
         'familyName': family_name,
-        'dateOfIssuance': _as_date(issue_text),
+        'dateOfIssuance': issue_date,
         'dateOfExpiration': expiration,
-        'dateOfBirth': _as_date(birth_text),
+        'dateOfBirth': birth_date,
         'homeAddressStreet1': street,
         'homeAddressCity': city,
         'homeAddressState': state,

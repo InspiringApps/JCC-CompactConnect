@@ -269,3 +269,47 @@ class TestPsyproMigration(unittest.TestCase):
         self.assertEqual('wa', provider['currentHomeJurisdiction'])
         self.assertEqual('+13035550100', next(item['phoneNumber'] for item in licenses if item['jurisdiction'] == 'co'))
         self.assertEqual(['NEW', 'WA-1'], sorted(item['licenseNumber'] for item in licenses))
+
+    def test_month_day_year_dates_are_stored_as_iso(self):
+        demographic = _demographic()
+        demographic['birthDate'] = '06/15/1980'
+        result = migrate.plan_migration(
+            approval_rows=[
+                {
+                    'UserId': 7,
+                    'authorizationType': 'APIT',
+                    'ApprovalDate': '06/15/2012',
+                    'dateOfExpiration': '10/11/2027',
+                },
+            ],
+            home_rows=[{'UserId': 7, 'Abbreviation': 'CO'}],
+            demographics={7: demographic},
+            emails={7: 'ada@example.com'},
+            licenses=[{**_license_row(), 'issueDate': '5/1/2019'}],
+        )
+        by_type = {item['type']: item for item in result['items']}
+        self.assertEqual('1980-06-15', by_type['provider']['dateOfBirth'])
+        self.assertEqual('06-15', by_type['provider']['birthMonthDay'])
+        self.assertEqual('2019-05-01', by_type['license']['dateOfIssuance'])
+        self.assertEqual('2027-10-11', by_type['authorization']['dateOfExpiration'])
+
+    def test_unparseable_birth_date_skips_provider_and_license(self):
+        demographic = _demographic()
+        demographic['birthDate'] = 'not-a-date'
+        result = migrate.plan_migration(
+            approval_rows=[
+                {
+                    'UserId': 7,
+                    'authorizationType': 'APIT',
+                    'ApprovalDate': '2026-10-11',
+                    'dateOfExpiration': '2027-10-11',
+                },
+            ],
+            home_rows=[{'UserId': 7, 'Abbreviation': 'CO'}],
+            demographics={7: demographic},
+            emails={7: 'ada@example.com'},
+            licenses=[_license_row()],
+        )
+        self.assertEqual(['authorization'], [item['type'] for item in result['items']])
+        self.assertEqual(1, result['skippedProviders'])
+        self.assertEqual(1, result['skippedLicenses'])
