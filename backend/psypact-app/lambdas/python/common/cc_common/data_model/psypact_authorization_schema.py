@@ -7,9 +7,10 @@ GetTrueStatus.
 """
 
 from common_lambdas.data_model.schema.base_record import BaseRecordSchema
-from common_lambdas.schema.authorization import AUTHORIZATION_RECORD_TYPE, AuthorizationRecordSchema
 from marshmallow.fields import String
 from marshmallow.validate import OneOf
+
+from cc_common.schema.authorization import AUTHORIZATION_RECORD_TYPE, AuthorizationRecordSchema
 
 RENEWAL_STATUS_NAMES = (
     'Active',
@@ -36,6 +37,6 @@ class PsypactAuthorizationRecordSchema(AuthorizationRecordSchema):
 
 def install_psypact_authorization_schema() -> None:
     """Keep renewalStatus when an authorization is loaded. Callers do not read it."""
-    from common_lambdas.schema.authorization import AuthorizationData
+    from cc_common.schema.authorization import AuthorizationData
 
     AuthorizationData._record_schema = PsypactAuthorizationRecordSchema()  # noqa: SLF001

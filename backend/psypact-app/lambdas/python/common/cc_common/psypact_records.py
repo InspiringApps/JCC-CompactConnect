@@ -19,7 +19,8 @@ from common_lambdas.data_model.schema.fields import OTHER_JURISDICTION, UNKNOWN_
 from common_lambdas.data_model.schema.license import LicenseData
 from common_lambdas.data_model.schema.military_affiliation import MilitaryAffiliationData
 from common_lambdas.data_model.schema.privilege.jcc_data import PrivilegeData, PrivilegeUpdateData
-from common_lambdas.schema.authorization import AUTHORIZATION_RECORD_TYPE, AuthorizationData
+
+from cc_common.schema.authorization import AUTHORIZATION_RECORD_TYPE, AuthorizationData
 
 
 class ProviderRecordType(StrEnum):

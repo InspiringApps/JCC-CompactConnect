@@ -306,7 +306,7 @@ class TestAuthorizationAndPrivilegeSchemas(unittest.TestCase):
         _configure_common_lambdas_for_tests()
 
     def test_authorization_record_uses_practitioner_key(self):
-        from common_lambdas.schema.authorization import AuthorizationRecordSchema
+        from cc_common.schema.authorization import AuthorizationRecordSchema
 
         dumped = AuthorizationRecordSchema().dump(
             {

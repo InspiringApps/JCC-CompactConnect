@@ -9,9 +9,10 @@ these subclasses are bound over the shared names when this module is imported.
 import common_lambdas.data_model.schema.privilege.api as privilege_api
 import common_lambdas.data_model.schema.provider.api as provider_api
 import common_lambdas.data_model.schema.provider.jcc_provider_api as jcc_provider_api
-from common_lambdas.schema.authorization import AUTHORIZATION_TYPES
 from marshmallow.fields import List, Nested, String
 from marshmallow.validate import OneOf
+
+from cc_common.schema.authorization import AUTHORIZATION_TYPES
 
 _installed = False
 

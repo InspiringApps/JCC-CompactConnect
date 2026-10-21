@@ -2,14 +2,13 @@
 from datetime import date
 from uuid import UUID
 
+from common_lambdas.data_model.schema.base_record import BaseRecordSchema
+from common_lambdas.data_model.schema.common import CCDataClass
+from common_lambdas.data_model.schema.fields import Compact
 from marshmallow import pre_dump
 from marshmallow.fields import UUID as MarshmallowUUID
 from marshmallow.fields import Boolean, Date, String
 from marshmallow.validate import OneOf
-
-from common_lambdas.data_model.schema.base_record import BaseRecordSchema
-from common_lambdas.data_model.schema.common import CCDataClass
-from common_lambdas.data_model.schema.fields import Compact
 
 AUTHORIZATION_RECORD_TYPE = 'authorization'
 AUTHORIZATION_TYPES = ('APIT', 'TAP')
