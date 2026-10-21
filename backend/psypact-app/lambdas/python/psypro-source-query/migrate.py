@@ -226,7 +226,7 @@ def current_home_jurisdictions(rows: list[dict]) -> dict[int, str]:
 
 
 def _license_preference(row: dict) -> tuple:
-    standing = (_required_text(row, 'status') or '').lower()
+    """Latest issue date, then higher entry id. Status is not part of the order."""
     issue_text = _required_text(row, 'issueDate')
     issued = _as_date(issue_text) if issue_text else None
     if issued is None:
@@ -235,7 +235,7 @@ def _license_preference(row: dict) -> tuple:
         entry_id = int(row['entryId']) if row.get('entryId') is not None else 0
     except (TypeError, ValueError):
         entry_id = 0
-    return (1 if standing == 'active' else 0, issued, entry_id)
+    return (issued, entry_id)
 
 
 def _has_qualifying_license(rows: list[dict]) -> bool:
@@ -262,7 +262,7 @@ def _require_qualifying_licenses(
 
 
 def _chosen_licenses(rows: list[dict]) -> list[dict]:
-    """One license per jurisdiction. Every row is stored as the psychologist type."""
+    """One license per jurisdiction. The latest issue date is kept."""
     by_jurisdiction: dict[str, dict] = {}
     for row in rows:
         jurisdiction = (_required_text(row, 'jurisdiction') or '').lower()

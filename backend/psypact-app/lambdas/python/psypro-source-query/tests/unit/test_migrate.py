@@ -270,6 +270,39 @@ class TestPsyproMigration(unittest.TestCase):
         self.assertEqual('+13035550100', next(item['phoneNumber'] for item in licenses if item['jurisdiction'] == 'co'))
         self.assertEqual(['NEW', 'WA-1'], sorted(item['licenseNumber'] for item in licenses))
 
+    def test_later_issue_date_wins_over_an_earlier_active_license(self):
+        active_older = {**_license_row(), 'status': 'Active', 'licensureNumber': 'OLD', 'issueDate': '2010-01-01'}
+        inactive_newer = {
+            **_license_row(),
+            'status': 'Inactive',
+            'licensureNumber': 'NEW',
+            'issueDate': '2020-01-01',
+            'entryId': 1,
+        }
+        result = migrate.plan_migration(
+            approval_rows=[
+                {
+                    'UserId': 7,
+                    'authorizationType': 'APIT',
+                    'ApprovalDate': '2026-10-11',
+                    'dateOfExpiration': '2027-10-11',
+                },
+            ],
+            home_rows=[{'UserId': 7, 'Abbreviation': 'CO'}],
+            demographics={7: _demographic()},
+            emails={7: 'ada@example.com'},
+            licenses=[
+                active_older,
+                inactive_newer,
+                {**active_older, 'jurisdiction': 'WA', 'licensureNumber': 'WA-1', 'issueDate': '2021-01-01'},
+            ],
+        )
+        licenses = [item for item in result['items'] if item['type'] == 'license']
+        colorado = next(item for item in licenses if item['jurisdiction'] == 'co')
+        self.assertEqual('NEW', colorado['licenseNumber'])
+        self.assertEqual('inactive', colorado['jurisdictionUploadedLicenseStatus'])
+        self.assertEqual(['NEW', 'WA-1'], sorted(item['licenseNumber'] for item in licenses))
+
     def test_month_day_year_dates_are_stored_as_iso(self):
         demographic = _demographic()
         demographic['birthDate'] = '06/15/1980'
