@@ -167,7 +167,7 @@ class TestPsyproMigration(unittest.TestCase):
             home_rows=[],
             demographics={},
             emails={7: 'ada@example.com'},
-            licenses=[],
+            licenses=[_license_row()],
         )
         self.assertEqual(['authorization'], [item['type'] for item in result['items']])
         self.assertEqual(1, result['skippedProviders'])
@@ -313,3 +313,53 @@ class TestPsyproMigration(unittest.TestCase):
         self.assertEqual(['authorization'], [item['type'] for item in result['items']])
         self.assertEqual(1, result['skippedProviders'])
         self.assertEqual(1, result['skippedLicenses'])
+
+    def test_psychologist_license_allows_the_authorization(self):
+        result = migrate.plan_migration(
+            approval_rows=[
+                {
+                    'UserId': 7,
+                    'authorizationType': 'TAP',
+                    'ApprovalDate': '2026-10-11',
+                    'dateOfExpiration': '2027-10-11',
+                },
+            ],
+            home_rows=[{'UserId': 7, 'Abbreviation': 'CO'}],
+            demographics={7: _demographic()},
+            emails={7: 'ada@example.com'},
+            licenses=[{**_license_row(), 'licenseType': 'Psychologist'}],
+        )
+        authorization_types = [item['authorizationType'] for item in result['items'] if item['type'] == 'authorization']
+        self.assertEqual(['TAP'], authorization_types)
+
+    def test_authorization_without_psychologist_license_fails_before_items(self):
+        approval_rows = [
+            {
+                'UserId': 7,
+                'authorizationType': 'APIT',
+                'ApprovalDate': '2026-10-11',
+                'dateOfExpiration': '2027-10-11',
+            },
+            {
+                'UserId': 7,
+                'authorizationType': 'TAP',
+                'ApprovalDate': '2026-10-11',
+                'dateOfExpiration': '2027-10-11',
+            },
+        ]
+        with self.assertRaisesRegex(RuntimeError, r'user 7 \(APIT, TAP\)'):
+            migrate.plan_migration(
+                approval_rows=approval_rows,
+                home_rows=[{'UserId': 7, 'Abbreviation': 'CO'}],
+                demographics={7: _demographic()},
+                emails={7: 'ada@example.com'},
+                licenses=[{**_license_row(), 'licenseType': 'Masters Psychologist'}],
+            )
+        with self.assertRaisesRegex(RuntimeError, r'user 7 \(APIT, TAP\)'):
+            migrate.plan_migration(
+                approval_rows=approval_rows,
+                home_rows=[{'UserId': 7, 'Abbreviation': 'CO'}],
+                demographics={7: _demographic()},
+                emails={7: 'ada@example.com'},
+                licenses=[],
+            )

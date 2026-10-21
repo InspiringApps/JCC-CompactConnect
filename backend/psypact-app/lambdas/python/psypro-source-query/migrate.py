@@ -21,6 +21,8 @@ from datetime import UTC, date, datetime
 
 COMPACT = 'psypact'
 LICENSE_TYPE = 'psychologist'
+# Source Licensures values that were stored as the psych and doc-psych sort keys.
+QUALIFYING_LICENSE_TYPES = frozenset({'doctoral psychologist', 'psychologist'})
 AUTHORIZATION_PROCESS_TYPES = {11: 'APIT', 12: 'TAP'}
 # RenewalStatus in the IA data dictionary. These are stored values, not the
 # Expired 1/2/Permanently Expired values GetTrueStatus derives from DueOn.
@@ -236,6 +238,29 @@ def _license_preference(row: dict) -> tuple:
     return (1 if standing == 'active' else 0, issued, entry_id)
 
 
+def _has_qualifying_license(rows: list[dict]) -> bool:
+    """True when the user has a Doctoral Psychologist or Psychologist license."""
+    return any((_required_text(row, 'licenseType') or '').lower() in QUALIFYING_LICENSE_TYPES for row in rows)
+
+
+def _require_qualifying_licenses(
+    selected_users: dict[int, str],
+    authorizations: dict[int, list[dict]],
+    licenses_by_user: dict[int, list[dict]],
+) -> None:
+    """Stop the migration before any write when an approved user lacks those licenses."""
+    missing = []
+    for user_id in sorted(selected_users):
+        if _has_qualifying_license(licenses_by_user.get(user_id, [])):
+            continue
+        authorization_types = ', '.join(entry['authorizationType'] for entry in authorizations[user_id])
+        missing.append(f'user {user_id} ({authorization_types})')
+    if missing:
+        raise RuntimeError(
+            'Approved authorization without a Doctoral Psychologist or Psychologist license: ' + '; '.join(missing)
+        )
+
+
 def _chosen_licenses(rows: list[dict]) -> list[dict]:
     """One license per jurisdiction. Every row is stored as the psychologist type."""
     by_jurisdiction: dict[str, dict] = {}
@@ -424,6 +449,8 @@ def plan_migration(
             selected_users.pop(previous, None)
         email_owner[normalized] = user_id
         selected_users[user_id] = provider_id_for_email(normalized)
+
+    _require_qualifying_licenses(selected_users, authorizations, licenses_by_user)
 
     items = []
     skipped_providers = 0
