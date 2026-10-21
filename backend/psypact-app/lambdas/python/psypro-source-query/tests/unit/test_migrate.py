@@ -111,6 +111,7 @@ class TestPsyproMigration(unittest.TestCase):
         for item in result['items']:
             self.assertEqual(partition_key, item['pk'])
             self.assertNotIn('providerId', item)
+            self.assertNotIn('ssnLastFour', item)
             if item['type'] != 'authorization':
                 self.assertNotIn('renewalStatus', item)
 

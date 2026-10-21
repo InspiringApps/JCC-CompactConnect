@@ -12,7 +12,8 @@ RenewalProcessTypeState.Status is the stored authorization standing. Its
 display name is written on the authorization and is not used to decide
 isActive, license standing, or provider standing. GetTrueStatus is not applied.
 There is no Cognito user yet, so these items omit providerId and are keyed by
-the PSYPRO user id.
+the PSYPRO user id. Demographics.ssn stays on the Psypro table and is not
+copied onto these items.
 """
 
 from datetime import date, datetime
@@ -158,12 +159,11 @@ def _provider_item(
     given_name = _required_text(demographic, 'firstName')
     family_name = _required_text(demographic, 'lastName')
     birth_date = _required_text(demographic, 'birthDate')
-    ssn_last_four = _required_text(demographic, 'ssn')
     street = _required_text(demographic, 'mailingAddress1')
     city = _required_text(demographic, 'mailingCity')
     state = _required_text(demographic, 'mailingState')
     postal_code = _required_text(demographic, 'mailingZip')
-    if not all([given_name, family_name, birth_date, ssn_last_four, street, city, state, postal_code]):
+    if not all([given_name, family_name, birth_date, street, city, state, postal_code]):
         return None
     standing = 'active' if has_active_home_license else 'inactive'
     eligibility = 'eligible' if has_active_home_license else 'ineligible'
@@ -175,7 +175,6 @@ def _provider_item(
         'licenseJurisdiction': home_jurisdiction,
         'jurisdictionUploadedLicenseStatus': standing,
         'jurisdictionUploadedCompactEligibility': eligibility,
-        'ssnLastFour': ssn_last_four,
         'givenName': given_name,
         'familyName': family_name,
         'dateOfExpiration': expiration.isoformat(),
@@ -241,7 +240,6 @@ def _license_item(
         'dateOfBirth': provider['dateOfBirth'],
         'givenName': given_name,
         'familyName': family_name,
-        'ssnLastFour': provider['ssnLastFour'],
         'homeAddressStreet1': provider['homeAddressStreet1'],
         'homeAddressCity': provider['homeAddressCity'],
         'homeAddressState': provider['homeAddressState'],

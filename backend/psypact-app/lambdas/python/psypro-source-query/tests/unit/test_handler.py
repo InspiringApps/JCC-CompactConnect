@@ -115,7 +115,7 @@ class TestPsyproSourceQuery(unittest.TestCase):
         self.assertEqual('psypact#MIGRATION#7', authorization['pk'])
         self.assertNotIn('providerId', authorization)
         self.assertEqual('Active', authorization['renewalStatus'])
-        self.assertTrue(all('providerId' not in item for item in written))
+        self.assertTrue(all('providerId' not in item and 'ssnLastFour' not in item for item in written))
 
     def test_migrate_dry_run_does_not_write(self):
         cursor = MagicMock()
