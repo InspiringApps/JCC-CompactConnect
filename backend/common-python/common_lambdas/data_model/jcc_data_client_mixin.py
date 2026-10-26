@@ -10,6 +10,7 @@ from common_lambdas.config import (
     config,
     logger,
 )
+from common_lambdas.data_model.jcc_record_type import ProviderRecordType
 from common_lambdas.data_model.provider_record_util import (
     ProviderRecordUtility,
     ProviderUserRecords,
@@ -41,7 +42,6 @@ from common_lambdas.exceptions import (
     CCInternalException,
     CCNotFoundException,
 )
-from common_lambdas.psypact_records import ProviderRecordType
 from common_lambdas.utils import logger_inject_kwargs
 
 MAX_DYNAMODB_TRANSACTION_ITEMS = 100

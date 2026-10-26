@@ -46,7 +46,7 @@ class TestPublicLookupApi(TestApi):
             api_lambda_stack_template.find_resources(CfnFunction.CFN_RESOURCE_TYPE_NAME),
         )
 
-        self.assertEqual(get_handler['Handler'], 'handlers.public_lookup.public_get_provider')
+        self.assertEqual(get_handler['Handler'], 'handler.public_get_provider')
 
         # Capture model logical ID for verification
         response_model_logical_id_capture = Capture()
@@ -108,7 +108,7 @@ class TestPublicLookupApi(TestApi):
             search_persistent_stack_template.find_resources(CfnFunction.CFN_RESOURCE_TYPE_NAME),
         )
 
-        self.assertEqual(query_handler['Handler'], 'handlers.public_search.public_search_api_handler')
+        self.assertEqual(query_handler['Handler'], 'handler.public_search_api_handler')
 
         # Capture model logical IDs for verification
         request_model_logical_id_capture = Capture()

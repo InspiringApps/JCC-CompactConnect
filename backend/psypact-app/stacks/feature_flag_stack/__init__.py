@@ -114,10 +114,9 @@ class FeatureFlagStack(AppStack):
         self.manage_function = PythonFunction(
             self,
             'ManageFunction',
-            index=os.path.join('handlers', 'manage_feature_flag.py'),
-            lambda_dir='feature-flag',
-            shared=True,
-            handler='on_event',
+            index='handler.py',
+            lambda_dir='manage-feature-flag',
+            handler='manage_feature_flag',
             log_retention=RetentionDays.ONE_MONTH,
             environment={'ENVIRONMENT_NAME': environment_name},
             timeout=Duration.minutes(5),

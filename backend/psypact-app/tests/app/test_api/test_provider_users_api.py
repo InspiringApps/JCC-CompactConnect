@@ -60,7 +60,9 @@ class TestProviderUsersApi(TestApi):
         # ensure the handler is created
         api_lambda_stack_template.has_resource_properties(
             type=CfnFunction.CFN_RESOURCE_TYPE_NAME,
-            props={'Handler': 'handlers.provider_users.provider_users_api_handler'},
+            props={
+                'Handler': 'handler.provider_users_api_handler',
+            },
         )
 
         method_model_logical_id_capture = Capture()
@@ -133,7 +135,9 @@ class TestProviderUsersApi(TestApi):
         # ensure the handler is created
         api_lambda_stack_template.has_resource_properties(
             type=CfnFunction.CFN_RESOURCE_TYPE_NAME,
-            props={'Handler': 'handlers.psypact_home_jurisdiction.put_psypact_provider_home_jurisdiction'},
+            props={
+                'Handler': 'cc_common.psypact_home_jurisdiction.put_psypact_provider_home_jurisdiction',
+            },
         )
 
         post_method_request_model_logical_id_capture = Capture()
@@ -217,7 +221,9 @@ class TestProviderUsersApi(TestApi):
         # ensure the handler is created
         api_lambda_stack_template.has_resource_properties(
             type=CfnFunction.CFN_RESOURCE_TYPE_NAME,
-            props={'Handler': 'handlers.provider_users.provider_users_api_handler'},
+            props={
+                'Handler': 'handler.provider_users_api_handler',
+            },
         )
 
         patch_method_request_model_logical_id_capture = Capture()
@@ -302,7 +308,9 @@ class TestProviderUsersApi(TestApi):
         # ensure the handler is created
         api_lambda_stack_template.has_resource_properties(
             type=CfnFunction.CFN_RESOURCE_TYPE_NAME,
-            props={'Handler': 'handlers.provider_users.provider_users_api_handler'},
+            props={
+                'Handler': 'handler.provider_users_api_handler',
+            },
         )
 
         post_method_request_model_logical_id_capture = Capture()
@@ -385,7 +393,9 @@ class TestProviderUsersApi(TestApi):
         # ensure the handler is created
         api_lambda_stack_template.has_resource_properties(
             type=CfnFunction.CFN_RESOURCE_TYPE_NAME,
-            props={'Handler': 'handlers.account_recovery.initiate_account_recovery'},
+            props={
+                'Handler': 'handler.initiate_account_recovery',
+            },
         )
 
         post_method_request_model_logical_id_capture = Capture()
@@ -464,7 +474,9 @@ class TestProviderUsersApi(TestApi):
         # ensure the handler is created
         api_lambda_stack_template.has_resource_properties(
             type=CfnFunction.CFN_RESOURCE_TYPE_NAME,
-            props={'Handler': 'handlers.account_recovery.verify_account_recovery'},
+            props={
+                'Handler': 'handler.verify_account_recovery',
+            },
         )
 
         post_method_request_model_logical_id_capture = Capture()

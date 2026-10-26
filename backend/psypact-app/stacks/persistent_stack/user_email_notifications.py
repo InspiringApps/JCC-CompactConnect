@@ -113,10 +113,9 @@ class UserEmailNotifications(Construct):
         verification_function = PythonFunction(
             self,
             'DomainVerificationFunction',
-            lambda_dir='custom-resources',
-            shared=True,
-            index=os.path.join('handlers', 'ses_email_identity_verification_handler.py'),
-            handler='on_event',
+            lambda_dir='verify-ses-email-identity',
+            index='handler.py',
+            handler='verify_ses_email_identity',
             description='Verifies that a SES email identity is verified',
             timeout=Duration.minutes(15),  # Long timeout to allow for verification
             memory_size=128,

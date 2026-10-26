@@ -1,5 +1,5 @@
 from collections.abc import Callable, Iterable
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from enum import StrEnum
 
 from common_lambdas.config import config, logger
@@ -20,6 +20,8 @@ from common_lambdas.data_model.schema.license import LicenseData
 from common_lambdas.data_model.schema.military_affiliation import MilitaryAffiliationData
 from common_lambdas.data_model.schema.privilege.jcc_data import PrivilegeData, PrivilegeUpdateData
 
+from cc_common.schema.authorization import AUTHORIZATION_RECORD_TYPE, AuthorizationData
+
 
 class ProviderRecordType(StrEnum):
     """Cosmetology record types plus JCC stored privilege/military types used by account handlers."""
@@ -33,27 +35,48 @@ class ProviderRecordType(StrEnum):
     PRIVILEGE = 'privilege'
     PRIVILEGE_UPDATE = 'privilegeUpdate'
     MILITARY_AFFILIATION = 'militaryAffiliation'
+    AUTHORIZATION = AUTHORIZATION_RECORD_TYPE
+
+
+def _as_date(value: date | datetime | None) -> date | None:
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value.date()
+    return value
+
+
+def date_is_current(expiration: date | datetime | None) -> bool:
+    resolved = _as_date(expiration)
+    if resolved is None:
+        return False
+    return resolved >= datetime.now(tz=UTC).date()
 
 
 def license_is_unexpired(license_record: LicenseData) -> bool:
-    expiration = license_record.dateOfExpiration
-    if expiration is None:
-        return False
-    today = datetime.now(tz=UTC).date()
-    if isinstance(expiration, datetime):
-        expiration = expiration.date()
-    return expiration >= today
+    return date_is_current(license_record.dateOfExpiration)
+
+
+def authorization_is_approved_and_unexpired(authorization: AuthorizationData) -> bool:
+    """Stored approval is still in force. Home-license validity is checked separately."""
+    return bool(authorization.isActive) and date_is_current(authorization.dateOfExpiration)
 
 
 class PsypactProviderUserRecords(ProviderUserRecords):
     """PSYPACT provider records: selected-home privilege generation and JCC account getters."""
 
     def __init__(self, provider_records: Iterable[dict]):
-        super().__init__(provider_records)
+        records = list(provider_records)
+        # Pull authorizations out before the copied utility sees them. It logs any type it does not know.
+        authorization_records = [record for record in records if record.get('type') == ProviderRecordType.AUTHORIZATION]
+        super().__init__([record for record in records if record.get('type') != ProviderRecordType.AUTHORIZATION])
+        self._authorization_records = [
+            AuthorizationData.from_database_record(record) for record in authorization_records
+        ]
         self._privilege_records: list[PrivilegeData] = []
         self._military_affiliation_records: list[MilitaryAffiliationData] = []
         self._privilege_update_records: list[PrivilegeUpdateData] = []
-        for record in provider_records:
+        for record in records:
             record_type = record.get('type')
             if record_type == ProviderRecordType.PRIVILEGE:
                 self._privilege_records.append(PrivilegeData.from_database_record(record))
@@ -67,6 +90,14 @@ class PsypactProviderUserRecords(ProviderUserRecords):
         filter_condition: Callable[[PrivilegeData], bool] | None = None,
     ) -> list[PrivilegeData]:
         return [record for record in self._privilege_records if filter_condition is None or filter_condition(record)]
+
+    def get_authorization_records(
+        self,
+        filter_condition: Callable[[AuthorizationData], bool] | None = None,
+    ) -> list[AuthorizationData]:
+        return [
+            record for record in self._authorization_records if filter_condition is None or filter_condition(record)
+        ]
 
     def get_military_affiliation_records(
         self, filter_condition: Callable[[MilitaryAffiliationData], bool] | None = None
@@ -95,15 +126,20 @@ class PsypactProviderUserRecords(ProviderUserRecords):
             selected.append(sorted(licenses, key=_license_sort_key, reverse=True)[0])
         return selected
 
-    def generate_privileges_for_provider(self, include_inactive_privileges: bool = False) -> list[dict]:
+    def generate_privileges_for_provider(self, include_inactive_privileges: bool = False, **_kwargs) -> list[dict]:
         """
-        Generate privilege dicts using the selected currentHomeJurisdiction as home.
+        Generate privilege dicts from valid APIT and TAP authorizations.
 
-        One privilege is produced for every live PSYPACT jurisdiction except home, matching
-        Cosmetology's privilege dict shape. Home is the license(s) in currentHomeJurisdiction,
-        not the most-recent license per type.
+        Home is the license in currentHomeJurisdiction. A stored authorization does not
+        generate an active privilege by itself. It is valid only when it is approved,
+        unexpired, and that home license is compact-eligible. Each valid authorization
+        produces one privilege in every live jurisdiction except home.
+
+        An authorization that is not valid still produces an inactive privilege where a
+        destination has an unlifted privilege encumbrance or an open privilege investigation.
+        With no authorization records, no privileges are generated.
         """
-        if not self._license_records:
+        if not self._license_records or not self._authorization_records:
             return []
         provider = self.get_provider_record()
         compact = provider.compact
@@ -132,43 +168,51 @@ class PsypactProviderUserRecords(ProviderUserRecords):
             home_jurisdiction = home_license.jurisdiction.lower()
             license_type_abbr = home_license.licenseTypeAbbreviation
 
-            for jurisdiction in live_jurisdictions_for_compact:
-                if jurisdiction == home_jurisdiction:
-                    continue
-                privilege_aa = self.get_adverse_action_records_for_privilege(jurisdiction, license_type_abbr)
-                privilege_unlifted = any(aa.effectiveLiftDate is None for aa in privilege_aa)
-                inv_records = self.get_investigation_records_for_privilege(
-                    jurisdiction, license_type_abbr, include_closed=False
-                )
-                if not is_eligible and not include_inactive_privileges and not privilege_aa and not inv_records:
-                    logger.debug(
-                        'Not returning a privilege for this jurisdiction because the home '
-                        'license is not compact eligible and there are no matching privilege adverse '
-                        'actions or open investigations.',
-                        jurisdiction=jurisdiction,
-                        home_jurisdiction=home_jurisdiction,
-                        license_type_abbr=license_type_abbr,
+            for authorization in self._authorization_records:
+                authorization_is_valid = is_eligible and authorization_is_approved_and_unexpired(authorization)
+                for jurisdiction in live_jurisdictions_for_compact:
+                    if jurisdiction == home_jurisdiction:
+                        continue
+                    privilege_aa = self.get_adverse_action_records_for_privilege(jurisdiction, license_type_abbr)
+                    privilege_unlifted = any(aa.effectiveLiftDate is None for aa in privilege_aa)
+                    inv_records = self.get_investigation_records_for_privilege(
+                        jurisdiction, license_type_abbr, include_closed=False
                     )
-                    continue
-                privilege_dict = {
-                    'type': 'privilege',
-                    'administratorSetStatus': ActiveInactiveStatus.ACTIVE.value,
-                    'providerId': str(provider.providerId),
-                    'compact': compact,
-                    'jurisdiction': jurisdiction,
-                    'licenseJurisdiction': home_jurisdiction,
-                    'licenseType': home_license.licenseType,
-                    'dateOfExpiration': home_license.dateOfExpiration,
-                    'status': ActiveInactiveStatus.ACTIVE.value
-                    if is_eligible and not privilege_unlifted
-                    else ActiveInactiveStatus.INACTIVE.value,
-                    'adverseActions': [aa.to_dict() for aa in privilege_aa],
-                    'investigations': [inv.to_dict() for inv in inv_records],
-                }
-                if privilege_dict.get('investigations'):
-                    privilege_dict.update({'investigationStatus': InvestigationStatusEnum.UNDER_INVESTIGATION.value})
+                    has_staff_record = bool(privilege_aa or inv_records)
+                    if not authorization_is_valid and not include_inactive_privileges and not has_staff_record:
+                        logger.debug(
+                            'Not returning a privilege because the authorization is not valid and there are '
+                            'no matching privilege adverse actions or open investigations.',
+                            jurisdiction=jurisdiction,
+                            home_jurisdiction=home_jurisdiction,
+                            license_type_abbr=license_type_abbr,
+                            authorization_type=authorization.authorizationType,
+                        )
+                        continue
+                    home_expiration = _as_date(home_license.dateOfExpiration)
+                    authorization_expiration = _as_date(authorization.dateOfExpiration)
+                    privilege_dict = {
+                        'type': 'privilege',
+                        'administratorSetStatus': ActiveInactiveStatus.ACTIVE.value,
+                        'providerId': str(provider.providerId),
+                        'compact': compact,
+                        'jurisdiction': jurisdiction,
+                        'licenseJurisdiction': home_jurisdiction,
+                        'licenseType': home_license.licenseType,
+                        'dateOfExpiration': min(home_expiration, authorization_expiration),
+                        'privilegeAuthorizationType': authorization.authorizationType,
+                        'status': ActiveInactiveStatus.ACTIVE.value
+                        if authorization_is_valid and not privilege_unlifted
+                        else ActiveInactiveStatus.INACTIVE.value,
+                        'adverseActions': [aa.to_dict() for aa in privilege_aa],
+                        'investigations': [inv.to_dict() for inv in inv_records],
+                    }
+                    if privilege_dict.get('investigations'):
+                        privilege_dict.update(
+                            {'investigationStatus': InvestigationStatusEnum.UNDER_INVESTIGATION.value}
+                        )
 
-                result.append(privilege_dict)
+                    result.append(privilege_dict)
         return result
 
     def generate_opensearch_documents(self) -> list[dict]:

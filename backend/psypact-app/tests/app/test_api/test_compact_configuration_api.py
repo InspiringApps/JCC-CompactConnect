@@ -52,7 +52,7 @@ class TestCompactConfigurationApi(TestApi):
 
         self.assertEqual(
             compact_configuration_api_handler['Handler'],
-            'handlers.compact_configuration.compact_configuration_api_handler',
+            'handler.compact_configuration_api_handler',
         )
 
         # Ensure the GET method is configured with the lambda integration

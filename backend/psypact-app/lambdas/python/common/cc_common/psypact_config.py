@@ -2,7 +2,6 @@ import os
 from functools import cached_property
 
 import boto3
-
 from common_lambdas.config import _Config
 
 
@@ -11,7 +10,7 @@ class PsypactConfig(_Config):
 
     @cached_property
     def data_client(self):
-        from common_lambdas.psypact_data_client import PsypactDataClient
+        from cc_common.psypact_data_client import PsypactDataClient
 
         return PsypactDataClient(self)
 

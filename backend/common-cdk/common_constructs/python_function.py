@@ -7,7 +7,7 @@ from aws_cdk import Duration
 from aws_cdk.aws_cloudwatch import Alarm, ComparisonOperator, Stats, TreatMissingData
 from aws_cdk.aws_cloudwatch_actions import SnsAction
 from aws_cdk.aws_iam import IRole, ManagedPolicy, Role, ServicePrincipal
-from aws_cdk.aws_lambda import ILayerVersion, Runtime
+from aws_cdk.aws_lambda import CfnFunction, ILayerVersion, Runtime
 from aws_cdk.aws_lambda_python_alpha import PythonFunction as CdkPythonFunction
 from aws_cdk.aws_logs import ILogGroup, LogGroup, RetentionDays
 from aws_cdk.aws_sns import ITopic
@@ -45,6 +45,14 @@ class PythonFunction(CdkPythonFunction):
             raise RuntimeError(
                 'The PythonCommonLayerVersions construct must be declared before these lambdas can be built'
             )
+
+        # A dotted handler is a module in the PSYPACT layer, such as the home-jurisdiction
+        # function. The alpha construct would append that string to the bundled index module.
+        layer_handler = kwargs.get('handler')
+        if isinstance(layer_handler, str) and layer_handler.startswith('cc_common.'):
+            kwargs['handler'] = 'handler'
+        else:
+            layer_handler = None
 
         defaults = {
             'timeout': Duration.seconds(28),
@@ -125,6 +133,11 @@ class PythonFunction(CdkPythonFunction):
             **defaults,
         )
         self.add_layers(self._get_common_layer())
+
+        if layer_handler is not None:
+            cfn_function = self.node.default_child
+            if isinstance(cfn_function, CfnFunction):
+                cfn_function.add_property_override('Handler', layer_handler)
 
         if alarm_topic is not None:
             self._add_alarms(alarm_topic)

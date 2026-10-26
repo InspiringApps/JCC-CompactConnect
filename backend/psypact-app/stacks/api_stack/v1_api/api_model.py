@@ -1521,6 +1521,7 @@ class ApiModel:
             ),
             'administratorSetStatus': JsonSchema(type=JsonSchemaType.STRING, enum=['active', 'inactive']),
             'status': JsonSchema(type=JsonSchemaType.STRING, enum=['active', 'inactive']),
+            'privilegeAuthorizationType': JsonSchema(type=JsonSchemaType.STRING, enum=['APIT', 'TAP']),
             'attestations': JsonSchema(
                 type=JsonSchemaType.ARRAY,
                 items=JsonSchema(
@@ -2408,6 +2409,7 @@ class ApiModel:
                 'privilegeId': JsonSchema(type=JsonSchemaType.STRING),
                 'administratorSetStatus': JsonSchema(type=JsonSchemaType.STRING, enum=['active', 'inactive']),
                 'status': JsonSchema(type=JsonSchemaType.STRING, enum=['active', 'inactive']),
+                'privilegeAuthorizationType': JsonSchema(type=JsonSchemaType.STRING, enum=['APIT', 'TAP']),
                 'history': JsonSchema(
                     type=JsonSchemaType.ARRAY,
                     items=JsonSchema(

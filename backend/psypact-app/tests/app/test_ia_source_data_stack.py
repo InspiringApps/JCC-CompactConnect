@@ -3,6 +3,7 @@ from unittest import TestCase
 
 from aws_cdk.assertions import Template
 
+from stacks.ia_source_data_stack import RDS_CA_BUNDLE_FILENAME, RDS_CA_BUNDLE_URL, RdsCaBundleHooks
 from tests.app.base import TstAppABC
 from tests.app.test_sandbox import TstSandbox
 
@@ -33,8 +34,43 @@ class TestIaSourceDataStack(TstAppABC, TestCase):
         )
         database = next(iter(template.find_resources('AWS::RDS::DBInstance').values()))
         self.assertNotIn('StorageEncrypted', database['Properties'])
-        security_group = next(iter(template.find_resources('AWS::EC2::SecurityGroup').values()))
-        self.assertNotIn('|', security_group['Properties']['GroupDescription'])
+        self.assertIn('MasterUserPassword', database['Properties'])
+        for security_group in template.find_resources('AWS::EC2::SecurityGroup').values():
+            self.assertNotIn('|', security_group['Properties']['GroupDescription'])
+
+        template.has_resource_properties(
+            'AWS::Lambda::Function',
+            {
+                'Handler': 'handler.query_psypro_source',
+                'Timeout': 300,
+                'ReservedConcurrentExecutions': 1,
+            },
+        )
+        query_function = next(
+            resource
+            for resource in template.find_resources('AWS::Lambda::Function').values()
+            if resource['Properties'].get('Handler') == 'handler.query_psypro_source'
+        )
+        self.assertIn('VpcConfig', query_function['Properties'])
+        self.assertEqual(
+            'Psypro.',
+            query_function['Properties']['Environment']['Variables']['PSYPRO_TABLE_PREFIX'],
+        )
+        self.assertIn('PROVIDER_TABLE_NAME', query_function['Properties']['Environment']['Variables'])
+        policy_actions = []
+        for policy in template.find_resources('AWS::IAM::Policy').values():
+            statements = policy['Properties']['PolicyDocument']['Statement']
+            if isinstance(statements, dict):
+                statements = [statements]
+            for statement in statements:
+                action = statement.get('Action', [])
+                policy_actions.extend([action] if isinstance(action, str) else action)
+        self.assertIn('dynamodb:PutItem', policy_actions)
+        hooks = RdsCaBundleHooks()
+        self.assertEqual([], hooks.before_bundling('/input', '/output'))
+        bundle_command = hooks.after_bundling('/input', '/output')[0]
+        self.assertIn(RDS_CA_BUNDLE_URL, bundle_command)
+        self.assertIn(f'/output/{RDS_CA_BUNDLE_FILENAME}', bundle_command)
 
         with open('docs/dynamodb_table_structures_2/_index.json', encoding='utf-8') as schema_index_file:
             schema_index = json.load(schema_index_file)
@@ -60,7 +96,7 @@ class TestIaSourceDataStack(TstAppABC, TestCase):
             template.has_resource_properties(
                 'AWS::DynamoDB::Table',
                 {
-                    'TableName': f'IA.{table_schema["tableName"]}',
+                    'TableName': f'Psypro.{table_schema["tableName"]}',
                     'BillingMode': 'PAY_PER_REQUEST',
                     'KeySchema': key_schema,
                     'AttributeDefinitions': attribute_definitions,

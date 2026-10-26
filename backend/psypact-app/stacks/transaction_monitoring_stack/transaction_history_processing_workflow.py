@@ -51,9 +51,8 @@ class TransactionHistoryProcessingWorkflow(Construct):
             f'{compact}-TransactionHistoryProcessor',
             description=f'Processes transaction history records for {compact} compact',
             runtime=Runtime.PYTHON_3_12,
-            lambda_dir='purchases',
-            shared=True,
-            index=os.path.join('handlers', 'transaction_history.py'),
+            lambda_dir='process-settled-transactions',
+            index='handler.py',
             handler='process_settled_transactions',
             timeout=Duration.minutes(15),
             environment={

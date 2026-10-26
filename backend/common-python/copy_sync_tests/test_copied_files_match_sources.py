@@ -6,7 +6,8 @@ silently edit a "shared" file.
 
 Each WHOLE_FILE_COMPARE_EXCLUSIONS path needs its own test file. Do not collect
 mixed-lineage files into one module. The DataClient mixin is checked in
-test_jcc_data_client_mixin.py.
+test_jcc_data_client_mixin.py. It imports JCC privilege record types, not a
+compact's privilege response schema.
 """
 
 import ast
@@ -25,13 +26,9 @@ from copy_sync_tests.copied_file_text import (
 # to its source. Add a new entry when a file cannot be a verbatim copy, and describe the
 # cross-project need that prevents copying complete source files, and combining multiple. Each entry
 # also needs its own test file (Ex. see test_jcc_data_client_mixin.py).
+# The DataClient mixin is a partial copy of JCC DataClient. Whole-file compare would fail it.
 WHOLE_FILE_COMPARE_EXCLUSIONS: frozenset[str] = frozenset(
     {
-        # PSYPACT licensing/encumbrance uses Cosmetology DataClient (read-time privileges).
-        # Selected JCC handlers need JCC DataClient methods on the same instance.
-        # JCC data_client.py would restore stored-privilege behavior, so only those method
-        # bodies are composed onto Cosmetology DataClient. Tests:
-        # test_jcc_data_client_mixin.py.
         'common_lambdas/data_model/jcc_data_client_mixin.py',
     }
 )

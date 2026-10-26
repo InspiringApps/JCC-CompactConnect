@@ -187,6 +187,7 @@ class BackendStage(Stage):
                 environment_name=environment_name,
                 vpc_stack=self.vpc_stack,
                 snapshot_identifier=snapshot_identifier,
+                provider_table=self.persistent_stack.provider_table,
             )
 
         # Reporting and notifications depend on emails, which depend on having a domain name. If we don't configure

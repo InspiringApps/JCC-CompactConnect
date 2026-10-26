@@ -4,8 +4,9 @@ from common_lambdas.config import logger
 from common_lambdas.data_model.data_client import DataClient
 from common_lambdas.data_model.jcc_data_client_mixin import JccDataClientMixin
 from common_lambdas.data_model.update_tier_enum import UpdateTierEnum
-from common_lambdas.psypact_records import PsypactProviderUserRecords
 from common_lambdas.utils import logger_inject_kwargs
+
+from cc_common.psypact_records import PsypactProviderUserRecords
 
 
 class PsypactDataClient(JccDataClientMixin, DataClient):

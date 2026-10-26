@@ -67,9 +67,8 @@ class ProviderUpdateIngestHandler(Construct):
             'ProviderUpdateIngestFunction',
             description='Processes SQS messages with DynamoDB stream events and indexes provider documents into '
             'OpenSearch',
-            index=os.path.join('handlers', 'provider_update_ingest.py'),
-            lambda_dir='search',
-            shared=True,
+            index='handler.py',
+            lambda_dir='provider-update-ingest',
             handler='provider_update_ingest_handler',
             role=lambda_role,
             log_retention=RetentionDays.ONE_MONTH,

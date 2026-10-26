@@ -74,7 +74,7 @@ class TestStaffUsersApi(TestApi):
             api_lambda_stack.get_logical_id(api_lambda_stack.staff_users_lambdas.patch_user_handler.node.default_child),
             api_lambda_stack_template.find_resources(CfnFunction.CFN_RESOURCE_TYPE_NAME),
         )
-        self.assertEqual(patch_user_handler['Handler'], 'handlers.users.patch_user')
+        self.assertEqual(patch_user_handler['Handler'], 'handler.patch_user')
         patch_method_request_model_logical_id_capture = Capture()
         patch_method_response_model_logical_id_capture = Capture()
 
@@ -144,7 +144,7 @@ class TestStaffUsersApi(TestApi):
             api_lambda_stack.get_logical_id(api_lambda_stack.staff_users_lambdas.post_user_handler.node.default_child),
             api_lambda_stack_template.find_resources(CfnFunction.CFN_RESOURCE_TYPE_NAME),
         )
-        self.assertEqual(post_user_handler['Handler'], 'handlers.users.post_user')
+        self.assertEqual(post_user_handler['Handler'], 'handler.post_user')
         post_method_request_model_logical_id_capture = Capture()
         post_method_response_model_logical_id_capture = Capture()
 
@@ -286,7 +286,7 @@ class TestStaffUsersApi(TestApi):
             ),
             api_lambda_stack_template.find_resources(CfnFunction.CFN_RESOURCE_TYPE_NAME),
         )
-        self.assertEqual(reinvite_user_handler['Handler'], 'handlers.users.reinvite_user')
+        self.assertEqual(reinvite_user_handler['Handler'], 'handler.reinvite_user')
 
         # ensure the POST method is configured with the lambda integration and authorizer
         api_stack_template.has_resource_properties(

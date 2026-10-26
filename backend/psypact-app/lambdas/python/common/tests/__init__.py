@@ -107,8 +107,7 @@ class TstLambdas(TestCase):
                             {'name': 'speech-language pathologist', 'abbreviation': 'slp'},
                         ],
                         'psypact': [
-                            {'name': 'Psychologist', 'abbreviation': 'psych'},
-                            {'name': 'School Psychologist', 'abbreviation': 'schpsych'},
+                            {'name': 'psychologist', 'abbreviation': 'psych'},
                         ],
                     },
                 ),

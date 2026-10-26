@@ -217,7 +217,9 @@ class TestProviderManagementApi(TestApi):
         # Ensure the lambda is created with expected code path
         api_lambda_stack_template.has_resource_properties(
             type=CfnFunction.CFN_RESOURCE_TYPE_NAME,
-            props={'Handler': 'handlers.providers.get_provider'},
+            props={
+                'Handler': 'handler.get_provider',
+            },
         )
 
         # Capture model logical ID for verification
@@ -280,7 +282,9 @@ class TestProviderManagementApi(TestApi):
         # Ensure the lambda is created with expected code path
         api_lambda_stack_template.has_resource_properties(
             type=CfnFunction.CFN_RESOURCE_TYPE_NAME,
-            props={'Handler': 'handlers.providers.query_providers'},
+            props={
+                'Handler': 'handler.query_providers',
+            },
         )
 
         # Capture model logical IDs for verification
@@ -357,7 +361,9 @@ class TestProviderManagementApi(TestApi):
         # Ensure the lambda is created with expected code path
         api_lambda_stack_template.has_resource_properties(
             type=CfnFunction.CFN_RESOURCE_TYPE_NAME,
-            props={'Handler': 'handlers.providers.get_provider_ssn'},
+            props={
+                'Handler': 'handlers.providers.get_provider_ssn',
+            },
         )
 
         # Capture model logical ID for verification
@@ -490,7 +496,9 @@ class TestProviderManagementApi(TestApi):
         # Ensure the lambda is created with expected code path
         api_lambda_stack_template.has_resource_properties(
             type=CfnFunction.CFN_RESOURCE_TYPE_NAME,
-            props={'Handler': 'handlers.encumbrance.encumbrance_handler'},
+            props={
+                'Handler': 'handler.encumbrance_handler',
+            },
         )
 
         # Verify the privilege encumbrance resource path is created correctly

@@ -1,11 +1,13 @@
 import json
 import os
 
+import jsii
 from aws_cdk import Duration, RemovalPolicy
 from aws_cdk.aws_dynamodb import (
     Attribute,
     AttributeType,
     BillingMode,
+    ITable,
     PointInTimeRecoverySpecification,
     Table,
     TableEncryption,
@@ -14,21 +16,28 @@ from aws_cdk.aws_ec2 import (
     InstanceClass,
     InstanceSize,
     InstanceType,
+    InterfaceVpcEndpoint,
+    InterfaceVpcEndpointAwsService,
     Peer,
     Port,
     SecurityGroup,
     SubnetSelection,
     SubnetType,
 )
+from aws_cdk.aws_iam import PolicyStatement
 from aws_cdk.aws_kms import Key
+from aws_cdk.aws_lambda import Runtime
+from aws_cdk.aws_lambda_python_alpha import BundlingOptions, ICommandHooks
 from aws_cdk.aws_rds import (
     DatabaseInstanceEngine,
     DatabaseInstanceFromSnapshot,
     LicenseModel,
+    SnapshotCredentials,
     SqlServerEngineVersion,
     StorageType,
 )
 from cdk_nag import NagSuppressions
+from common_constructs.python_function import PythonFunction
 from common_constructs.stack import AppStack
 from constructs import Construct
 
@@ -45,7 +54,13 @@ SOURCE_STORAGE_TYPE = 'gp2'
 SOURCE_IOPS = None
 SOURCE_LICENSE_MODEL = 'license-included'
 SOURCE_MULTI_AZ = False
-TABLE_NAME_PREFIX = 'IA.'
+# RDS cannot change the master username of a restored snapshot. This must be that username.
+SOURCE_MASTER_USERNAME = 'admin'
+TABLE_NAME_PREFIX = 'Psypro.'
+# Public Amazon RDS trust bundle. It is not a credential, so it is fetched into the
+# lambda asset at build time and is not stored in git or Secrets Manager.
+RDS_CA_BUNDLE_FILENAME = 'rds-global-bundle.pem'
+RDS_CA_BUNDLE_URL = 'https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem'
 
 _SCHEMA_INDEX_PATH = os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..', '..', 'docs', 'dynamodb_table_structures_2', '_index.json')
@@ -119,6 +134,21 @@ def _instance_type(instance_class: str) -> InstanceType:
         raise ValueError(f'Unsupported RDS instance class {instance_class}') from exc
 
 
+@jsii.implements(ICommandHooks)
+class RdsCaBundleHooks:
+    """Fetch the public RDS CA into the packaged lambda asset."""
+
+    def before_bundling(self, _input_dir: str, _output_dir: str) -> list[str]:
+        return []
+
+    def after_bundling(self, _input_dir: str, output_dir: str) -> list[str]:
+        destination = f'{output_dir}/{RDS_CA_BUNDLE_FILENAME}'
+        return [
+            'python -c "import urllib.request; urllib.request.urlretrieve('
+            f"'{RDS_CA_BUNDLE_URL}', '{destination}')\""
+        ]
+
+
 class IaSourceDataStack(AppStack):
     """
     PSY|PRO source data for an environment that has opted in.
@@ -137,6 +167,7 @@ class IaSourceDataStack(AppStack):
         environment_context: dict,
         vpc_stack: VpcStack,
         snapshot_identifier: str,
+        provider_table: ITable,
         **kwargs,
     ):
         super().__init__(
@@ -162,6 +193,7 @@ class IaSourceDataStack(AppStack):
             removal_policy=removal_policy,
             environment_name=environment_name,
         )
+        self.query_function = self._create_query_function(vpc_stack, provider_table)
 
     def _create_tables(self, removal_policy: RemovalPolicy) -> dict[str, Table]:
         with open(_SCHEMA_INDEX_PATH, encoding='utf-8') as schema_index_file:
@@ -228,6 +260,7 @@ class IaSourceDataStack(AppStack):
             description='SQL Server access for the Inspiring Apps source database',
             allow_all_outbound=False,
         )
+        self.database_security_group = security_group
         # Literal CIDR matches VpcStack. A cross-stack token cannot be evaluated by cdk-nag.
         security_group.add_ingress_rule(
             Peer.ipv4('10.0.0.0/16'),
@@ -253,6 +286,10 @@ class IaSourceDataStack(AppStack):
             self,
             'IaSqlServer',
             snapshot_identifier=snapshot_identifier,
+            credentials=SnapshotCredentials.from_generated_secret(
+                SOURCE_MASTER_USERNAME,
+                encryption_key=self.encryption_key,
+            ),
             instance_identifier=f'ia-source-sqlserver-{environment_name}',
             engine=engine_factory(
                 version=SqlServerEngineVersion.of(SOURCE_ENGINE_VERSION, SOURCE_ENGINE_MAJOR_VERSION),
@@ -336,3 +373,138 @@ class IaSourceDataStack(AppStack):
             )
         NagSuppressions.add_resource_suppressions(database, suppressions=database_suppressions, apply_to_children=True)
         return database
+
+    def _create_query_function(self, vpc_stack: VpcStack, provider_table: ITable) -> PythonFunction:
+        """Lambda in the database subnets that can query SQL Server and read Psypro tables."""
+        vpc = vpc_stack.vpc
+        secrets_endpoint = InterfaceVpcEndpoint(
+            self,
+            'SecretsManagerEndpoint',
+            vpc=vpc,
+            service=InterfaceVpcEndpointAwsService.SECRETS_MANAGER,
+            subnets=SubnetSelection(subnet_type=SubnetType.PRIVATE_ISOLATED),
+            private_dns_enabled=True,
+            open=True,
+            lookup_supported_azs=False,
+        )
+        NagSuppressions.add_resource_suppressions(
+            secrets_endpoint,
+            suppressions=[
+                {
+                    'id': 'AwsSolutions-EC23',
+                    'reason': 'The endpoint security group is managed by CDK and allows HTTPS from the VPC CIDR only.',
+                },
+                {
+                    'id': 'HIPAA.Security-EC2RestrictedCommonPorts',
+                    'reason': 'The endpoint security group allows HTTPS from the VPC so the query lambda can read '
+                    'the database secret. It is not open to the internet.',
+                },
+                {
+                    'id': 'HIPAA.Security-EC2RestrictedSSH',
+                    'reason': 'SSH is not enabled on the Secrets Manager endpoint security group.',
+                },
+            ],
+            apply_to_children=True,
+        )
+
+        query_security_group = SecurityGroup(
+            self,
+            'PsyproSourceQuerySecurityGroup',
+            vpc=vpc,
+            description='PSYPRO source query lambda',
+            allow_all_outbound=False,
+        )
+        query_security_group.add_egress_rule(
+            self.database_security_group,
+            Port.tcp(1433),
+            'SQL Server on the PSYPRO source database',
+        )
+        # Interface endpoints use private IPs in the VPC. The DynamoDB gateway endpoint uses the
+        # AWS managed prefix list, which is public addresses, so HTTPS egress cannot be the VPC CIDR alone.
+        query_security_group.add_egress_rule(
+            Peer.any_ipv4(),
+            Port.tcp(443),
+            'HTTPS to DynamoDB and Secrets Manager endpoints',
+        )
+        NagSuppressions.add_resource_suppressions(
+            query_security_group,
+            suppressions=[
+                {
+                    'id': 'HIPAA.Security-EC2RestrictedCommonPorts',
+                    'reason': 'Outbound HTTPS is required for the DynamoDB gateway endpoint and the Secrets Manager '
+                    'interface endpoint. The lambda has no inbound rules.',
+                },
+            ],
+            apply_to_children=True,
+        )
+
+        if self.database.secret is None:
+            raise RuntimeError('PSYPRO source database secret was not created')
+        NagSuppressions.add_resource_suppressions_by_path(
+            self,
+            f'{self.database.node.path}/Secret/Resource',
+            [
+                {
+                    'id': 'AwsSolutions-SMG4',
+                    'reason': 'This secret holds the generated master password for a restored fixture database. '
+                    'Automatic rotation would change that password while a migration is using it.',
+                },
+                {
+                    'id': 'HIPAA.Security-SecretsManagerRotationEnabled',
+                    'reason': 'This secret holds the generated master password for a restored fixture database. '
+                    'Automatic rotation would change that password while a migration is using it.',
+                },
+            ],
+        )
+        query_function = PythonFunction(
+            self,
+            'PsyproSourceQuery',
+            description='Query the PSYPRO source SQL Server database',
+            lambda_dir='psypro-source-query',
+            index='handler.py',
+            handler='query_psypro_source',
+            runtime=Runtime.PYTHON_3_14,
+            timeout=Duration.minutes(5),
+            memory_size=512,
+            reserved_concurrent_executions=1,
+            vpc=vpc,
+            vpc_subnets=SubnetSelection(subnet_type=SubnetType.PRIVATE_ISOLATED),
+            security_groups=[query_security_group],
+            bundling=BundlingOptions(command_hooks=RdsCaBundleHooks()),
+            environment={
+                'PSYPRO_SQL_SECRET_ARN': self.database.secret.secret_arn,
+                'PSYPRO_SQL_HOST': self.database.db_instance_endpoint_address,
+                'PSYPRO_SQL_PORT': self.database.db_instance_endpoint_port,
+                'PSYPRO_TABLE_PREFIX': TABLE_NAME_PREFIX,
+                'PROVIDER_TABLE_NAME': provider_table.table_name,
+                **self.common_env_vars,
+            },
+        )
+        query_function.node.add_dependency(secrets_endpoint)
+        self.database.secret.grant_read(query_function)
+        self.encryption_key.grant_decrypt(query_function)
+        query_function.add_to_role_policy(
+            PolicyStatement(
+                actions=[
+                    'dynamodb:BatchGetItem',
+                    'dynamodb:DescribeTable',
+                    'dynamodb:GetItem',
+                    'dynamodb:Query',
+                    'dynamodb:Scan',
+                ],
+                resources=[table.table_arn for table in self.tables.values()],
+            )
+        )
+        provider_table.grant_read_write_data(query_function)
+        NagSuppressions.add_resource_suppressions_by_path(
+            self,
+            f'{query_function.role.node.path}/DefaultPolicy/Resource',
+            [
+                {
+                    'id': 'AwsSolutions-IAM5',
+                    'reason': 'Reading the generated database secret includes its version suffix. DynamoDB access is '
+                    'limited to the Psypro source tables and the provider table, including its indexes.',
+                },
+            ],
+        )
+        return query_function

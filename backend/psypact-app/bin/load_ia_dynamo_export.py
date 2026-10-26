@@ -23,7 +23,19 @@ import boto3
 from botocore.exceptions import ClientError
 
 BATCH_SIZE = 25
+# Export folders keep the original IA. prefix. The stack tables are Psypro.*.
+EXPORT_TABLE_PREFIX = 'IA.'
+DESTINATION_TABLE_PREFIX = 'Psypro.'
 logger = logging.getLogger(__name__)
+
+
+def destination_table_name(export_name: str) -> str:
+    """Map an export directory name onto the Psypro table created by the stack."""
+    if export_name.startswith(EXPORT_TABLE_PREFIX):
+        return DESTINATION_TABLE_PREFIX + export_name.removeprefix(EXPORT_TABLE_PREFIX)
+    if export_name.startswith(DESTINATION_TABLE_PREFIX):
+        return export_name
+    return DESTINATION_TABLE_PREFIX + export_name
 
 
 def iter_data_files(table_dir: Path) -> list[Path]:
@@ -114,7 +126,7 @@ def load_export(export_dir: Path, region: str) -> int:
     client = boto3.client('dynamodb', region_name=region)
     failures = 0
     for table_dir in table_directories(export_dir):
-        table_name = table_dir.name
+        table_name = destination_table_name(table_dir.name)
         written, expected = load_table(client, table_name, table_dir)
         if expected is not None and written != expected:
             logger.error('%s: wrote %s, manifest itemCount %s', table_name, written, expected)

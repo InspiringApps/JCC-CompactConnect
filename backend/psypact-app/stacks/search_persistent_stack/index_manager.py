@@ -65,10 +65,9 @@ class IndexManagerCustomResource(Construct):
         self.manage_function = PythonFunction(
             self,
             'IndexManagerFunction',
-            index=os.path.join('handlers', 'manage_opensearch_indices.py'),
-            lambda_dir='search',
-            shared=True,
-            handler='on_event',
+            index='handler.py',
+            lambda_dir='manage-opensearch-indices',
+            handler='manage_opensearch_indices',
             role=lambda_role,
             log_retention=RetentionDays.ONE_MONTH,
             environment={

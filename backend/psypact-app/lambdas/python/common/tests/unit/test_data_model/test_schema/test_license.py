@@ -278,7 +278,7 @@ class TestLicenseUpdateRecordSchema(TstLambdas):
                 'providerId': uuid4(),
                 'compact': 'psypact',
                 'jurisdiction': 'ky',
-                'licenseType': 'Psychologist',
+                'licenseType': 'psychologist',
                 'updateType': loaded_record['updateType'],
                 'createDate': loaded_record['createDate'],
                 # These two fields should determine the change hash:
@@ -307,7 +307,7 @@ class TestLicenseUpdateRecordSchema(TstLambdas):
             'providerId': uuid4(),
             'compact': 'psypact',
             'jurisdiction': 'ky',
-            'licenseType': 'Psychologist',
+            'licenseType': 'psychologist',
             'updateType': loaded_record['updateType'],
             'createDate': loaded_record['createDate'],
             # These two fields should determine the change hash:
@@ -411,7 +411,7 @@ class TestLicenseGeneralResponseSchemaExpirationCheck(TstLambdas):
             'dateOfUpdate': '2024-01-01T00:00:00+00:00',
             'compact': 'psypact',
             'jurisdiction': 'oh',
-            'licenseType': 'Psychologist',
+            'licenseType': 'psychologist',
             'licenseNumber': 'PSY-12345',
             'licenseStatus': license_status,
             'jurisdictionUploadedLicenseStatus': 'active',

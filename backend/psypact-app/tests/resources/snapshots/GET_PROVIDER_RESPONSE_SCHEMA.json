@@ -79,8 +79,7 @@
           },
           "licenseType": {
             "enum": [
-              "Psychologist",
-              "School Psychologist"
+              "psychologist"
             ],
             "type": "string"
           },
@@ -211,8 +210,7 @@
                 },
                 "licenseType": {
                   "enum": [
-                    "Psychologist",
-                    "School Psychologist"
+                    "psychologist"
                   ],
                   "type": "string"
                 },
@@ -968,8 +966,7 @@
                 },
                 "licenseType": {
                   "enum": [
-                    "Psychologist",
-                    "School Psychologist"
+                    "psychologist"
                   ],
                   "type": "string"
                 },
@@ -1147,6 +1144,13 @@
                       "enum": [
                         "active",
                         "inactive"
+                      ],
+                      "type": "string"
+                    },
+                    "privilegeAuthorizationType": {
+                      "enum": [
+                        "APIT",
+                        "TAP"
                       ],
                       "type": "string"
                     },
@@ -1357,6 +1361,13 @@
                       ],
                       "type": "string"
                     },
+                    "privilegeAuthorizationType": {
+                      "enum": [
+                        "APIT",
+                        "TAP"
+                      ],
+                      "type": "string"
+                    },
                     "attestations": {
                       "items": {
                         "properties": {
@@ -1402,8 +1413,7 @@
           },
           "licenseType": {
             "enum": [
-              "Psychologist",
-              "School Psychologist"
+              "psychologist"
             ],
             "type": "string"
           },
@@ -1832,6 +1842,13 @@
             "enum": [
               "active",
               "inactive"
+            ],
+            "type": "string"
+          },
+          "privilegeAuthorizationType": {
+            "enum": [
+              "APIT",
+              "TAP"
             ],
             "type": "string"
           },

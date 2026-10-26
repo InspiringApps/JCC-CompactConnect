@@ -104,7 +104,6 @@ class ProviderUsersBucket(Bucket):
             'V1ProcessProviderS3EventsHandler',
             description='Process updates to provider s3 objects handler',
             lambda_dir='provider-data-v1',
-            shared=True,
             index=os.path.join('handlers', 'provider_s3_events.py'),
             handler='process_provider_s3_events',
             # we currently don't expect update events to take more than a minute
