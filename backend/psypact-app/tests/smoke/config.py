@@ -1,107 +1,44 @@
+import ast
 import json
-import logging
 import os
-from functools import cached_property
+from pathlib import Path
 
-import boto3
-from aws_lambda_powertools import Logger
+from _common_smoke import COMMON_PYTHON, add_common_python_to_path
 
-logging.basicConfig()
-logger = Logger()
-logger.setLevel(logging.DEBUG if os.environ.get('DEBUG', 'false').lower() == 'true' else logging.INFO)
+add_common_python_to_path()
+
+# The copied module calls load_smoke_test_env() at import and looks for
+# smoke_tests_env.json beside itself. Skip those trailing statements so this
+# directory's env file is the one that loads, then subclass the copied config.
+_copied_config = COMMON_PYTHON / 'common_smoke_test' / 'compact_connect_config.py'
+_copied_text = _copied_config.read_text(encoding='utf-8')
+if _copied_text.startswith('# Copied from'):
+    _copied_text = _copied_text.split('\n', 1)[1].lstrip('\n')
+_module = ast.parse(_copied_text)
+_kept_body = []
+for _node in _module.body:
+    if isinstance(_node, ast.Expr) and isinstance(_node.value, ast.Call) and isinstance(_node.value.func, ast.Name):
+        if _node.value.func.id == 'load_smoke_test_env':
+            continue
+    if isinstance(_node, ast.Assign) and any(
+        isinstance(target, ast.Name) and target.id == 'config' for target in _node.targets
+    ):
+        continue
+    _kept_body.append(_node)
+_module.body = _kept_body
+ast.fix_missing_locations(_module)
+_config_namespace: dict = {'__file__': str(Path(__file__).resolve()), '__name__': 'compact_connect_config_base'}
+exec(compile(_module, str(_copied_config), 'exec'), _config_namespace)  # noqa: S102
+
+_CompactConnectConfig = _config_namespace['_Config']
+logger = _config_namespace['logger']
 
 
-class _Config:
+class _Config(_CompactConnectConfig):
     @property
-    def api_base_url(self):
-        return os.environ['CC_TEST_API_BASE_URL']
-
-    @property
-    def environment_name(self):
-        return os.environ['ENVIRONMENT_NAME']
-
-    @property
-    def aws_region(self):
-        return os.environ['AWS_DEFAULT_REGION']
-
-    @property
-    def provider_user_dynamodb_table(self):
-        return boto3.resource('dynamodb').Table(os.environ['CC_TEST_PROVIDER_DYNAMO_TABLE_NAME'])
-
-    @property
-    def data_events_dynamodb_table(self):
-        return boto3.resource('dynamodb').Table(os.environ['CC_TEST_DATA_EVENT_DYNAMO_TABLE_NAME'])
-
-    @property
-    def staff_users_dynamodb_table(self):
-        return boto3.resource('dynamodb').Table(os.environ['CC_TEST_STAFF_USER_DYNAMO_TABLE_NAME'])
-
-    @property
-    def compact_configuration_dynamodb_table(self):
-        return boto3.resource('dynamodb').Table(os.environ['CC_TEST_COMPACT_CONFIGURATION_DYNAMO_TABLE_NAME'])
-
-    @property
-    def compact_configuration_table_name(self):
-        return os.environ['CC_TEST_COMPACT_CONFIGURATION_DYNAMO_TABLE_NAME']
-
-    @property
-    def cognito_staff_user_client_id(self):
-        return os.environ['CC_TEST_COGNITO_STAFF_USER_POOL_CLIENT_ID']
-
-    @property
-    def cognito_staff_user_pool_id(self):
-        return os.environ['CC_TEST_COGNITO_STAFF_USER_POOL_ID']
-
-    @property
-    def cognito_provider_user_client_id(self):
-        return os.environ['CC_TEST_COGNITO_PROVIDER_USER_POOL_CLIENT_ID']
-
-    @property
-    def cognito_provider_user_pool_id(self):
-        return os.environ['CC_TEST_COGNITO_PROVIDER_USER_POOL_ID']
-
-    @property
-    def test_provider_user_username(self):
-        return os.environ['CC_TEST_PROVIDER_USER_USERNAME']
-
-    @property
-    def test_provider_user_password(self):
-        return os.environ['CC_TEST_PROVIDER_USER_PASSWORD']
-
-    @property
-    def test_provider_mock_ssn(self):
-        """The mock SSN the test provider user's license records are currently stored under."""
-        return os.environ['CC_TEST_PROVIDER_MOCK_SSN']
-
-    @property
-    def test_provider_original_provider_id(self):
-        """The provider id the test provider's records live under when their SSN is CC_TEST_PROVIDER_MOCK_SSN.
-
-        Used by the full migration smoke test to detect and recover from a prior run that was interrupted
-        after migrating the test provider off of this provider id but before migrating it back.
-        """
-        return os.environ['CC_TEST_PROVIDER_ORIGINAL_PROVIDER_ID']
-
-    @property
-    def provider_user_bucket_name(self):
-        """The provider users' S3 bucket, which holds practitioner-uploaded documents."""
-        return os.environ['CC_TEST_PROVIDER_USER_BUCKET_NAME']
-
-    @property
-    def sandbox_authorize_net_api_login_id(self):
-        return os.environ['SANDBOX_AUTHORIZE_NET_API_LOGIN_ID']
-
-    @property
-    def sandbox_authorize_net_transaction_key(self):
-        return os.environ['SANDBOX_AUTHORIZE_NET_TRANSACTION_KEY']
-
-    @property
-    def smoke_test_notification_email(self):
-        return os.environ['CC_TEST_SMOKE_TEST_NOTIFICATION_EMAIL']
-
-    @cached_property
-    def cognito_client(self):
-        return boto3.client('cognito-idp')
+    def test_provider_id(self):
+        """Provider id of a practitioner who already has license records in the test environment."""
+        return os.environ['CC_TEST_PROVIDER_ID']
 
 
 def load_smoke_test_env():
