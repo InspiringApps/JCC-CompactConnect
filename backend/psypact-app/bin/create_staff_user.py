@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Staff user generation helper script. Run from `backend/compact-connect`.
+"""Staff user generation helper script. Run from `backend/psypact-app`.
 
 Note: This script requires the boto3 library and two environment variables:
 USER_POOL_ID=us-east-1_7zzexample

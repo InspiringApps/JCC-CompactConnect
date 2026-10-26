@@ -17,28 +17,12 @@ class _Config:
         return os.environ['CC_TEST_API_BASE_URL']
 
     @property
-    def state_api_base_url(self):
-        return os.environ['CC_TEST_STATE_API_BASE_URL']
-
-    @property
-    def state_auth_url(self):
-        return os.environ['CC_TEST_STATE_AUTH_URL']
-
-    @property
-    def cognito_state_auth_user_pool_id(self):
-        return os.environ['CC_TEST_COGNITO_STATE_AUTH_USER_POOL_ID']
-
-    @property
     def environment_name(self):
         return os.environ['ENVIRONMENT_NAME']
 
     @property
     def aws_region(self):
         return os.environ['AWS_DEFAULT_REGION']
-
-    @property
-    def license_upload_rollback_step_function_arn(self):
-        return os.environ['CC_TEST_ROLLBACK_STEP_FUNCTION_ARN']
 
     @property
     def provider_user_dynamodb_table(self):

@@ -1,15 +1,9 @@
 from __future__ import annotations
 
 import json
-import os
 
-from aws_cdk.aws_dynamodb import ITable
-from aws_cdk.aws_kms import IKey
 from aws_cdk.aws_logs import QueryDefinition, QueryString
 from aws_cdk.aws_secretsmanager import ISecret, Secret
-from aws_cdk.aws_sns import ITopic
-from cdk_nag import NagSuppressions
-from common_constructs.python_function import PythonFunction
 from common_constructs.ssm_parameter_utility import SSMParameterUtility
 from common_constructs.stack import AppStack
 from constructs import Construct
@@ -17,6 +11,7 @@ from constructs import Construct
 from stacks import persistent_stack as ps
 from stacks.provider_users import ProviderUsersStack
 
+from .attestations import AttestationsLambdas
 from .compact_configuration_api import CompactConfigurationApiLambdas
 from .credentials import CredentialsLambdas
 from .feature_flags import FeatureFlagsLambdas
@@ -61,6 +56,12 @@ class ApiLambdaStack(AppStack):
         self.feature_flags_lambdas = FeatureFlagsLambdas(
             scope=self,
             persistent_stack=persistent_stack,
+        )
+
+        self.attestations_lambdas = AttestationsLambdas(
+            scope=self,
+            persistent_stack=persistent_stack,
+            api_lambda_stack=self,
         )
 
         # Compact configuration lambdas

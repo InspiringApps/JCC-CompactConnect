@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Update API documentation workflow
-# Downloads, trims, and updates Postman collections for StateApi, LicenseApi, and SearchApi
+# Downloads, trims, and updates Postman collections for LicenseApi and SearchApi
 
 set -e  # Exit immediately if any command fails
 
@@ -84,14 +84,6 @@ download_specs() {
 trim_specs() {
     print_status "Trimming API specifications..."
 
-    # Trim regular API spec
-    print_status "Trimming StateApi specification..."
-    if ! python3 bin/trim_oas30.py; then
-        print_error "Failed to trim StateApi specification"
-        exit 1
-    fi
-    print_success "StateApi specification trimmed"
-
     # Trim internal API spec
     print_status "Trimming LicenseApi specification..."
     if ! python3 bin/trim_oas30.py --internal; then
@@ -112,14 +104,6 @@ trim_specs() {
 # Function to update Postman collections
 update_postman() {
     print_status "Updating Postman collections..."
-
-    # Update regular Postman collection
-    print_status "Updating StateApi Postman collection..."
-    if ! python3 bin/update_postman_collection.py; then
-        print_error "Failed to update StateApi Postman collection"
-        exit 1
-    fi
-    print_success "StateApi Postman collection updated"
 
     # Update internal Postman collection
     print_status "Updating LicenseApi Postman collection..."
@@ -143,10 +127,8 @@ verify_files() {
     print_status "Verifying generated files..."
 
     local files=(
-        "docs/api-specification/latest-oas30.json"
         "docs/internal/api-specification/latest-oas30.json"
         "docs/search-internal/api-specification/latest-oas30.json"
-        "docs/postman/postman-collection.json"
         "docs/internal/postman/postman-collection.json"
         "docs/search-internal/postman/postman-collection.json"
     )
@@ -190,10 +172,8 @@ main() {
     print_success "API documentation update workflow completed successfully!"
     echo
     print_status "Updated files:"
-    echo "  - docs/api-specification/latest-oas30.json"
     echo "  - docs/internal/api-specification/latest-oas30.json"
     echo "  - docs/search-internal/api-specification/latest-oas30.json"
-    echo "  - docs/postman/postman-collection.json"
     echo "  - docs/internal/postman/postman-collection.json"
     echo "  - docs/search-internal/postman/postman-collection.json"
 }

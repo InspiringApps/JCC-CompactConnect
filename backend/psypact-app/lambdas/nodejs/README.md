@@ -8,7 +8,7 @@ This folder contains all lambda runtimes that are written with NodeJS/TypeScript
 * **[Yarn](https://yarnpkg.com/en/) `1.22.22`**
     * `npm install --global yarn@1.22.22`
 
-_[back to top](#ingest-event-reporter-lambda)_
+_[back to top](#nodejs-lambdas)_
 
 ---
 ## Installing dependencies
@@ -17,7 +17,7 @@ _[back to top](#ingest-event-reporter-lambda)_
 ## Bundling the runtime
 - `yarn build`
 
-_[back to top](#ingest-event-reporter-lambda)_
+_[back to top](#nodejs-lambdas)_
 
 ---
 ## Local development
@@ -28,7 +28,7 @@ _[back to top](#ingest-event-reporter-lambda)_
     - The easiest way to execute the Lambda is to run the tests ([see below](#tests))
         - Commenting out certain tests to limit the execution scope & repetition is trivial
 
-_[back to top](#ingest-event-reporter-lambda)_
+_[back to top](#nodejs-lambdas)_
 
 ---
 ## Testing

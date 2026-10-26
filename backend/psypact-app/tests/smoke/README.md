@@ -65,9 +65,6 @@ Install the required Python packages. The smoke tests use the same dependencies 
 
    **Required Variables:**
    - `CC_TEST_API_BASE_URL`: Base URL for the Compact Connect API (e.g., `https://api.sandbox.compactconnect.org`)
-   - `CC_TEST_STATE_API_BASE_URL`: Base URL for the state API
-   - `CC_TEST_STATE_AUTH_URL`: OAuth2 token endpoint for state authentication
-   - `CC_TEST_COGNITO_STATE_AUTH_USER_POOL_ID`: Cognito user pool ID for state auth
    - `CC_TEST_PROVIDER_DYNAMO_TABLE_NAME`: DynamoDB table name for provider data
    - `CC_TEST_COMPACT_CONFIGURATION_DYNAMO_TABLE_NAME`: DynamoDB table name for compact configuration
    - `CC_TEST_DATA_EVENT_DYNAMO_TABLE_NAME`: DynamoDB table name for data events
@@ -84,7 +81,6 @@ Install the required Python packages. The smoke tests use the same dependencies 
    **Optional Variables (for specific tests):**
    - `SANDBOX_AUTHORIZE_NET_API_LOGIN_ID`: Authorize.net API login ID for payment processing tests
    - `SANDBOX_AUTHORIZE_NET_TRANSACTION_KEY`: Authorize.net transaction key for payment processing tests
-   - `CC_TEST_ROLLBACK_STEP_FUNCTION_ARN`: Step function ARN for rollback tests
    - `CC_TEST_RATE_LIMITING_DYNAMO_TABLE_NAME`: DynamoDB table name for rate limiting
    - `CC_TEST_SSN_DYNAMO_TABLE_NAME`: DynamoDB table name for SSN data
    - `CC_TEST_GET_PROVIDER_SSN_LAMBDA_NAME`: Lambda function name for SSN retrieval
@@ -95,11 +91,11 @@ Install the required Python packages. The smoke tests use the same dependencies 
 
 ### Running Individual Test Files
 
-Each test file can be run independently from the compact-connect folder:
+Each test file can be run independently from the psypact-app folder:
 
 ```bash
-# Navigate to the compact-connect directory
-cd backend/compact-connect
+# Navigate to the psypact-app directory
+cd backend/psypact-app
 
 # Run a specific test file
 python3 tests/smoke/purchasing_privileges_smoke_tests.py
@@ -114,10 +110,6 @@ python3 tests/smoke/query_provider_smoke_tests.py
 Some tests require manual interaction:
 
 - **`practitioner_email_update_smoke_tests.py`**: Requires you to manually enter email verification codes sent to your email address.
-
-### Tests With Account Requirements
-
-- **`ssn_migration_smoke_tests.py`**: Requires the `CC_TEST_PROVIDER_MOCK_SSN` and `CC_TEST_PROVIDER_ORIGINAL_PROVIDER_ID` env vars set to the SSN the test provider's records are currently stored under, and the `CC_TEST_PROVIDER_USER_BUCKET_NAME` env var set to the provider users S3 bucket name. The full migration test temporarily deletes and then restores the test provider's Cognito account (Cognito account deletion is part of the feature under test), so avoid running other provider-user tests concurrently.
 
 ### Tests Creating Test Data
 

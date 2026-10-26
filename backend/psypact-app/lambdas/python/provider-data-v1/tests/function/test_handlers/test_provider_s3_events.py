@@ -25,7 +25,7 @@ MOCK_MILITARY_AFFILIATION_S3_COPY_EVENT = {
             'eventTime': '2026-07-23T15:47:16.822Z',
             'eventName': 'ObjectCreated:Copy',
             'userIdentity': {
-                'principalId': 'AWS:AROA3FLD54XO75CUFS6OJ:Test-IngestStack-V1IngestHandlerDDBAB1AF-b1PElCTmSnHX'
+                'principalId': 'AWS:AROA3FLD54XO75CUFS6OJ:Test-ProviderDataHandler'
             },
             'requestParameters': {'sourceIPAddress': '44.202.75.55'},
             'responseElements': {

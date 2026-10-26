@@ -8,6 +8,7 @@ from stacks import search_persistent_stack as sps
 from stacks.api_lambda_stack import ApiLambdaStack
 
 from .api_model import ApiModel
+from .attestations import Attestations
 from .compact_configuration_api import CompactConfigurationApi
 from .credentials import Credentials
 from .feature_flags import FeatureFlagsApi
@@ -37,12 +38,6 @@ class V1Api:
         stack: Stack = Stack.of(self.resource)
         # Beta intentionally omits unauthenticated public provider lookup routes
         # (GET/POST under /v1/public/compacts/{compact}/providers/...). Test and prod deploy them.
-        #
-        # We normally keep beta and prod behavior aligned, but beta is used for state onboarding: IT staff
-        # may upload full license datasets or create mock privileges for API testing that they do not intend
-        # to be publicly searchable. In prod, states upload records they intend to expose via CompactConnect.
-        # There is no valid use case for public search in beta; omitting these routes follows the principle
-        # of least privilege.
         deploy_public_lookup_api = stack.environment_name != 'beta'
         _active_compacts = persistent_stack.get_list_of_compact_abbreviations()
 
@@ -132,6 +127,14 @@ class V1Api:
         self.compacts_resource = self.resource.add_resource('compacts')
         # /v1/compacts/{compact}
         self.compact_resource = self.compacts_resource.add_resource('{compact}')
+
+        # /v1/compacts/{compact}/attestations
+        self.attestations_resource = self.compact_resource.add_resource('attestations')
+        self.attestations = Attestations(
+            resource=self.attestations_resource,
+            api_model=self.api_model,
+            api_lambda_stack=api_lambda_stack,
+        )
 
         # /v1/compacts/{compact}/credentials
         credentials_resource = self.compact_resource.add_resource('credentials')

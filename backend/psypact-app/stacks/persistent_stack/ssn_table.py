@@ -11,7 +11,6 @@ from aws_cdk.aws_dynamodb import (
     Table,
     TableEncryption,
 )
-from aws_cdk.aws_events import EventBus
 from aws_cdk.aws_iam import (
     Effect,
     ManagedPolicy,
@@ -31,6 +30,7 @@ from common_constructs.stack import Stack
 from constructs import Construct
 
 from stacks.backup_infrastructure_stack import BackupInfrastructureStack
+from stacks.persistent_stack.event_bus import EventBus
 
 # Name for SSN disaster recovery sync table state machine for specific permissions
 SSN_SYNC_STATE_MACHINE_NAME = 'SSNTable-SSNSyncTableData'
@@ -210,8 +210,12 @@ class SSNTable(Table):
             )
 
         self._configure_access()
+        # StateAPIStack still imports this queue. Removing it deletes a CloudFormation export that stack uses.
+        self._setup_license_preprocessor_queue(data_event_bus, alarm_topic)
 
     def _configure_access(self):
+        # These roles are still assumed by lambdas in ApiLambdaStack and StateAPIStack. Deleting them
+        # removes exports those stacks import.
         self.ingest_role = Role(
             self,
             'LicenseIngestRole',
@@ -451,7 +455,6 @@ class SSNTable(Table):
             'LicensePreprocessHandler',
             description='Preprocess license data to create SSN Dynamo records before sending licenses to the event bus',
             lambda_dir='provider-data-v1',
-            shared=True,
             index=os.path.join('handlers', 'ingest.py'),
             handler='preprocess_license_ingest',
             role=self.ingest_role,

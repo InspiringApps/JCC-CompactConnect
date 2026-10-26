@@ -79,55 +79,6 @@ def find_folder_by_name(items: list[dict[str, Any]], name: str) -> dict[str, Any
     return None
 
 
-def find_request_by_path(items: list[dict[str, Any]], path_fragment: str) -> dict[str, Any]:
-    """Find a request by a fragment of its path."""
-    for item in items:
-        if 'request' in item and 'name' in item and path_fragment in item['name']:
-            return item
-        if 'item' in item:
-            result = find_request_by_path(item['item'], path_fragment)
-            if result:
-                return result
-    return None
-
-
-def preserve_bulk_upload_script(new_collection: dict[str, Any], existing_collection: dict[str, Any]):
-    """Preserve the script content in the GET bulk-upload request."""
-    # Find the bulk-upload request in both collections
-    existing_bulk_upload = find_request_by_path(existing_collection['item'], '/licenses/bulk-upload')
-    new_bulk_upload = find_request_by_path(new_collection['item'], '/licenses/bulk-upload')
-
-    if existing_bulk_upload and new_bulk_upload:
-        # Check if the existing request has a test script
-        if 'event' in existing_bulk_upload:
-            for event in existing_bulk_upload['event']:
-                if event.get('listen') == 'test' and 'script' in event:
-                    # Copy the script to the new request
-                    sys.stdout.write('Preserving bulk-upload test script\n')
-
-                    # Ensure the new request has an event array
-                    if 'event' not in new_bulk_upload:
-                        new_bulk_upload['event'] = []
-
-                    # Check if the new request already has a test event
-                    test_event_exists = False
-                    for i, event in enumerate(new_bulk_upload['event']):
-                        if event.get('listen') == 'test':
-                            # Replace the existing test script
-                            test_event_exists = True
-                            new_bulk_upload['event'][i] = next(
-                                (e for e in existing_bulk_upload['event'] if e.get('listen') == 'test'), event
-                            )
-                            break
-
-                    # If no test event exists, add it
-                    if not test_event_exists:
-                        new_bulk_upload['event'].append(
-                            next(e for e in existing_bulk_upload['event'] if e.get('listen') == 'test')
-                        )
-                    break
-
-
 def copy_upload_document_request(new_collection: dict[str, Any], existing_collection: dict[str, Any]):
     """Copy the Upload Document request from the existing collection to the new one."""
     # Find the Upload Document request in the existing collection
@@ -172,9 +123,6 @@ def merge_collections(new_collection: dict[str, Any], existing_collection: dict[
         if new_provider_users and existing_provider_users and 'auth' in existing_provider_users:
             new_provider_users['auth'] = existing_provider_users['auth']
 
-    # Preserve the bulk-upload script
-    preserve_bulk_upload_script(new_collection, existing_collection)
-
     # Copy the Upload Document request
     copy_upload_document_request(new_collection, existing_collection)
 
@@ -212,8 +160,7 @@ def main():
         base_dir = os.path.join('internal', 'api-specification')
         postman_dir = os.path.join('internal', 'postman')
     else:
-        base_dir = os.path.join('api-specification')
-        postman_dir = os.path.join('postman')
+        raise SystemExit('Pass --internal or --search. PSYPACT does not publish a state license API collection.')
 
     openapi_path = os.path.join(workspace_dir, 'docs', base_dir, 'latest-oas30.json')
     tmp_path = os.path.join(workspace_dir, 'tmp.json')

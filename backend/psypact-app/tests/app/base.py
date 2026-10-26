@@ -217,7 +217,7 @@ class TstAppABC(ABC):
             persistent_stack.ssn_table.disaster_recovery_step_function_role.node.default_child
         )
 
-        # Build the expected PrincipalArn array - always includes 5 roles, plus optional backup role
+        # Build the expected PrincipalArn array, plus optional backup role
         # Note: SSN backup role reference may be a nested stack output, so we use Match.any_value() for flexibility
         principal_arn_array = [
             {'Fn::GetAtt': [ingest_role_logical_id, 'Arn']},

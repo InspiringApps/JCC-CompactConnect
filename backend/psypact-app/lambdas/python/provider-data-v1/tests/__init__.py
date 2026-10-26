@@ -15,7 +15,6 @@ class TstLambdas(TestCase):
                 'DEBUG': 'false',
                 'ALLOWED_ORIGINS': '["https://example.org"]',
                 'AWS_DEFAULT_REGION': 'us-east-1',
-                'BULK_BUCKET_NAME': 'cc-license-data-bulk-bucket',
                 'EVENT_BUS_NAME': 'license-data-events',
                 'PROVIDER_TABLE_NAME': 'provider-table',
                 'RATE_LIMITING_TABLE_NAME': 'rate-limiting-table',
@@ -32,7 +31,6 @@ class TstLambdas(TestCase):
                 'PROV_DATE_OF_UPDATE_INDEX_NAME': 'providerDateOfUpdate',
                 'SSN_INDEX_NAME': 'ssnIndex',
                 'USER_POOL_ID': 'us-east-1-12345',
-                'LICENSE_PREPROCESSING_QUEUE_URL': 'license-preprocessing-queue-url',
                 'PROVIDER_USER_BUCKET_NAME': 'provider-user-bucket',
                 'COMPACTS': '["aslp", "octp", "coun"]',
                 'JURISDICTIONS': json.dumps(

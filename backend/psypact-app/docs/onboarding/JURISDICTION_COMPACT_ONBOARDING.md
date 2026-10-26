@@ -118,8 +118,3 @@ If the request is successful, payment processing will be enabled for your compac
 
 **Important Security Notes:**
 - If your credentials are ever compromised, or you suspect they might have been compromised, generate new ones immediately in your Authorize.net account and update them through the CompactConnect UI.
-
-## Access Management
-
-### Creating App Clients for Machine-to-Machine Authentication
-See [App Client Management for Staff Users](../../app_clients/README.md) for more information on how to create app clients for machine-to-machine authentication.
