@@ -1,0 +1,48 @@
+{
+  "tableName": "WaiverAndAcknowledgement",
+  "description": "Structure for the 'WaiverAndAcknowledgement' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+  "partitionKey": "userId",
+  "sortKey": null,
+  "attributes": {
+    "UpdatedAt": "String",
+    "legalAgree": "String",
+    "userId": "Number",
+    "attestationDate": "String",
+    "AttestationType": "String",
+    "legalName": "String",
+    "validated": "String"
+  },
+  "sampleItemShape": {
+    "UpdatedAt": "example-string",
+    "legalAgree": "example-string",
+    "userId": 12345,
+    "attestationDate": "example-string",
+    "AttestationType": "example-string",
+    "legalName": "example-string",
+    "validated": "example-string"
+  },
+  "sampleItemDynamoDBFormat": {
+    "UpdatedAt": {
+      "S": "example-string"
+    },
+    "legalAgree": {
+      "S": "example-string"
+    },
+    "userId": {
+      "N": "12345"
+    },
+    "attestationDate": {
+      "S": "example-string"
+    },
+    "AttestationType": {
+      "S": "example-string"
+    },
+    "legalName": {
+      "S": "example-string"
+    },
+    "validated": {
+      "S": "example-string"
+    }
+  },
+  "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+}

@@ -1,0 +1,138 @@
+{
+  "tableName": "Renewal",
+  "description": "Structure for the 'Renewal' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+  "partitionKey": "userId",
+  "sortKey": null,
+  "attributes": {
+    "question11": "String",
+    "question5": "String",
+    "UpdatedAt": "String",
+    "question10": "String",
+    "question6": "String",
+    "question4": "String",
+    "userId": "Number",
+    "question9": "String",
+    "question7": "String",
+    "question8": "String",
+    "question3": "String",
+    "question1": "String",
+    "question2": "String",
+    "question6Explanation": "String",
+    "question11Explanation": "String",
+    "question8Explanation": "String",
+    "question4Explanation": "String",
+    "question5Explanation": "String",
+    "question10Explanation": "String",
+    "question7Explanation": "String",
+    "question9Explanation": "String",
+    "question1StatePeriodList": "String",
+    "question1Explanation": "String",
+    "question2Explanation": "String",
+    "question3Explanation": "String"
+  },
+  "sampleItemShape": {
+    "question11": "example-string",
+    "question5": "example-string",
+    "UpdatedAt": "example-string",
+    "question10": "example-string",
+    "question6": "example-string",
+    "question4": "example-string",
+    "userId": 12345,
+    "question9": "example-string",
+    "question7": "example-string",
+    "question8": "example-string",
+    "question3": "example-string",
+    "question1": "example-string",
+    "question2": "example-string",
+    "question6Explanation": "example-string",
+    "question11Explanation": "example-string",
+    "question8Explanation": "example-string",
+    "question4Explanation": "example-string",
+    "question5Explanation": "example-string",
+    "question10Explanation": "example-string",
+    "question7Explanation": "example-string",
+    "question9Explanation": "example-string",
+    "question1StatePeriodList": "example-string",
+    "question1Explanation": "example-string",
+    "question2Explanation": "example-string",
+    "question3Explanation": "example-string"
+  },
+  "sampleItemDynamoDBFormat": {
+    "question11": {
+      "S": "example-string"
+    },
+    "question5": {
+      "S": "example-string"
+    },
+    "UpdatedAt": {
+      "S": "example-string"
+    },
+    "question10": {
+      "S": "example-string"
+    },
+    "question6": {
+      "S": "example-string"
+    },
+    "question4": {
+      "S": "example-string"
+    },
+    "userId": {
+      "N": "12345"
+    },
+    "question9": {
+      "S": "example-string"
+    },
+    "question7": {
+      "S": "example-string"
+    },
+    "question8": {
+      "S": "example-string"
+    },
+    "question3": {
+      "S": "example-string"
+    },
+    "question1": {
+      "S": "example-string"
+    },
+    "question2": {
+      "S": "example-string"
+    },
+    "question6Explanation": {
+      "S": "example-string"
+    },
+    "question11Explanation": {
+      "S": "example-string"
+    },
+    "question8Explanation": {
+      "S": "example-string"
+    },
+    "question4Explanation": {
+      "S": "example-string"
+    },
+    "question5Explanation": {
+      "S": "example-string"
+    },
+    "question10Explanation": {
+      "S": "example-string"
+    },
+    "question7Explanation": {
+      "S": "example-string"
+    },
+    "question9Explanation": {
+      "S": "example-string"
+    },
+    "question1StatePeriodList": {
+      "S": "example-string"
+    },
+    "question1Explanation": {
+      "S": "example-string"
+    },
+    "question2Explanation": {
+      "S": "example-string"
+    },
+    "question3Explanation": {
+      "S": "example-string"
+    }
+  },
+  "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+}

@@ -1,0 +1,103 @@
+{
+  "tableName": "Renewal_v2",
+  "description": "Structure for the 'Renewal_v2' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+  "partitionKey": "userId",
+  "sortKey": "activityId",
+  "attributes": {
+    "question11": "String",
+    "question5": "String",
+    "UpdatedAt": "String",
+    "question6": "String",
+    "question10": "String",
+    "question4": "String",
+    "userId": "Number",
+    "activityId": "Number",
+    "question9": "String",
+    "question7": "String",
+    "question8": "String",
+    "question6Explanation": "String",
+    "question11Explanation": "String",
+    "question8Explanation": "String",
+    "question5Explanation": "String",
+    "question10Explanation": "String",
+    "question7Explanation": "String",
+    "question9Explanation": "String"
+  },
+  "sampleItemShape": {
+    "question11": "example-string",
+    "question5": "example-string",
+    "UpdatedAt": "example-string",
+    "question6": "example-string",
+    "question10": "example-string",
+    "question4": "example-string",
+    "userId": 12345,
+    "activityId": 12345,
+    "question9": "example-string",
+    "question7": "example-string",
+    "question8": "example-string",
+    "question6Explanation": "example-string",
+    "question11Explanation": "example-string",
+    "question8Explanation": "example-string",
+    "question5Explanation": "example-string",
+    "question10Explanation": "example-string",
+    "question7Explanation": "example-string",
+    "question9Explanation": "example-string"
+  },
+  "sampleItemDynamoDBFormat": {
+    "question11": {
+      "S": "example-string"
+    },
+    "question5": {
+      "S": "example-string"
+    },
+    "UpdatedAt": {
+      "S": "example-string"
+    },
+    "question6": {
+      "S": "example-string"
+    },
+    "question10": {
+      "S": "example-string"
+    },
+    "question4": {
+      "S": "example-string"
+    },
+    "userId": {
+      "N": "12345"
+    },
+    "activityId": {
+      "N": "12345"
+    },
+    "question9": {
+      "S": "example-string"
+    },
+    "question7": {
+      "S": "example-string"
+    },
+    "question8": {
+      "S": "example-string"
+    },
+    "question6Explanation": {
+      "S": "example-string"
+    },
+    "question11Explanation": {
+      "S": "example-string"
+    },
+    "question8Explanation": {
+      "S": "example-string"
+    },
+    "question5Explanation": {
+      "S": "example-string"
+    },
+    "question10Explanation": {
+      "S": "example-string"
+    },
+    "question7Explanation": {
+      "S": "example-string"
+    },
+    "question9Explanation": {
+      "S": "example-string"
+    }
+  },
+  "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+}

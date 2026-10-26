@@ -38,3 +38,6 @@ coverage
 # Node files
 package-lock.json
 .node-version
+
+# Local working copy of the shared PSY|PRO DynamoDB export
+ia-export/

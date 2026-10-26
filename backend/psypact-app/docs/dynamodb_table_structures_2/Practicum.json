@@ -1,0 +1,153 @@
+{
+  "tableName": "Practicum",
+  "description": "Structure for the 'Practicum' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+  "partitionKey": "userId",
+  "sortKey": "entryId",
+  "attributes": {
+    "avgHoursPerWeek": "String",
+    "validated": "String",
+    "agencyAddress1": "String",
+    "entryId": "Number",
+    "userId": "Number",
+    "agencyState": "String",
+    "studentTitle": "String",
+    "indirectHours": "String",
+    "toDate": "String",
+    "totalIndividualSupervisionHours": "String",
+    "dutiesDescription": "String",
+    "attesterPhone": "String",
+    "readyForAttestation": "String",
+    "attesterName": "String",
+    "totalGroupSupervisionHours": "String",
+    "attesterEmail": "String",
+    "serviceHours": "String",
+    "AttestationType": "String",
+    "totalNonLicensedIndividualSupervisionHours": "String",
+    "agencyCity": "String",
+    "agencyName": "String",
+    "fromDate": "String",
+    "courseTitleNumber": "String",
+    "HasAttestation": "Number",
+    "faceHours": "String",
+    "agencyZip": "String",
+    "totalWeeks": "String",
+    "totalNonLicensedGroupSupervisionHours": "String"
+  },
+  "sampleItemShape": {
+    "avgHoursPerWeek": "example-string",
+    "validated": "example-string",
+    "agencyAddress1": "example-string",
+    "entryId": 12345,
+    "userId": 12345,
+    "agencyState": "example-string",
+    "studentTitle": "example-string",
+    "indirectHours": "example-string",
+    "toDate": "example-string",
+    "totalIndividualSupervisionHours": "example-string",
+    "dutiesDescription": "example-string",
+    "attesterPhone": "example-string",
+    "readyForAttestation": "example-string",
+    "attesterName": "example-string",
+    "totalGroupSupervisionHours": "example-string",
+    "attesterEmail": "example-string",
+    "serviceHours": "example-string",
+    "AttestationType": "example-string",
+    "totalNonLicensedIndividualSupervisionHours": "example-string",
+    "agencyCity": "example-string",
+    "agencyName": "example-string",
+    "fromDate": "example-string",
+    "courseTitleNumber": "example-string",
+    "HasAttestation": 12345,
+    "faceHours": "example-string",
+    "agencyZip": "example-string",
+    "totalWeeks": "example-string",
+    "totalNonLicensedGroupSupervisionHours": "example-string"
+  },
+  "sampleItemDynamoDBFormat": {
+    "avgHoursPerWeek": {
+      "S": "example-string"
+    },
+    "validated": {
+      "S": "example-string"
+    },
+    "agencyAddress1": {
+      "S": "example-string"
+    },
+    "entryId": {
+      "N": "12345"
+    },
+    "userId": {
+      "N": "12345"
+    },
+    "agencyState": {
+      "S": "example-string"
+    },
+    "studentTitle": {
+      "S": "example-string"
+    },
+    "indirectHours": {
+      "S": "example-string"
+    },
+    "toDate": {
+      "S": "example-string"
+    },
+    "totalIndividualSupervisionHours": {
+      "S": "example-string"
+    },
+    "dutiesDescription": {
+      "S": "example-string"
+    },
+    "attesterPhone": {
+      "S": "example-string"
+    },
+    "readyForAttestation": {
+      "S": "example-string"
+    },
+    "attesterName": {
+      "S": "example-string"
+    },
+    "totalGroupSupervisionHours": {
+      "S": "example-string"
+    },
+    "attesterEmail": {
+      "S": "example-string"
+    },
+    "serviceHours": {
+      "S": "example-string"
+    },
+    "AttestationType": {
+      "S": "example-string"
+    },
+    "totalNonLicensedIndividualSupervisionHours": {
+      "S": "example-string"
+    },
+    "agencyCity": {
+      "S": "example-string"
+    },
+    "agencyName": {
+      "S": "example-string"
+    },
+    "fromDate": {
+      "S": "example-string"
+    },
+    "courseTitleNumber": {
+      "S": "example-string"
+    },
+    "HasAttestation": {
+      "N": "12345"
+    },
+    "faceHours": {
+      "S": "example-string"
+    },
+    "agencyZip": {
+      "S": "example-string"
+    },
+    "totalWeeks": {
+      "S": "example-string"
+    },
+    "totalNonLicensedGroupSupervisionHours": {
+      "S": "example-string"
+    }
+  },
+  "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+}

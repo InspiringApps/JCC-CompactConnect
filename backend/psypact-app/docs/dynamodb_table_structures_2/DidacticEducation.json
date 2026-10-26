@@ -1,0 +1,83 @@
+{
+  "tableName": "DidacticEducation",
+  "description": "Structure for the 'DidacticEducation' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+  "partitionKey": "userId",
+  "sortKey": "entryId",
+  "attributes": {
+    "courseNumber": "String",
+    "credits": "String",
+    "term": "String",
+    "semesterQuarter": "String",
+    "hours": "String",
+    "institution": "String",
+    "AttestationType": "String",
+    "validated": "String",
+    "entryId": "Number",
+    "userId": "Number",
+    "year": "String",
+    "category": "String",
+    "title": "String",
+    "description": "String"
+  },
+  "sampleItemShape": {
+    "courseNumber": "example-string",
+    "credits": "example-string",
+    "term": "example-string",
+    "semesterQuarter": "example-string",
+    "hours": "example-string",
+    "institution": "example-string",
+    "AttestationType": "example-string",
+    "validated": "example-string",
+    "entryId": 12345,
+    "userId": 12345,
+    "year": "example-string",
+    "category": "example-string",
+    "title": "example-string",
+    "description": "example-string"
+  },
+  "sampleItemDynamoDBFormat": {
+    "courseNumber": {
+      "S": "example-string"
+    },
+    "credits": {
+      "S": "example-string"
+    },
+    "term": {
+      "S": "example-string"
+    },
+    "semesterQuarter": {
+      "S": "example-string"
+    },
+    "hours": {
+      "S": "example-string"
+    },
+    "institution": {
+      "S": "example-string"
+    },
+    "AttestationType": {
+      "S": "example-string"
+    },
+    "validated": {
+      "S": "example-string"
+    },
+    "entryId": {
+      "N": "12345"
+    },
+    "userId": {
+      "N": "12345"
+    },
+    "year": {
+      "S": "example-string"
+    },
+    "category": {
+      "S": "example-string"
+    },
+    "title": {
+      "S": "example-string"
+    },
+    "description": {
+      "S": "example-string"
+    }
+  },
+  "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+}

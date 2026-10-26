@@ -1,0 +1,143 @@
+{
+  "tableName": "Education",
+  "description": "Structure for the 'Education' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+  "partitionKey": "userId",
+  "sortKey": "entryId",
+  "attributes": {
+    "department": "String",
+    "readyForAttestation": "String",
+    "degree": "String",
+    "designationYear": "String",
+    "institution": "String",
+    "validated": "String",
+    "state": "String",
+    "entryId": "Number",
+    "city": "String",
+    "accreditationYear": "String",
+    "program": "String",
+    "dateConferred": "String",
+    "userId": "Number",
+    "approvedYear": "String",
+    "accreditingBody": "String",
+    "attesterPhone": "String",
+    "attesterName": "String",
+    "attesterEmail": "String",
+    "attesterCity": "String",
+    "attesterZip": "String",
+    "attesterAddress1": "String",
+    "attesterState": "String",
+    "residency": "String",
+    "residencyToDate": "String",
+    "residencyFromDate": "String",
+    "notes": "String"
+  },
+  "sampleItemShape": {
+    "department": "example-string",
+    "readyForAttestation": "example-string",
+    "degree": "example-string",
+    "designationYear": "example-string",
+    "institution": "example-string",
+    "validated": "example-string",
+    "state": "example-string",
+    "entryId": 12345,
+    "city": "example-string",
+    "accreditationYear": "example-string",
+    "program": "example-string",
+    "dateConferred": "example-string",
+    "userId": 12345,
+    "approvedYear": "example-string",
+    "accreditingBody": "example-string",
+    "attesterPhone": "example-string",
+    "attesterName": "example-string",
+    "attesterEmail": "example-string",
+    "attesterCity": "example-string",
+    "attesterZip": "example-string",
+    "attesterAddress1": "example-string",
+    "attesterState": "example-string",
+    "residency": "example-string",
+    "residencyToDate": "example-string",
+    "residencyFromDate": "example-string",
+    "notes": "example-string"
+  },
+  "sampleItemDynamoDBFormat": {
+    "department": {
+      "S": "example-string"
+    },
+    "readyForAttestation": {
+      "S": "example-string"
+    },
+    "degree": {
+      "S": "example-string"
+    },
+    "designationYear": {
+      "S": "example-string"
+    },
+    "institution": {
+      "S": "example-string"
+    },
+    "validated": {
+      "S": "example-string"
+    },
+    "state": {
+      "S": "example-string"
+    },
+    "entryId": {
+      "N": "12345"
+    },
+    "city": {
+      "S": "example-string"
+    },
+    "accreditationYear": {
+      "S": "example-string"
+    },
+    "program": {
+      "S": "example-string"
+    },
+    "dateConferred": {
+      "S": "example-string"
+    },
+    "userId": {
+      "N": "12345"
+    },
+    "approvedYear": {
+      "S": "example-string"
+    },
+    "accreditingBody": {
+      "S": "example-string"
+    },
+    "attesterPhone": {
+      "S": "example-string"
+    },
+    "attesterName": {
+      "S": "example-string"
+    },
+    "attesterEmail": {
+      "S": "example-string"
+    },
+    "attesterCity": {
+      "S": "example-string"
+    },
+    "attesterZip": {
+      "S": "example-string"
+    },
+    "attesterAddress1": {
+      "S": "example-string"
+    },
+    "attesterState": {
+      "S": "example-string"
+    },
+    "residency": {
+      "S": "example-string"
+    },
+    "residencyToDate": {
+      "S": "example-string"
+    },
+    "residencyFromDate": {
+      "S": "example-string"
+    },
+    "notes": {
+      "S": "example-string"
+    }
+  },
+  "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+}

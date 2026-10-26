@@ -553,6 +553,8 @@ class TstAppABC(ABC):
         if stage.persistent_stack.hosted_zone:
             self._check_no_stack_annotations(stage.notification_stack)
             self._check_no_stack_annotations(stage.reporting_stack)
+        if stage.ia_source_data_stack is not None:
+            self._check_no_stack_annotations(stage.ia_source_data_stack)
         # No backup stack here, because nested stack annotations are checked in the parent stack
 
     def _count_stack_resources(self, stack: Stack) -> int:
@@ -597,6 +599,8 @@ class TstAppABC(ABC):
                     ('reporting_stack', stage.reporting_stack),
                 ]
             )
+        if stage.ia_source_data_stack is not None:
+            stacks_to_check.append(('ia_source_data_stack', stage.ia_source_data_stack))
 
         for _stack_name, stack in stacks_to_check:
             if stack is None:

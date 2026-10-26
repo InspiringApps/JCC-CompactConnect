@@ -1,0 +1,93 @@
+{
+  "tableName": "Attester",
+  "description": "Structure for the 'Attester' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+  "partitionKey": "attesterEmail",
+  "sortKey": null,
+  "attributes": {
+    "degreeSpeciality": "String",
+    "addressState": "String",
+    "lastName": "String",
+    "degree": "String",
+    "yearConferred": "String",
+    "attesterEmail": "String",
+    "addressLine1": "String",
+    "jurisdiction": "String",
+    "supervisionActivities": "String",
+    "addressCity": "String",
+    "addressZip": "String",
+    "firstName": "String",
+    "licensed": "String",
+    "otherJurisdictions": "String",
+    "licenseNumber": "String",
+    "titlePosition": "String"
+  },
+  "sampleItemShape": {
+    "degreeSpeciality": "example-string",
+    "addressState": "example-string",
+    "lastName": "example-string",
+    "degree": "example-string",
+    "yearConferred": "example-string",
+    "attesterEmail": "example-string",
+    "addressLine1": "example-string",
+    "jurisdiction": "example-string",
+    "supervisionActivities": "example-string",
+    "addressCity": "example-string",
+    "addressZip": "example-string",
+    "firstName": "example-string",
+    "licensed": "example-string",
+    "otherJurisdictions": "example-string",
+    "licenseNumber": "example-string",
+    "titlePosition": "example-string"
+  },
+  "sampleItemDynamoDBFormat": {
+    "degreeSpeciality": {
+      "S": "example-string"
+    },
+    "addressState": {
+      "S": "example-string"
+    },
+    "lastName": {
+      "S": "example-string"
+    },
+    "degree": {
+      "S": "example-string"
+    },
+    "yearConferred": {
+      "S": "example-string"
+    },
+    "attesterEmail": {
+      "S": "example-string"
+    },
+    "addressLine1": {
+      "S": "example-string"
+    },
+    "jurisdiction": {
+      "S": "example-string"
+    },
+    "supervisionActivities": {
+      "S": "example-string"
+    },
+    "addressCity": {
+      "S": "example-string"
+    },
+    "addressZip": {
+      "S": "example-string"
+    },
+    "firstName": {
+      "S": "example-string"
+    },
+    "licensed": {
+      "S": "example-string"
+    },
+    "otherJurisdictions": {
+      "S": "example-string"
+    },
+    "licenseNumber": {
+      "S": "example-string"
+    },
+    "titlePosition": {
+      "S": "example-string"
+    }
+  },
+  "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+}

@@ -1,0 +1,183 @@
+{
+  "tableName": "Renewal2_v2",
+  "description": "Structure for the 'Renewal2_v2' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+  "partitionKey": "userId",
+  "sortKey": "activityId",
+  "attributes": {
+    "UpdatedAt": "String",
+    "specialty_cognitive_behavioral_Psychology": "String",
+    "question1": "String",
+    "sessions_per_week": "String",
+    "specialties_psypact_directory": "String",
+    "activityId": "Number",
+    "languages_psypact_directory": "String",
+    "telecom_Phone_call": "String",
+    "userId": "Number",
+    "question1StatePeriodList": "String",
+    "questionnaireId": "String",
+    "population_Adolescents": "String",
+    "patientCount": "String",
+    "specialty_psychoanalysis_psychology": "String",
+    "telecom_Email": "String",
+    "specialty_geropsychology": "String",
+    "population_Adults": "String",
+    "telecom_Texting": "String",
+    "specialty_clinical_health_Psychology": "String",
+    "specialty_clinical_child_adolescent_psychology": "String",
+    "specialty_counseling_psychology": "String",
+    "specialty_group_psychology": "String",
+    "population_Children": "String",
+    "specialty_clinical_neuropsychology": "String",
+    "telecom_Interactive_Video_Conferencing": "String",
+    "population_Rural": "String",
+    "specialty_couple_family_psychology": "String",
+    "telecom_Interactive_Video_Conferencing_specify": "String",
+    "specialty_school_psychology": "String",
+    "population_American_Native": "String",
+    "population_Urban": "String",
+    "telecom_Chat": "String",
+    "population_Native_Pacific": "String",
+    "population_African_American": "String"
+  },
+  "sampleItemShape": {
+    "UpdatedAt": "example-string",
+    "specialty_cognitive_behavioral_Psychology": "example-string",
+    "question1": "example-string",
+    "sessions_per_week": "example-string",
+    "specialties_psypact_directory": "example-string",
+    "activityId": 12345,
+    "languages_psypact_directory": "example-string",
+    "telecom_Phone_call": "example-string",
+    "userId": 12345,
+    "question1StatePeriodList": "example-string",
+    "questionnaireId": "example-string",
+    "population_Adolescents": "example-string",
+    "patientCount": "example-string",
+    "specialty_psychoanalysis_psychology": "example-string",
+    "telecom_Email": "example-string",
+    "specialty_geropsychology": "example-string",
+    "population_Adults": "example-string",
+    "telecom_Texting": "example-string",
+    "specialty_clinical_health_Psychology": "example-string",
+    "specialty_clinical_child_adolescent_psychology": "example-string",
+    "specialty_counseling_psychology": "example-string",
+    "specialty_group_psychology": "example-string",
+    "population_Children": "example-string",
+    "specialty_clinical_neuropsychology": "example-string",
+    "telecom_Interactive_Video_Conferencing": "example-string",
+    "population_Rural": "example-string",
+    "specialty_couple_family_psychology": "example-string",
+    "telecom_Interactive_Video_Conferencing_specify": "example-string",
+    "specialty_school_psychology": "example-string",
+    "population_American_Native": "example-string",
+    "population_Urban": "example-string",
+    "telecom_Chat": "example-string",
+    "population_Native_Pacific": "example-string",
+    "population_African_American": "example-string"
+  },
+  "sampleItemDynamoDBFormat": {
+    "UpdatedAt": {
+      "S": "example-string"
+    },
+    "specialty_cognitive_behavioral_Psychology": {
+      "S": "example-string"
+    },
+    "question1": {
+      "S": "example-string"
+    },
+    "sessions_per_week": {
+      "S": "example-string"
+    },
+    "specialties_psypact_directory": {
+      "S": "example-string"
+    },
+    "activityId": {
+      "N": "12345"
+    },
+    "languages_psypact_directory": {
+      "S": "example-string"
+    },
+    "telecom_Phone_call": {
+      "S": "example-string"
+    },
+    "userId": {
+      "N": "12345"
+    },
+    "question1StatePeriodList": {
+      "S": "example-string"
+    },
+    "questionnaireId": {
+      "S": "example-string"
+    },
+    "population_Adolescents": {
+      "S": "example-string"
+    },
+    "patientCount": {
+      "S": "example-string"
+    },
+    "specialty_psychoanalysis_psychology": {
+      "S": "example-string"
+    },
+    "telecom_Email": {
+      "S": "example-string"
+    },
+    "specialty_geropsychology": {
+      "S": "example-string"
+    },
+    "population_Adults": {
+      "S": "example-string"
+    },
+    "telecom_Texting": {
+      "S": "example-string"
+    },
+    "specialty_clinical_health_Psychology": {
+      "S": "example-string"
+    },
+    "specialty_clinical_child_adolescent_psychology": {
+      "S": "example-string"
+    },
+    "specialty_counseling_psychology": {
+      "S": "example-string"
+    },
+    "specialty_group_psychology": {
+      "S": "example-string"
+    },
+    "population_Children": {
+      "S": "example-string"
+    },
+    "specialty_clinical_neuropsychology": {
+      "S": "example-string"
+    },
+    "telecom_Interactive_Video_Conferencing": {
+      "S": "example-string"
+    },
+    "population_Rural": {
+      "S": "example-string"
+    },
+    "specialty_couple_family_psychology": {
+      "S": "example-string"
+    },
+    "telecom_Interactive_Video_Conferencing_specify": {
+      "S": "example-string"
+    },
+    "specialty_school_psychology": {
+      "S": "example-string"
+    },
+    "population_American_Native": {
+      "S": "example-string"
+    },
+    "population_Urban": {
+      "S": "example-string"
+    },
+    "telecom_Chat": {
+      "S": "example-string"
+    },
+    "population_Native_Pacific": {
+      "S": "example-string"
+    },
+    "population_African_American": {
+      "S": "example-string"
+    }
+  },
+  "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+}

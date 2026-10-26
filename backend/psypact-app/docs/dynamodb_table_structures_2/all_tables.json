@@ -1,0 +1,3886 @@
+{
+  "tableCount": 37,
+  "tables": {
+    "Accommodations": {
+      "tableName": "Accommodations",
+      "description": "Structure for the 'Accommodations' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "userId",
+      "sortKey": null,
+      "attributes": {
+        "provided_accommodations": "String",
+        "UpdatedAt": "String",
+        "legalAgree": "String",
+        "special_accommodations": "String",
+        "userId": "Number",
+        "attestationDate": "String",
+        "AttestationType": "String",
+        "legalName": "String",
+        "validated": "String",
+        "provided_accommodations_desc": "String",
+        "special_accommodations_desc": "String",
+        "place_holder_2": "String",
+        "place_holder_3": "String",
+        "place_holder_4": "String"
+      },
+      "sampleItemShape": {
+        "provided_accommodations": "example-string",
+        "UpdatedAt": "example-string",
+        "legalAgree": "example-string",
+        "special_accommodations": "example-string",
+        "userId": 12345,
+        "attestationDate": "example-string",
+        "AttestationType": "example-string",
+        "legalName": "example-string",
+        "validated": "example-string",
+        "provided_accommodations_desc": "example-string",
+        "special_accommodations_desc": "example-string",
+        "place_holder_2": "example-string",
+        "place_holder_3": "example-string",
+        "place_holder_4": "example-string"
+      },
+      "sampleItemDynamoDBFormat": {
+        "provided_accommodations": {
+          "S": "example-string"
+        },
+        "UpdatedAt": {
+          "S": "example-string"
+        },
+        "legalAgree": {
+          "S": "example-string"
+        },
+        "special_accommodations": {
+          "S": "example-string"
+        },
+        "userId": {
+          "N": "12345"
+        },
+        "attestationDate": {
+          "S": "example-string"
+        },
+        "AttestationType": {
+          "S": "example-string"
+        },
+        "legalName": {
+          "S": "example-string"
+        },
+        "validated": {
+          "S": "example-string"
+        },
+        "provided_accommodations_desc": {
+          "S": "example-string"
+        },
+        "special_accommodations_desc": {
+          "S": "example-string"
+        },
+        "place_holder_2": {
+          "S": "example-string"
+        },
+        "place_holder_3": {
+          "S": "example-string"
+        },
+        "place_holder_4": {
+          "S": "example-string"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    },
+    "Acknowledgements": {
+      "tableName": "Acknowledgements",
+      "description": "Structure for the 'Acknowledgements' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "userId",
+      "sortKey": null,
+      "attributes": {
+        "userId": "Number"
+      },
+      "sampleItemShape": {
+        "userId": 12345
+      },
+      "sampleItemDynamoDBFormat": {
+        "userId": {
+          "N": "12345"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    },
+    "Acknowledgements.APIT": {
+      "tableName": "Acknowledgements.APIT",
+      "description": "Structure for the 'Acknowledgements.APIT' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "userId",
+      "sortKey": null,
+      "attributes": {
+        "question5": "String",
+        "UpdatedAt": "String",
+        "question6": "String",
+        "question3": "String",
+        "question4": "String",
+        "question1": "String",
+        "question2": "String",
+        "AttestationType": "String",
+        "validated": "String",
+        "legalAgree": "String",
+        "userId": "Number",
+        "attestationDate": "String",
+        "legalName": "String",
+        "question7": "String"
+      },
+      "sampleItemShape": {
+        "question5": "example-string",
+        "UpdatedAt": "example-string",
+        "question6": "example-string",
+        "question3": "example-string",
+        "question4": "example-string",
+        "question1": "example-string",
+        "question2": "example-string",
+        "AttestationType": "example-string",
+        "validated": "example-string",
+        "legalAgree": "example-string",
+        "userId": 12345,
+        "attestationDate": "example-string",
+        "legalName": "example-string",
+        "question7": "example-string"
+      },
+      "sampleItemDynamoDBFormat": {
+        "question5": {
+          "S": "example-string"
+        },
+        "UpdatedAt": {
+          "S": "example-string"
+        },
+        "question6": {
+          "S": "example-string"
+        },
+        "question3": {
+          "S": "example-string"
+        },
+        "question4": {
+          "S": "example-string"
+        },
+        "question1": {
+          "S": "example-string"
+        },
+        "question2": {
+          "S": "example-string"
+        },
+        "AttestationType": {
+          "S": "example-string"
+        },
+        "validated": {
+          "S": "example-string"
+        },
+        "legalAgree": {
+          "S": "example-string"
+        },
+        "userId": {
+          "N": "12345"
+        },
+        "attestationDate": {
+          "S": "example-string"
+        },
+        "legalName": {
+          "S": "example-string"
+        },
+        "question7": {
+          "S": "example-string"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    },
+    "Acknowledgements.APIT_v2": {
+      "tableName": "Acknowledgements.APIT_v2",
+      "description": "Structure for the 'Acknowledgements.APIT_v2' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "userId",
+      "sortKey": "activityId",
+      "attributes": {
+        "question5": "String",
+        "UpdatedAt": "String",
+        "question6": "String",
+        "question3": "String",
+        "question4": "String",
+        "question1": "String",
+        "question2": "String",
+        "activityId": "Number",
+        "AttestationType": "String",
+        "validated": "String",
+        "legalAgree": "String",
+        "userId": "Number",
+        "attestationDate": "String",
+        "legalName": "String",
+        "question7": "String"
+      },
+      "sampleItemShape": {
+        "question5": "example-string",
+        "UpdatedAt": "example-string",
+        "question6": "example-string",
+        "question3": "example-string",
+        "question4": "example-string",
+        "question1": "example-string",
+        "question2": "example-string",
+        "activityId": 12345,
+        "AttestationType": "example-string",
+        "validated": "example-string",
+        "legalAgree": "example-string",
+        "userId": 12345,
+        "attestationDate": "example-string",
+        "legalName": "example-string",
+        "question7": "example-string"
+      },
+      "sampleItemDynamoDBFormat": {
+        "question5": {
+          "S": "example-string"
+        },
+        "UpdatedAt": {
+          "S": "example-string"
+        },
+        "question6": {
+          "S": "example-string"
+        },
+        "question3": {
+          "S": "example-string"
+        },
+        "question4": {
+          "S": "example-string"
+        },
+        "question1": {
+          "S": "example-string"
+        },
+        "question2": {
+          "S": "example-string"
+        },
+        "activityId": {
+          "N": "12345"
+        },
+        "AttestationType": {
+          "S": "example-string"
+        },
+        "validated": {
+          "S": "example-string"
+        },
+        "legalAgree": {
+          "S": "example-string"
+        },
+        "userId": {
+          "N": "12345"
+        },
+        "attestationDate": {
+          "S": "example-string"
+        },
+        "legalName": {
+          "S": "example-string"
+        },
+        "question7": {
+          "S": "example-string"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    },
+    "Acknowledgements.Epassport": {
+      "tableName": "Acknowledgements.Epassport",
+      "description": "Structure for the 'Acknowledgements.Epassport' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "userId",
+      "sortKey": null,
+      "attributes": {
+        "legalAgree": "String",
+        "competence_area": "String",
+        "post_licensure": "String",
+        "legal_requirements": "String",
+        "userId": "Number",
+        "attestationDate": "String",
+        "asppb_guidelines": "String",
+        "asppb_mobility": "String",
+        "AttestationType": "String",
+        "telecom_tech": "String",
+        "legalName": "String",
+        "validated": "String",
+        "UpdatedAt": "String",
+        "relevant_training_3hrs": "String"
+      },
+      "sampleItemShape": {
+        "legalAgree": "example-string",
+        "competence_area": "example-string",
+        "post_licensure": "example-string",
+        "legal_requirements": "example-string",
+        "userId": 12345,
+        "attestationDate": "example-string",
+        "asppb_guidelines": "example-string",
+        "asppb_mobility": "example-string",
+        "AttestationType": "example-string",
+        "telecom_tech": "example-string",
+        "legalName": "example-string",
+        "validated": "example-string",
+        "UpdatedAt": "example-string",
+        "relevant_training_3hrs": "example-string"
+      },
+      "sampleItemDynamoDBFormat": {
+        "legalAgree": {
+          "S": "example-string"
+        },
+        "competence_area": {
+          "S": "example-string"
+        },
+        "post_licensure": {
+          "S": "example-string"
+        },
+        "legal_requirements": {
+          "S": "example-string"
+        },
+        "userId": {
+          "N": "12345"
+        },
+        "attestationDate": {
+          "S": "example-string"
+        },
+        "asppb_guidelines": {
+          "S": "example-string"
+        },
+        "asppb_mobility": {
+          "S": "example-string"
+        },
+        "AttestationType": {
+          "S": "example-string"
+        },
+        "telecom_tech": {
+          "S": "example-string"
+        },
+        "legalName": {
+          "S": "example-string"
+        },
+        "validated": {
+          "S": "example-string"
+        },
+        "UpdatedAt": {
+          "S": "example-string"
+        },
+        "relevant_training_3hrs": {
+          "S": "example-string"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    },
+    "Acknowledgements.Epassport_v2": {
+      "tableName": "Acknowledgements.Epassport_v2",
+      "description": "Structure for the 'Acknowledgements.Epassport_v2' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "userId",
+      "sortKey": "activityId",
+      "attributes": {
+        "UpdatedAt": "String",
+        "competence_area": "String",
+        "post_licensure": "String",
+        "legal_requirements": "String",
+        "asppb_guidelines": "String",
+        "asppb_mobility": "String",
+        "activityId": "Number",
+        "AttestationType": "String",
+        "telecom_tech": "String",
+        "validated": "String",
+        "legalAgree": "String",
+        "userId": "Number",
+        "attestationDate": "String",
+        "relevant_training_3hrs": "String",
+        "legalName": "String"
+      },
+      "sampleItemShape": {
+        "UpdatedAt": "example-string",
+        "competence_area": "example-string",
+        "post_licensure": "example-string",
+        "legal_requirements": "example-string",
+        "asppb_guidelines": "example-string",
+        "asppb_mobility": "example-string",
+        "activityId": 12345,
+        "AttestationType": "example-string",
+        "telecom_tech": "example-string",
+        "validated": "example-string",
+        "legalAgree": "example-string",
+        "userId": 12345,
+        "attestationDate": "example-string",
+        "relevant_training_3hrs": "example-string",
+        "legalName": "example-string"
+      },
+      "sampleItemDynamoDBFormat": {
+        "UpdatedAt": {
+          "S": "example-string"
+        },
+        "competence_area": {
+          "S": "example-string"
+        },
+        "post_licensure": {
+          "S": "example-string"
+        },
+        "legal_requirements": {
+          "S": "example-string"
+        },
+        "asppb_guidelines": {
+          "S": "example-string"
+        },
+        "asppb_mobility": {
+          "S": "example-string"
+        },
+        "activityId": {
+          "N": "12345"
+        },
+        "AttestationType": {
+          "S": "example-string"
+        },
+        "telecom_tech": {
+          "S": "example-string"
+        },
+        "validated": {
+          "S": "example-string"
+        },
+        "legalAgree": {
+          "S": "example-string"
+        },
+        "userId": {
+          "N": "12345"
+        },
+        "attestationDate": {
+          "S": "example-string"
+        },
+        "relevant_training_3hrs": {
+          "S": "example-string"
+        },
+        "legalName": {
+          "S": "example-string"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    },
+    "Acknowledgements.Ipc": {
+      "tableName": "Acknowledgements.Ipc",
+      "description": "Structure for the 'Acknowledgements.Ipc' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "userId",
+      "sortKey": null,
+      "attributes": {
+        "legalAgree": "String",
+        "post_licensure": "String",
+        "legal_requirements": "String",
+        "userId": "Number",
+        "attestationDate": "String",
+        "asppb_mobility": "String",
+        "30_day_conduct": "String",
+        "AttestationType": "String",
+        "legalName": "String",
+        "validated": "String",
+        "UpdatedAt": "String"
+      },
+      "sampleItemShape": {
+        "legalAgree": "example-string",
+        "post_licensure": "example-string",
+        "legal_requirements": "example-string",
+        "userId": 12345,
+        "attestationDate": "example-string",
+        "asppb_mobility": "example-string",
+        "30_day_conduct": "example-string",
+        "AttestationType": "example-string",
+        "legalName": "example-string",
+        "validated": "example-string",
+        "UpdatedAt": "example-string"
+      },
+      "sampleItemDynamoDBFormat": {
+        "legalAgree": {
+          "S": "example-string"
+        },
+        "post_licensure": {
+          "S": "example-string"
+        },
+        "legal_requirements": {
+          "S": "example-string"
+        },
+        "userId": {
+          "N": "12345"
+        },
+        "attestationDate": {
+          "S": "example-string"
+        },
+        "asppb_mobility": {
+          "S": "example-string"
+        },
+        "30_day_conduct": {
+          "S": "example-string"
+        },
+        "AttestationType": {
+          "S": "example-string"
+        },
+        "legalName": {
+          "S": "example-string"
+        },
+        "validated": {
+          "S": "example-string"
+        },
+        "UpdatedAt": {
+          "S": "example-string"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    },
+    "Acknowledgements.Ipc_v2": {
+      "tableName": "Acknowledgements.Ipc_v2",
+      "description": "Structure for the 'Acknowledgements.Ipc_v2' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "userId",
+      "sortKey": "activityId",
+      "attributes": {
+        "UpdatedAt": "String",
+        "legalAgree": "String",
+        "post_licensure": "String",
+        "legal_requirements": "String",
+        "userId": "Number",
+        "attestationDate": "String",
+        "asppb_mobility": "String",
+        "30_day_conduct": "String",
+        "activityId": "Number",
+        "AttestationType": "String",
+        "legalName": "String",
+        "validated": "String"
+      },
+      "sampleItemShape": {
+        "UpdatedAt": "example-string",
+        "legalAgree": "example-string",
+        "post_licensure": "example-string",
+        "legal_requirements": "example-string",
+        "userId": 12345,
+        "attestationDate": "example-string",
+        "asppb_mobility": "example-string",
+        "30_day_conduct": "example-string",
+        "activityId": 12345,
+        "AttestationType": "example-string",
+        "legalName": "example-string",
+        "validated": "example-string"
+      },
+      "sampleItemDynamoDBFormat": {
+        "UpdatedAt": {
+          "S": "example-string"
+        },
+        "legalAgree": {
+          "S": "example-string"
+        },
+        "post_licensure": {
+          "S": "example-string"
+        },
+        "legal_requirements": {
+          "S": "example-string"
+        },
+        "userId": {
+          "N": "12345"
+        },
+        "attestationDate": {
+          "S": "example-string"
+        },
+        "asppb_mobility": {
+          "S": "example-string"
+        },
+        "30_day_conduct": {
+          "S": "example-string"
+        },
+        "activityId": {
+          "N": "12345"
+        },
+        "AttestationType": {
+          "S": "example-string"
+        },
+        "legalName": {
+          "S": "example-string"
+        },
+        "validated": {
+          "S": "example-string"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    },
+    "Acknowledgements.TAP": {
+      "tableName": "Acknowledgements.TAP",
+      "description": "Structure for the 'Acknowledgements.TAP' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "userId",
+      "sortKey": null,
+      "attributes": {
+        "question5": "String",
+        "UpdatedAt": "String",
+        "legalAgree": "String",
+        "question3": "String",
+        "question4": "String",
+        "question1": "String",
+        "question2": "String",
+        "userId": "Number",
+        "attestationDate": "String",
+        "AttestationType": "String",
+        "legalName": "String",
+        "validated": "String"
+      },
+      "sampleItemShape": {
+        "question5": "example-string",
+        "UpdatedAt": "example-string",
+        "legalAgree": "example-string",
+        "question3": "example-string",
+        "question4": "example-string",
+        "question1": "example-string",
+        "question2": "example-string",
+        "userId": 12345,
+        "attestationDate": "example-string",
+        "AttestationType": "example-string",
+        "legalName": "example-string",
+        "validated": "example-string"
+      },
+      "sampleItemDynamoDBFormat": {
+        "question5": {
+          "S": "example-string"
+        },
+        "UpdatedAt": {
+          "S": "example-string"
+        },
+        "legalAgree": {
+          "S": "example-string"
+        },
+        "question3": {
+          "S": "example-string"
+        },
+        "question4": {
+          "S": "example-string"
+        },
+        "question1": {
+          "S": "example-string"
+        },
+        "question2": {
+          "S": "example-string"
+        },
+        "userId": {
+          "N": "12345"
+        },
+        "attestationDate": {
+          "S": "example-string"
+        },
+        "AttestationType": {
+          "S": "example-string"
+        },
+        "legalName": {
+          "S": "example-string"
+        },
+        "validated": {
+          "S": "example-string"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    },
+    "Acknowledgements.TAP_v2": {
+      "tableName": "Acknowledgements.TAP_v2",
+      "description": "Structure for the 'Acknowledgements.TAP_v2' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "userId",
+      "sortKey": "activityId",
+      "attributes": {
+        "question5": "String",
+        "UpdatedAt": "String",
+        "question3": "String",
+        "question4": "String",
+        "question1": "String",
+        "question2": "String",
+        "activityId": "Number",
+        "AttestationType": "String",
+        "validated": "String",
+        "legalAgree": "String",
+        "userId": "Number",
+        "attestationDate": "String",
+        "legalName": "String"
+      },
+      "sampleItemShape": {
+        "question5": "example-string",
+        "UpdatedAt": "example-string",
+        "question3": "example-string",
+        "question4": "example-string",
+        "question1": "example-string",
+        "question2": "example-string",
+        "activityId": 12345,
+        "AttestationType": "example-string",
+        "validated": "example-string",
+        "legalAgree": "example-string",
+        "userId": 12345,
+        "attestationDate": "example-string",
+        "legalName": "example-string"
+      },
+      "sampleItemDynamoDBFormat": {
+        "question5": {
+          "S": "example-string"
+        },
+        "UpdatedAt": {
+          "S": "example-string"
+        },
+        "question3": {
+          "S": "example-string"
+        },
+        "question4": {
+          "S": "example-string"
+        },
+        "question1": {
+          "S": "example-string"
+        },
+        "question2": {
+          "S": "example-string"
+        },
+        "activityId": {
+          "N": "12345"
+        },
+        "AttestationType": {
+          "S": "example-string"
+        },
+        "validated": {
+          "S": "example-string"
+        },
+        "legalAgree": {
+          "S": "example-string"
+        },
+        "userId": {
+          "N": "12345"
+        },
+        "attestationDate": {
+          "S": "example-string"
+        },
+        "legalName": {
+          "S": "example-string"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    },
+    "Attestation": {
+      "tableName": "Attestation",
+      "description": "Structure for the 'Attestation' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "attestationId",
+      "sortKey": null,
+      "attributes": {
+        "question5": "String",
+        "question3": "String",
+        "generalComments": "String",
+        "question4": "String",
+        "question1": "String",
+        "question2": "String",
+        "attestationId": "Number",
+        "question6": "String",
+        "question9": "String",
+        "question7": "String",
+        "question8": "String",
+        "question11": "String",
+        "question10": "String",
+        "question19": "String",
+        "question18": "String",
+        "question17": "String",
+        "question16": "String",
+        "question15": "String",
+        "question14": "String",
+        "numberSupervisors": "String",
+        "numberInterns": "String"
+      },
+      "sampleItemShape": {
+        "question5": "example-string",
+        "question3": "example-string",
+        "generalComments": "example-string",
+        "question4": "example-string",
+        "question1": "example-string",
+        "question2": "example-string",
+        "attestationId": 12345,
+        "question6": "example-string",
+        "question9": "example-string",
+        "question7": "example-string",
+        "question8": "example-string",
+        "question11": "example-string",
+        "question10": "example-string",
+        "question19": "example-string",
+        "question18": "example-string",
+        "question17": "example-string",
+        "question16": "example-string",
+        "question15": "example-string",
+        "question14": "example-string",
+        "numberSupervisors": "example-string",
+        "numberInterns": "example-string"
+      },
+      "sampleItemDynamoDBFormat": {
+        "question5": {
+          "S": "example-string"
+        },
+        "question3": {
+          "S": "example-string"
+        },
+        "generalComments": {
+          "S": "example-string"
+        },
+        "question4": {
+          "S": "example-string"
+        },
+        "question1": {
+          "S": "example-string"
+        },
+        "question2": {
+          "S": "example-string"
+        },
+        "attestationId": {
+          "N": "12345"
+        },
+        "question6": {
+          "S": "example-string"
+        },
+        "question9": {
+          "S": "example-string"
+        },
+        "question7": {
+          "S": "example-string"
+        },
+        "question8": {
+          "S": "example-string"
+        },
+        "question11": {
+          "S": "example-string"
+        },
+        "question10": {
+          "S": "example-string"
+        },
+        "question19": {
+          "S": "example-string"
+        },
+        "question18": {
+          "S": "example-string"
+        },
+        "question17": {
+          "S": "example-string"
+        },
+        "question16": {
+          "S": "example-string"
+        },
+        "question15": {
+          "S": "example-string"
+        },
+        "question14": {
+          "S": "example-string"
+        },
+        "numberSupervisors": {
+          "S": "example-string"
+        },
+        "numberInterns": {
+          "S": "example-string"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    },
+    "Attester": {
+      "tableName": "Attester",
+      "description": "Structure for the 'Attester' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "attesterEmail",
+      "sortKey": null,
+      "attributes": {
+        "degreeSpeciality": "String",
+        "addressState": "String",
+        "lastName": "String",
+        "degree": "String",
+        "yearConferred": "String",
+        "attesterEmail": "String",
+        "addressLine1": "String",
+        "jurisdiction": "String",
+        "supervisionActivities": "String",
+        "addressCity": "String",
+        "addressZip": "String",
+        "firstName": "String",
+        "licensed": "String",
+        "otherJurisdictions": "String",
+        "licenseNumber": "String",
+        "titlePosition": "String"
+      },
+      "sampleItemShape": {
+        "degreeSpeciality": "example-string",
+        "addressState": "example-string",
+        "lastName": "example-string",
+        "degree": "example-string",
+        "yearConferred": "example-string",
+        "attesterEmail": "example-string",
+        "addressLine1": "example-string",
+        "jurisdiction": "example-string",
+        "supervisionActivities": "example-string",
+        "addressCity": "example-string",
+        "addressZip": "example-string",
+        "firstName": "example-string",
+        "licensed": "example-string",
+        "otherJurisdictions": "example-string",
+        "licenseNumber": "example-string",
+        "titlePosition": "example-string"
+      },
+      "sampleItemDynamoDBFormat": {
+        "degreeSpeciality": {
+          "S": "example-string"
+        },
+        "addressState": {
+          "S": "example-string"
+        },
+        "lastName": {
+          "S": "example-string"
+        },
+        "degree": {
+          "S": "example-string"
+        },
+        "yearConferred": {
+          "S": "example-string"
+        },
+        "attesterEmail": {
+          "S": "example-string"
+        },
+        "addressLine1": {
+          "S": "example-string"
+        },
+        "jurisdiction": {
+          "S": "example-string"
+        },
+        "supervisionActivities": {
+          "S": "example-string"
+        },
+        "addressCity": {
+          "S": "example-string"
+        },
+        "addressZip": {
+          "S": "example-string"
+        },
+        "firstName": {
+          "S": "example-string"
+        },
+        "licensed": {
+          "S": "example-string"
+        },
+        "otherJurisdictions": {
+          "S": "example-string"
+        },
+        "licenseNumber": {
+          "S": "example-string"
+        },
+        "titlePosition": {
+          "S": "example-string"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    },
+    "Conduct": {
+      "tableName": "Conduct",
+      "description": "Structure for the 'Conduct' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "userId",
+      "sortKey": null,
+      "attributes": {
+        "rejected": "String",
+        "ethicsCommittee": "String",
+        "incapable": "String",
+        "convicted": "String",
+        "thirdPartyRevoked": "String",
+        "deniedMembership": "String",
+        "censured": "String",
+        "refusedRenewal": "String",
+        "malpractice": "String",
+        "governmentAllegations": "String",
+        "userId": "Number",
+        "aidedPracticeWithoutLicense": "String",
+        "limited": "String",
+        "disciplined": "String",
+        "sexOffender": "String",
+        "drugsAlcohol": "String",
+        "surrendered": "String",
+        "disciplinedWhileHolding": "String",
+        "outstandingInvestigation": "String",
+        "liablityCancelled": "String",
+        "practicedWithoutLicense": "String",
+        "validated": "String",
+        "attestationDate": "String",
+        "AttestationType": "String",
+        "legalAgree": "String",
+        "legalName": "String",
+        "censured_desc": "String"
+      },
+      "sampleItemShape": {
+        "rejected": "example-string",
+        "ethicsCommittee": "example-string",
+        "incapable": "example-string",
+        "convicted": "example-string",
+        "thirdPartyRevoked": "example-string",
+        "deniedMembership": "example-string",
+        "censured": "example-string",
+        "refusedRenewal": "example-string",
+        "malpractice": "example-string",
+        "governmentAllegations": "example-string",
+        "userId": 12345,
+        "aidedPracticeWithoutLicense": "example-string",
+        "limited": "example-string",
+        "disciplined": "example-string",
+        "sexOffender": "example-string",
+        "drugsAlcohol": "example-string",
+        "surrendered": "example-string",
+        "disciplinedWhileHolding": "example-string",
+        "outstandingInvestigation": "example-string",
+        "liablityCancelled": "example-string",
+        "practicedWithoutLicense": "example-string",
+        "validated": "example-string",
+        "attestationDate": "example-string",
+        "AttestationType": "example-string",
+        "legalAgree": "example-string",
+        "legalName": "example-string",
+        "censured_desc": "example-string"
+      },
+      "sampleItemDynamoDBFormat": {
+        "rejected": {
+          "S": "example-string"
+        },
+        "ethicsCommittee": {
+          "S": "example-string"
+        },
+        "incapable": {
+          "S": "example-string"
+        },
+        "convicted": {
+          "S": "example-string"
+        },
+        "thirdPartyRevoked": {
+          "S": "example-string"
+        },
+        "deniedMembership": {
+          "S": "example-string"
+        },
+        "censured": {
+          "S": "example-string"
+        },
+        "refusedRenewal": {
+          "S": "example-string"
+        },
+        "malpractice": {
+          "S": "example-string"
+        },
+        "governmentAllegations": {
+          "S": "example-string"
+        },
+        "userId": {
+          "N": "12345"
+        },
+        "aidedPracticeWithoutLicense": {
+          "S": "example-string"
+        },
+        "limited": {
+          "S": "example-string"
+        },
+        "disciplined": {
+          "S": "example-string"
+        },
+        "sexOffender": {
+          "S": "example-string"
+        },
+        "drugsAlcohol": {
+          "S": "example-string"
+        },
+        "surrendered": {
+          "S": "example-string"
+        },
+        "disciplinedWhileHolding": {
+          "S": "example-string"
+        },
+        "outstandingInvestigation": {
+          "S": "example-string"
+        },
+        "liablityCancelled": {
+          "S": "example-string"
+        },
+        "practicedWithoutLicense": {
+          "S": "example-string"
+        },
+        "validated": {
+          "S": "example-string"
+        },
+        "attestationDate": {
+          "S": "example-string"
+        },
+        "AttestationType": {
+          "S": "example-string"
+        },
+        "legalAgree": {
+          "S": "example-string"
+        },
+        "legalName": {
+          "S": "example-string"
+        },
+        "censured_desc": {
+          "S": "example-string"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    },
+    "ContinuingEducation": {
+      "tableName": "ContinuingEducation",
+      "description": "Structure for the 'ContinuingEducation' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "userId",
+      "sortKey": null,
+      "attributes": {
+        "UpdatedAt": "String",
+        "legalAgree": "String",
+        "courseEntryList": "String",
+        "validated": "String",
+        "userId": "Number",
+        "attestationDate": "String",
+        "AttestationType": "String"
+      },
+      "sampleItemShape": {
+        "UpdatedAt": "example-string",
+        "legalAgree": "example-string",
+        "courseEntryList": "example-string",
+        "validated": "example-string",
+        "userId": 12345,
+        "attestationDate": "example-string",
+        "AttestationType": "example-string"
+      },
+      "sampleItemDynamoDBFormat": {
+        "UpdatedAt": {
+          "S": "example-string"
+        },
+        "legalAgree": {
+          "S": "example-string"
+        },
+        "courseEntryList": {
+          "S": "example-string"
+        },
+        "validated": {
+          "S": "example-string"
+        },
+        "userId": {
+          "N": "12345"
+        },
+        "attestationDate": {
+          "S": "example-string"
+        },
+        "AttestationType": {
+          "S": "example-string"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    },
+    "Courses": {
+      "tableName": "Courses",
+      "description": "Structure for the 'Courses' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "userId",
+      "sortKey": "entryId",
+      "attributes": {
+        "courseNumber": "String",
+        "userId": "Number",
+        "year": "String",
+        "category": "String",
+        "credits": "String",
+        "term": "String",
+        "semesterQuarter": "String",
+        "institution": "String",
+        "hours": "String",
+        "validated": "String",
+        "title": "String",
+        "entryId": "Number",
+        "description": "String"
+      },
+      "sampleItemShape": {
+        "courseNumber": "example-string",
+        "userId": 12345,
+        "year": "example-string",
+        "category": "example-string",
+        "credits": "example-string",
+        "term": "example-string",
+        "semesterQuarter": "example-string",
+        "institution": "example-string",
+        "hours": "example-string",
+        "validated": "example-string",
+        "title": "example-string",
+        "entryId": 12345,
+        "description": "example-string"
+      },
+      "sampleItemDynamoDBFormat": {
+        "courseNumber": {
+          "S": "example-string"
+        },
+        "userId": {
+          "N": "12345"
+        },
+        "year": {
+          "S": "example-string"
+        },
+        "category": {
+          "S": "example-string"
+        },
+        "credits": {
+          "S": "example-string"
+        },
+        "term": {
+          "S": "example-string"
+        },
+        "semesterQuarter": {
+          "S": "example-string"
+        },
+        "institution": {
+          "S": "example-string"
+        },
+        "hours": {
+          "S": "example-string"
+        },
+        "validated": {
+          "S": "example-string"
+        },
+        "title": {
+          "S": "example-string"
+        },
+        "entryId": {
+          "N": "12345"
+        },
+        "description": {
+          "S": "example-string"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    },
+    "Credentials": {
+      "tableName": "Credentials",
+      "description": "Structure for the 'Credentials' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "userId",
+      "sortKey": null,
+      "attributes": {
+        "abpp": "String",
+        "nrhspp": "String",
+        "validated": "String",
+        "crhspp": "String",
+        "userId": "Number",
+        "abppDate": "String",
+        "nrhsppDate": "String",
+        "abppSpecialty": "String"
+      },
+      "sampleItemShape": {
+        "abpp": "example-string",
+        "nrhspp": "example-string",
+        "validated": "example-string",
+        "crhspp": "example-string",
+        "userId": 12345,
+        "abppDate": "example-string",
+        "nrhsppDate": "example-string",
+        "abppSpecialty": "example-string"
+      },
+      "sampleItemDynamoDBFormat": {
+        "abpp": {
+          "S": "example-string"
+        },
+        "nrhspp": {
+          "S": "example-string"
+        },
+        "validated": {
+          "S": "example-string"
+        },
+        "crhspp": {
+          "S": "example-string"
+        },
+        "userId": {
+          "N": "12345"
+        },
+        "abppDate": {
+          "S": "example-string"
+        },
+        "nrhsppDate": {
+          "S": "example-string"
+        },
+        "abppSpecialty": {
+          "S": "example-string"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    },
+    "Declaration": {
+      "tableName": "Declaration",
+      "description": "Structure for the 'Declaration' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "userId",
+      "sortKey": null,
+      "attributes": {
+        "clinicalNeuro": "String",
+        "clinical": "String",
+        "english": "String",
+        "validated": "String",
+        "userId": "Number",
+        "familiesIntervention": "String",
+        "psycoanalysis": "String",
+        "adultsIntervention": "String",
+        "clinicalAssessment": "String",
+        "consultation": "String",
+        "familiesResearch": "String",
+        "adultsResearch": "String",
+        "groupsAssessment": "String",
+        "adultsConsultation": "String",
+        "research": "String",
+        "adolescentsAdministration": "String",
+        "adolescentsIntervention": "String",
+        "cognitive": "String",
+        "groupsConsultation": "String",
+        "treatment": "String",
+        "groupsResearch": "String",
+        "academic": "String",
+        "familiesAssessment": "String",
+        "familiesConsultation": "String",
+        "spanish": "String",
+        "adolescentsConsultation": "String",
+        "groupsAdministration": "String",
+        "familiesAdministration": "String",
+        "adultsAdministration": "String",
+        "adolescentsAssessment": "String",
+        "groupsIntervention": "String",
+        "adultsAssessment": "String",
+        "adolescentsResearch": "String",
+        "clinicalHealth": "String",
+        "elderlyAssessment": "String",
+        "organizationsAdministration": "String",
+        "elderlyIntervention": "String",
+        "elderlyResearch": "String",
+        "organizationsConsultation": "String",
+        "infantsAssessment": "String",
+        "childrenConsultation": "String",
+        "infantsConsultation": "String",
+        "childrenAssessment": "String",
+        "elderlyConsultation": "String",
+        "infantsIntervention": "String",
+        "childrenIntervention": "String",
+        "organizationsResearch": "String",
+        "remoteServices": "String",
+        "organizationsAssessment": "String",
+        "childrenResearch": "String",
+        "infantsResearch": "String",
+        "counseling": "String",
+        "elderlyAdministration": "String",
+        "otherLanguages": "String",
+        "forensic": "String",
+        "otherIntervention": "String",
+        "otherAdministration": "String",
+        "otherAssessment": "String",
+        "otherResearch": "String",
+        "otherConsultation": "String",
+        "correctional": "String",
+        "school": "String",
+        "rehabilitation": "String",
+        "organizationsIntervention": "String",
+        "childrenAdministration": "String",
+        "appliedBehavior": "String"
+      },
+      "sampleItemShape": {
+        "clinicalNeuro": "example-string",
+        "clinical": "example-string",
+        "english": "example-string",
+        "validated": "example-string",
+        "userId": 12345,
+        "familiesIntervention": "example-string",
+        "psycoanalysis": "example-string",
+        "adultsIntervention": "example-string",
+        "clinicalAssessment": "example-string",
+        "consultation": "example-string",
+        "familiesResearch": "example-string",
+        "adultsResearch": "example-string",
+        "groupsAssessment": "example-string",
+        "adultsConsultation": "example-string",
+        "research": "example-string",
+        "adolescentsAdministration": "example-string",
+        "adolescentsIntervention": "example-string",
+        "cognitive": "example-string",
+        "groupsConsultation": "example-string",
+        "treatment": "example-string",
+        "groupsResearch": "example-string",
+        "academic": "example-string",
+        "familiesAssessment": "example-string",
+        "familiesConsultation": "example-string",
+        "spanish": "example-string",
+        "adolescentsConsultation": "example-string",
+        "groupsAdministration": "example-string",
+        "familiesAdministration": "example-string",
+        "adultsAdministration": "example-string",
+        "adolescentsAssessment": "example-string",
+        "groupsIntervention": "example-string",
+        "adultsAssessment": "example-string",
+        "adolescentsResearch": "example-string",
+        "clinicalHealth": "example-string",
+        "elderlyAssessment": "example-string",
+        "organizationsAdministration": "example-string",
+        "elderlyIntervention": "example-string",
+        "elderlyResearch": "example-string",
+        "organizationsConsultation": "example-string",
+        "infantsAssessment": "example-string",
+        "childrenConsultation": "example-string",
+        "infantsConsultation": "example-string",
+        "childrenAssessment": "example-string",
+        "elderlyConsultation": "example-string",
+        "infantsIntervention": "example-string",
+        "childrenIntervention": "example-string",
+        "organizationsResearch": "example-string",
+        "remoteServices": "example-string",
+        "organizationsAssessment": "example-string",
+        "childrenResearch": "example-string",
+        "infantsResearch": "example-string",
+        "counseling": "example-string",
+        "elderlyAdministration": "example-string",
+        "otherLanguages": "example-string",
+        "forensic": "example-string",
+        "otherIntervention": "example-string",
+        "otherAdministration": "example-string",
+        "otherAssessment": "example-string",
+        "otherResearch": "example-string",
+        "otherConsultation": "example-string",
+        "correctional": "example-string",
+        "school": "example-string",
+        "rehabilitation": "example-string",
+        "organizationsIntervention": "example-string",
+        "childrenAdministration": "example-string",
+        "appliedBehavior": "example-string"
+      },
+      "sampleItemDynamoDBFormat": {
+        "clinicalNeuro": {
+          "S": "example-string"
+        },
+        "clinical": {
+          "S": "example-string"
+        },
+        "english": {
+          "S": "example-string"
+        },
+        "validated": {
+          "S": "example-string"
+        },
+        "userId": {
+          "N": "12345"
+        },
+        "familiesIntervention": {
+          "S": "example-string"
+        },
+        "psycoanalysis": {
+          "S": "example-string"
+        },
+        "adultsIntervention": {
+          "S": "example-string"
+        },
+        "clinicalAssessment": {
+          "S": "example-string"
+        },
+        "consultation": {
+          "S": "example-string"
+        },
+        "familiesResearch": {
+          "S": "example-string"
+        },
+        "adultsResearch": {
+          "S": "example-string"
+        },
+        "groupsAssessment": {
+          "S": "example-string"
+        },
+        "adultsConsultation": {
+          "S": "example-string"
+        },
+        "research": {
+          "S": "example-string"
+        },
+        "adolescentsAdministration": {
+          "S": "example-string"
+        },
+        "adolescentsIntervention": {
+          "S": "example-string"
+        },
+        "cognitive": {
+          "S": "example-string"
+        },
+        "groupsConsultation": {
+          "S": "example-string"
+        },
+        "treatment": {
+          "S": "example-string"
+        },
+        "groupsResearch": {
+          "S": "example-string"
+        },
+        "academic": {
+          "S": "example-string"
+        },
+        "familiesAssessment": {
+          "S": "example-string"
+        },
+        "familiesConsultation": {
+          "S": "example-string"
+        },
+        "spanish": {
+          "S": "example-string"
+        },
+        "adolescentsConsultation": {
+          "S": "example-string"
+        },
+        "groupsAdministration": {
+          "S": "example-string"
+        },
+        "familiesAdministration": {
+          "S": "example-string"
+        },
+        "adultsAdministration": {
+          "S": "example-string"
+        },
+        "adolescentsAssessment": {
+          "S": "example-string"
+        },
+        "groupsIntervention": {
+          "S": "example-string"
+        },
+        "adultsAssessment": {
+          "S": "example-string"
+        },
+        "adolescentsResearch": {
+          "S": "example-string"
+        },
+        "clinicalHealth": {
+          "S": "example-string"
+        },
+        "elderlyAssessment": {
+          "S": "example-string"
+        },
+        "organizationsAdministration": {
+          "S": "example-string"
+        },
+        "elderlyIntervention": {
+          "S": "example-string"
+        },
+        "elderlyResearch": {
+          "S": "example-string"
+        },
+        "organizationsConsultation": {
+          "S": "example-string"
+        },
+        "infantsAssessment": {
+          "S": "example-string"
+        },
+        "childrenConsultation": {
+          "S": "example-string"
+        },
+        "infantsConsultation": {
+          "S": "example-string"
+        },
+        "childrenAssessment": {
+          "S": "example-string"
+        },
+        "elderlyConsultation": {
+          "S": "example-string"
+        },
+        "infantsIntervention": {
+          "S": "example-string"
+        },
+        "childrenIntervention": {
+          "S": "example-string"
+        },
+        "organizationsResearch": {
+          "S": "example-string"
+        },
+        "remoteServices": {
+          "S": "example-string"
+        },
+        "organizationsAssessment": {
+          "S": "example-string"
+        },
+        "childrenResearch": {
+          "S": "example-string"
+        },
+        "infantsResearch": {
+          "S": "example-string"
+        },
+        "counseling": {
+          "S": "example-string"
+        },
+        "elderlyAdministration": {
+          "S": "example-string"
+        },
+        "otherLanguages": {
+          "S": "example-string"
+        },
+        "forensic": {
+          "S": "example-string"
+        },
+        "otherIntervention": {
+          "S": "example-string"
+        },
+        "otherAdministration": {
+          "S": "example-string"
+        },
+        "otherAssessment": {
+          "S": "example-string"
+        },
+        "otherResearch": {
+          "S": "example-string"
+        },
+        "otherConsultation": {
+          "S": "example-string"
+        },
+        "correctional": {
+          "S": "example-string"
+        },
+        "school": {
+          "S": "example-string"
+        },
+        "rehabilitation": {
+          "S": "example-string"
+        },
+        "organizationsIntervention": {
+          "S": "example-string"
+        },
+        "childrenAdministration": {
+          "S": "example-string"
+        },
+        "appliedBehavior": {
+          "S": "example-string"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    },
+    "Demographics": {
+      "tableName": "Demographics",
+      "description": "Structure for the 'Demographics' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "userId",
+      "sortKey": null,
+      "attributes": {
+        "birthDate": "String",
+        "lastName": "String",
+        "primaryPhoneType": "String",
+        "primaryPhone": "String",
+        "validated": "String",
+        "professionalName": "String",
+        "firstName": "String",
+        "mailingCity": "String",
+        "languageFrench": "String",
+        "mailingAddress1": "String",
+        "userId": "Number",
+        "mailingAddress2": "String",
+        "languageEnglish": "String",
+        "citizenshipCountry": "String",
+        "mailingAddressType": "String",
+        "languageSpanish": "String",
+        "languageOthers": "String",
+        "mailingState": "String",
+        "mailingZip": "String",
+        "gender": "String",
+        "otherCurrentNames": "String",
+        "birthPlace": "String",
+        "phoneList": "String",
+        "mailingName": "String",
+        "addressList": "String",
+        "middleName": "String",
+        "primaryFax": "String",
+        "primaryFaxType": "String",
+        "maidenName": "String"
+      },
+      "sampleItemShape": {
+        "birthDate": "example-string",
+        "lastName": "example-string",
+        "primaryPhoneType": "example-string",
+        "primaryPhone": "example-string",
+        "validated": "example-string",
+        "professionalName": "example-string",
+        "firstName": "example-string",
+        "mailingCity": "example-string",
+        "languageFrench": "example-string",
+        "mailingAddress1": "example-string",
+        "userId": 12345,
+        "mailingAddress2": "example-string",
+        "languageEnglish": "example-string",
+        "citizenshipCountry": "example-string",
+        "mailingAddressType": "example-string",
+        "languageSpanish": "example-string",
+        "languageOthers": "example-string",
+        "mailingState": "example-string",
+        "mailingZip": "example-string",
+        "gender": "example-string",
+        "otherCurrentNames": "example-string",
+        "birthPlace": "example-string",
+        "phoneList": "example-string",
+        "mailingName": "example-string",
+        "addressList": "example-string",
+        "middleName": "example-string",
+        "primaryFax": "example-string",
+        "primaryFaxType": "example-string",
+        "maidenName": "example-string"
+      },
+      "sampleItemDynamoDBFormat": {
+        "birthDate": {
+          "S": "example-string"
+        },
+        "lastName": {
+          "S": "example-string"
+        },
+        "primaryPhoneType": {
+          "S": "example-string"
+        },
+        "primaryPhone": {
+          "S": "example-string"
+        },
+        "validated": {
+          "S": "example-string"
+        },
+        "professionalName": {
+          "S": "example-string"
+        },
+        "firstName": {
+          "S": "example-string"
+        },
+        "mailingCity": {
+          "S": "example-string"
+        },
+        "languageFrench": {
+          "S": "example-string"
+        },
+        "mailingAddress1": {
+          "S": "example-string"
+        },
+        "userId": {
+          "N": "12345"
+        },
+        "mailingAddress2": {
+          "S": "example-string"
+        },
+        "languageEnglish": {
+          "S": "example-string"
+        },
+        "citizenshipCountry": {
+          "S": "example-string"
+        },
+        "mailingAddressType": {
+          "S": "example-string"
+        },
+        "languageSpanish": {
+          "S": "example-string"
+        },
+        "languageOthers": {
+          "S": "example-string"
+        },
+        "mailingState": {
+          "S": "example-string"
+        },
+        "mailingZip": {
+          "S": "example-string"
+        },
+        "gender": {
+          "S": "example-string"
+        },
+        "otherCurrentNames": {
+          "S": "example-string"
+        },
+        "birthPlace": {
+          "S": "example-string"
+        },
+        "phoneList": {
+          "S": "example-string"
+        },
+        "mailingName": {
+          "S": "example-string"
+        },
+        "addressList": {
+          "S": "example-string"
+        },
+        "middleName": {
+          "S": "example-string"
+        },
+        "primaryFax": {
+          "S": "example-string"
+        },
+        "primaryFaxType": {
+          "S": "example-string"
+        },
+        "maidenName": {
+          "S": "example-string"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    },
+    "DidacticEducation": {
+      "tableName": "DidacticEducation",
+      "description": "Structure for the 'DidacticEducation' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "userId",
+      "sortKey": "entryId",
+      "attributes": {
+        "courseNumber": "String",
+        "credits": "String",
+        "term": "String",
+        "semesterQuarter": "String",
+        "hours": "String",
+        "institution": "String",
+        "AttestationType": "String",
+        "validated": "String",
+        "entryId": "Number",
+        "userId": "Number",
+        "year": "String",
+        "category": "String",
+        "title": "String",
+        "description": "String"
+      },
+      "sampleItemShape": {
+        "courseNumber": "example-string",
+        "credits": "example-string",
+        "term": "example-string",
+        "semesterQuarter": "example-string",
+        "hours": "example-string",
+        "institution": "example-string",
+        "AttestationType": "example-string",
+        "validated": "example-string",
+        "entryId": 12345,
+        "userId": 12345,
+        "year": "example-string",
+        "category": "example-string",
+        "title": "example-string",
+        "description": "example-string"
+      },
+      "sampleItemDynamoDBFormat": {
+        "courseNumber": {
+          "S": "example-string"
+        },
+        "credits": {
+          "S": "example-string"
+        },
+        "term": {
+          "S": "example-string"
+        },
+        "semesterQuarter": {
+          "S": "example-string"
+        },
+        "hours": {
+          "S": "example-string"
+        },
+        "institution": {
+          "S": "example-string"
+        },
+        "AttestationType": {
+          "S": "example-string"
+        },
+        "validated": {
+          "S": "example-string"
+        },
+        "entryId": {
+          "N": "12345"
+        },
+        "userId": {
+          "N": "12345"
+        },
+        "year": {
+          "S": "example-string"
+        },
+        "category": {
+          "S": "example-string"
+        },
+        "title": {
+          "S": "example-string"
+        },
+        "description": {
+          "S": "example-string"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    },
+    "DidacticEducation.Extension": {
+      "tableName": "DidacticEducation.Extension",
+      "description": "Structure for the 'DidacticEducation.Extension' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "userId",
+      "sortKey": null,
+      "attributes": {
+        "UpdatedAt": "String",
+        "zip": "String",
+        "admissionDate": "String",
+        "completionDate": "String",
+        "telephoneNumber": "String",
+        "institution": "String",
+        "email": "String",
+        "state": "String",
+        "city": "String",
+        "program": "String",
+        "contactName": "String",
+        "userId": "Number",
+        "addressLine1": "String"
+      },
+      "sampleItemShape": {
+        "UpdatedAt": "example-string",
+        "zip": "example-string",
+        "admissionDate": "example-string",
+        "completionDate": "example-string",
+        "telephoneNumber": "example-string",
+        "institution": "example-string",
+        "email": "example-string",
+        "state": "example-string",
+        "city": "example-string",
+        "program": "example-string",
+        "contactName": "example-string",
+        "userId": 12345,
+        "addressLine1": "example-string"
+      },
+      "sampleItemDynamoDBFormat": {
+        "UpdatedAt": {
+          "S": "example-string"
+        },
+        "zip": {
+          "S": "example-string"
+        },
+        "admissionDate": {
+          "S": "example-string"
+        },
+        "completionDate": {
+          "S": "example-string"
+        },
+        "telephoneNumber": {
+          "S": "example-string"
+        },
+        "institution": {
+          "S": "example-string"
+        },
+        "email": {
+          "S": "example-string"
+        },
+        "state": {
+          "S": "example-string"
+        },
+        "city": {
+          "S": "example-string"
+        },
+        "program": {
+          "S": "example-string"
+        },
+        "contactName": {
+          "S": "example-string"
+        },
+        "userId": {
+          "N": "12345"
+        },
+        "addressLine1": {
+          "S": "example-string"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    },
+    "DisciplinaryEntry": {
+      "tableName": "DisciplinaryEntry",
+      "description": "Structure for the 'DisciplinaryEntry' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "disciplinaryEntryId",
+      "sortKey": null,
+      "attributes": {
+        "ddrDate": "String",
+        "birthDate": "String",
+        "logDate": "String",
+        "addressList": "String",
+        "degree": "String",
+        "schoolName": "String",
+        "lengthType": "String",
+        "Entry.FirstName": "String",
+        "disciplinaryEntryId": "Number",
+        "Entry.LastName": "String",
+        "middleName": "String",
+        "automaticReinstatement": "String",
+        "graduationYear": "Number",
+        "disciplineDate": "String",
+        "Entry.DisciplinaryEntry": "Number",
+        "logLastName": "String",
+        "gender": "String",
+        "reasonList": "String",
+        "isLicensed": "String",
+        "monetaryPenalty": "Number",
+        "actionOnAppeal": "String",
+        "actionList": "String",
+        "licensesList": "String",
+        "actionDescription": "String",
+        "effectiveDate": "String",
+        "licenseType": "String",
+        "licenseNumber": "String",
+        "Entry.IsActive": "String",
+        "Jurisdiction": "String",
+        "licenseDate": "String",
+        "otherAliases": "String",
+        "birthPlace": "String",
+        "degreeSpecialty": "String",
+        "otherJurisdictions": "String",
+        "isActionConductRelated": "String",
+        "lengthMonths": "Number"
+      },
+      "sampleItemShape": {
+        "ddrDate": "example-string",
+        "birthDate": "example-string",
+        "logDate": "example-string",
+        "addressList": "example-string",
+        "degree": "example-string",
+        "schoolName": "example-string",
+        "lengthType": "example-string",
+        "Entry.FirstName": "example-string",
+        "disciplinaryEntryId": 12345,
+        "Entry.LastName": "example-string",
+        "middleName": "example-string",
+        "automaticReinstatement": "example-string",
+        "graduationYear": 12345,
+        "disciplineDate": "example-string",
+        "Entry.DisciplinaryEntry": 12345,
+        "logLastName": "example-string",
+        "gender": "example-string",
+        "reasonList": "example-string",
+        "isLicensed": "example-string",
+        "monetaryPenalty": 12345,
+        "actionOnAppeal": "example-string",
+        "actionList": "example-string",
+        "licensesList": "example-string",
+        "actionDescription": "example-string",
+        "effectiveDate": "example-string",
+        "licenseType": "example-string",
+        "licenseNumber": "example-string",
+        "Entry.IsActive": "example-string",
+        "Jurisdiction": "example-string",
+        "licenseDate": "example-string",
+        "otherAliases": "example-string",
+        "birthPlace": "example-string",
+        "degreeSpecialty": "example-string",
+        "otherJurisdictions": "example-string",
+        "isActionConductRelated": "example-string",
+        "lengthMonths": 12345
+      },
+      "sampleItemDynamoDBFormat": {
+        "ddrDate": {
+          "S": "example-string"
+        },
+        "birthDate": {
+          "S": "example-string"
+        },
+        "logDate": {
+          "S": "example-string"
+        },
+        "addressList": {
+          "S": "example-string"
+        },
+        "degree": {
+          "S": "example-string"
+        },
+        "schoolName": {
+          "S": "example-string"
+        },
+        "lengthType": {
+          "S": "example-string"
+        },
+        "Entry.FirstName": {
+          "S": "example-string"
+        },
+        "disciplinaryEntryId": {
+          "N": "12345"
+        },
+        "Entry.LastName": {
+          "S": "example-string"
+        },
+        "middleName": {
+          "S": "example-string"
+        },
+        "automaticReinstatement": {
+          "S": "example-string"
+        },
+        "graduationYear": {
+          "N": "12345"
+        },
+        "disciplineDate": {
+          "S": "example-string"
+        },
+        "Entry.DisciplinaryEntry": {
+          "N": "12345"
+        },
+        "logLastName": {
+          "S": "example-string"
+        },
+        "gender": {
+          "S": "example-string"
+        },
+        "reasonList": {
+          "S": "example-string"
+        },
+        "isLicensed": {
+          "S": "example-string"
+        },
+        "monetaryPenalty": {
+          "N": "12345"
+        },
+        "actionOnAppeal": {
+          "S": "example-string"
+        },
+        "actionList": {
+          "S": "example-string"
+        },
+        "licensesList": {
+          "S": "example-string"
+        },
+        "actionDescription": {
+          "S": "example-string"
+        },
+        "effectiveDate": {
+          "S": "example-string"
+        },
+        "licenseType": {
+          "S": "example-string"
+        },
+        "licenseNumber": {
+          "S": "example-string"
+        },
+        "Entry.IsActive": {
+          "S": "example-string"
+        },
+        "Jurisdiction": {
+          "S": "example-string"
+        },
+        "licenseDate": {
+          "S": "example-string"
+        },
+        "otherAliases": {
+          "S": "example-string"
+        },
+        "birthPlace": {
+          "S": "example-string"
+        },
+        "degreeSpecialty": {
+          "S": "example-string"
+        },
+        "otherJurisdictions": {
+          "S": "example-string"
+        },
+        "isActionConductRelated": {
+          "S": "example-string"
+        },
+        "lengthMonths": {
+          "N": "12345"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    },
+    "EPassportHomeStateDeclaration": {
+      "tableName": "EPassportHomeStateDeclaration",
+      "description": "Structure for the 'EPassportHomeStateDeclaration' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "userId",
+      "sortKey": "entryId",
+      "attributes": {
+        "StateAbbreviation": "String",
+        "HasAttested": "String",
+        "CreatedOn": "String",
+        "StartDate": "String",
+        "userId": "Number",
+        "CreatedByUserId": "String",
+        "AttestationType": "String",
+        "validated": "String",
+        "StateFullName": "String",
+        "entryId": "Number",
+        "UpdatedOn": "String",
+        "UpdatedByUserId": "String",
+        "OriginalStartDate": "String",
+        "UpdatedAt": "String"
+      },
+      "sampleItemShape": {
+        "StateAbbreviation": "example-string",
+        "HasAttested": "example-string",
+        "CreatedOn": "example-string",
+        "StartDate": "example-string",
+        "userId": 12345,
+        "CreatedByUserId": "example-string",
+        "AttestationType": "example-string",
+        "validated": "example-string",
+        "StateFullName": "example-string",
+        "entryId": 12345,
+        "UpdatedOn": "example-string",
+        "UpdatedByUserId": "example-string",
+        "OriginalStartDate": "example-string",
+        "UpdatedAt": "example-string"
+      },
+      "sampleItemDynamoDBFormat": {
+        "StateAbbreviation": {
+          "S": "example-string"
+        },
+        "HasAttested": {
+          "S": "example-string"
+        },
+        "CreatedOn": {
+          "S": "example-string"
+        },
+        "StartDate": {
+          "S": "example-string"
+        },
+        "userId": {
+          "N": "12345"
+        },
+        "CreatedByUserId": {
+          "S": "example-string"
+        },
+        "AttestationType": {
+          "S": "example-string"
+        },
+        "validated": {
+          "S": "example-string"
+        },
+        "StateFullName": {
+          "S": "example-string"
+        },
+        "entryId": {
+          "N": "12345"
+        },
+        "UpdatedOn": {
+          "S": "example-string"
+        },
+        "UpdatedByUserId": {
+          "S": "example-string"
+        },
+        "OriginalStartDate": {
+          "S": "example-string"
+        },
+        "UpdatedAt": {
+          "S": "example-string"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    },
+    "Education": {
+      "tableName": "Education",
+      "description": "Structure for the 'Education' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "userId",
+      "sortKey": "entryId",
+      "attributes": {
+        "department": "String",
+        "readyForAttestation": "String",
+        "degree": "String",
+        "designationYear": "String",
+        "institution": "String",
+        "validated": "String",
+        "state": "String",
+        "entryId": "Number",
+        "city": "String",
+        "accreditationYear": "String",
+        "program": "String",
+        "dateConferred": "String",
+        "userId": "Number",
+        "approvedYear": "String",
+        "accreditingBody": "String",
+        "attesterPhone": "String",
+        "attesterName": "String",
+        "attesterEmail": "String",
+        "attesterCity": "String",
+        "attesterZip": "String",
+        "attesterAddress1": "String",
+        "attesterState": "String",
+        "residency": "String",
+        "residencyToDate": "String",
+        "residencyFromDate": "String",
+        "notes": "String"
+      },
+      "sampleItemShape": {
+        "department": "example-string",
+        "readyForAttestation": "example-string",
+        "degree": "example-string",
+        "designationYear": "example-string",
+        "institution": "example-string",
+        "validated": "example-string",
+        "state": "example-string",
+        "entryId": 12345,
+        "city": "example-string",
+        "accreditationYear": "example-string",
+        "program": "example-string",
+        "dateConferred": "example-string",
+        "userId": 12345,
+        "approvedYear": "example-string",
+        "accreditingBody": "example-string",
+        "attesterPhone": "example-string",
+        "attesterName": "example-string",
+        "attesterEmail": "example-string",
+        "attesterCity": "example-string",
+        "attesterZip": "example-string",
+        "attesterAddress1": "example-string",
+        "attesterState": "example-string",
+        "residency": "example-string",
+        "residencyToDate": "example-string",
+        "residencyFromDate": "example-string",
+        "notes": "example-string"
+      },
+      "sampleItemDynamoDBFormat": {
+        "department": {
+          "S": "example-string"
+        },
+        "readyForAttestation": {
+          "S": "example-string"
+        },
+        "degree": {
+          "S": "example-string"
+        },
+        "designationYear": {
+          "S": "example-string"
+        },
+        "institution": {
+          "S": "example-string"
+        },
+        "validated": {
+          "S": "example-string"
+        },
+        "state": {
+          "S": "example-string"
+        },
+        "entryId": {
+          "N": "12345"
+        },
+        "city": {
+          "S": "example-string"
+        },
+        "accreditationYear": {
+          "S": "example-string"
+        },
+        "program": {
+          "S": "example-string"
+        },
+        "dateConferred": {
+          "S": "example-string"
+        },
+        "userId": {
+          "N": "12345"
+        },
+        "approvedYear": {
+          "S": "example-string"
+        },
+        "accreditingBody": {
+          "S": "example-string"
+        },
+        "attesterPhone": {
+          "S": "example-string"
+        },
+        "attesterName": {
+          "S": "example-string"
+        },
+        "attesterEmail": {
+          "S": "example-string"
+        },
+        "attesterCity": {
+          "S": "example-string"
+        },
+        "attesterZip": {
+          "S": "example-string"
+        },
+        "attesterAddress1": {
+          "S": "example-string"
+        },
+        "attesterState": {
+          "S": "example-string"
+        },
+        "residency": {
+          "S": "example-string"
+        },
+        "residencyToDate": {
+          "S": "example-string"
+        },
+        "residencyFromDate": {
+          "S": "example-string"
+        },
+        "notes": {
+          "S": "example-string"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    },
+    "Examination": {
+      "tableName": "Examination",
+      "description": "Structure for the 'Examination' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "userId",
+      "sortKey": null,
+      "attributes": {
+        "bcbaExamPassed": "String",
+        "epppList": "String",
+        "bcabaExamPassed": "String",
+        "validated": "String",
+        "userId": "Number",
+        "examList": "String"
+      },
+      "sampleItemShape": {
+        "bcbaExamPassed": "example-string",
+        "epppList": "example-string",
+        "bcabaExamPassed": "example-string",
+        "validated": "example-string",
+        "userId": 12345,
+        "examList": "example-string"
+      },
+      "sampleItemDynamoDBFormat": {
+        "bcbaExamPassed": {
+          "S": "example-string"
+        },
+        "epppList": {
+          "S": "example-string"
+        },
+        "bcabaExamPassed": {
+          "S": "example-string"
+        },
+        "validated": {
+          "S": "example-string"
+        },
+        "userId": {
+          "N": "12345"
+        },
+        "examList": {
+          "S": "example-string"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    },
+    "HomeStateDeclaration": {
+      "tableName": "HomeStateDeclaration",
+      "description": "Structure for the 'HomeStateDeclaration' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "userId",
+      "sortKey": "entryId",
+      "attributes": {
+        "userId": "Number",
+        "entryId": "Number"
+      },
+      "sampleItemShape": {
+        "userId": 12345,
+        "entryId": 12345
+      },
+      "sampleItemDynamoDBFormat": {
+        "userId": {
+          "N": "12345"
+        },
+        "entryId": {
+          "N": "12345"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    },
+    "Internship": {
+      "tableName": "Internship",
+      "description": "Structure for the 'Internship' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "userId",
+      "sortKey": "entryId",
+      "attributes": {
+        "tbDirectServices": "String",
+        "tbIndirectServices": "String",
+        "tbhoursPerWeekSupervisionOther": "String",
+        "APPICMember": "String",
+        "gSupervisionList": "String",
+        "duties": "String",
+        "endDate": "String",
+        "clienteleDescription": "String",
+        "validated": "String",
+        "agencyAddress1": "String",
+        "entryId": "Number",
+        "APAAccredited": "String",
+        "userId": "Number",
+        "specialty": "String",
+        "startDate": "String",
+        "agencyState": "String",
+        "attesterPhone": "String",
+        "iSupervisionList": "String",
+        "attesterName": "String",
+        "attesterEmail": "String",
+        "CPAAccredited": "String",
+        "AttestationType": "String",
+        "agencyCity": "String",
+        "totalHoursGeneralServices": "String",
+        "agencyName": "String",
+        "applicantTitle": "String",
+        "tbAvgHoursWeek": "String",
+        "tbTotalWeeks": "String",
+        "trainingRequired": "String",
+        "HasAttestation": "Number",
+        "agencyZip": "String",
+        "internCount": "Number",
+        "remarks": "String"
+      },
+      "sampleItemShape": {
+        "tbDirectServices": "example-string",
+        "tbIndirectServices": "example-string",
+        "tbhoursPerWeekSupervisionOther": "example-string",
+        "APPICMember": "example-string",
+        "gSupervisionList": "example-string",
+        "duties": "example-string",
+        "endDate": "example-string",
+        "clienteleDescription": "example-string",
+        "validated": "example-string",
+        "agencyAddress1": "example-string",
+        "entryId": 12345,
+        "APAAccredited": "example-string",
+        "userId": 12345,
+        "specialty": "example-string",
+        "startDate": "example-string",
+        "agencyState": "example-string",
+        "attesterPhone": "example-string",
+        "iSupervisionList": "example-string",
+        "attesterName": "example-string",
+        "attesterEmail": "example-string",
+        "CPAAccredited": "example-string",
+        "AttestationType": "example-string",
+        "agencyCity": "example-string",
+        "totalHoursGeneralServices": "example-string",
+        "agencyName": "example-string",
+        "applicantTitle": "example-string",
+        "tbAvgHoursWeek": "example-string",
+        "tbTotalWeeks": "example-string",
+        "trainingRequired": "example-string",
+        "HasAttestation": 12345,
+        "agencyZip": "example-string",
+        "internCount": 12345,
+        "remarks": "example-string"
+      },
+      "sampleItemDynamoDBFormat": {
+        "tbDirectServices": {
+          "S": "example-string"
+        },
+        "tbIndirectServices": {
+          "S": "example-string"
+        },
+        "tbhoursPerWeekSupervisionOther": {
+          "S": "example-string"
+        },
+        "APPICMember": {
+          "S": "example-string"
+        },
+        "gSupervisionList": {
+          "S": "example-string"
+        },
+        "duties": {
+          "S": "example-string"
+        },
+        "endDate": {
+          "S": "example-string"
+        },
+        "clienteleDescription": {
+          "S": "example-string"
+        },
+        "validated": {
+          "S": "example-string"
+        },
+        "agencyAddress1": {
+          "S": "example-string"
+        },
+        "entryId": {
+          "N": "12345"
+        },
+        "APAAccredited": {
+          "S": "example-string"
+        },
+        "userId": {
+          "N": "12345"
+        },
+        "specialty": {
+          "S": "example-string"
+        },
+        "startDate": {
+          "S": "example-string"
+        },
+        "agencyState": {
+          "S": "example-string"
+        },
+        "attesterPhone": {
+          "S": "example-string"
+        },
+        "iSupervisionList": {
+          "S": "example-string"
+        },
+        "attesterName": {
+          "S": "example-string"
+        },
+        "attesterEmail": {
+          "S": "example-string"
+        },
+        "CPAAccredited": {
+          "S": "example-string"
+        },
+        "AttestationType": {
+          "S": "example-string"
+        },
+        "agencyCity": {
+          "S": "example-string"
+        },
+        "totalHoursGeneralServices": {
+          "S": "example-string"
+        },
+        "agencyName": {
+          "S": "example-string"
+        },
+        "applicantTitle": {
+          "S": "example-string"
+        },
+        "tbAvgHoursWeek": {
+          "S": "example-string"
+        },
+        "tbTotalWeeks": {
+          "S": "example-string"
+        },
+        "trainingRequired": {
+          "S": "example-string"
+        },
+        "HasAttestation": {
+          "N": "12345"
+        },
+        "agencyZip": {
+          "S": "example-string"
+        },
+        "internCount": {
+          "N": "12345"
+        },
+        "remarks": {
+          "S": "example-string"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    },
+    "IpcHomeStateDeclaration": {
+      "tableName": "IpcHomeStateDeclaration",
+      "description": "Structure for the 'IpcHomeStateDeclaration' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "userId",
+      "sortKey": "entryId",
+      "attributes": {
+        "StateAbbreviation": "String",
+        "HasAttested": "String",
+        "CreatedOn": "String",
+        "StartDate": "String",
+        "userId": "Number",
+        "CreatedByUserId": "String",
+        "AttestationType": "String",
+        "validated": "String",
+        "StateFullName": "String",
+        "entryId": "Number",
+        "UpdatedAt": "String",
+        "UpdatedOn": "String",
+        "UpdatedByUserId": "String"
+      },
+      "sampleItemShape": {
+        "StateAbbreviation": "example-string",
+        "HasAttested": "example-string",
+        "CreatedOn": "example-string",
+        "StartDate": "example-string",
+        "userId": 12345,
+        "CreatedByUserId": "example-string",
+        "AttestationType": "example-string",
+        "validated": "example-string",
+        "StateFullName": "example-string",
+        "entryId": 12345,
+        "UpdatedAt": "example-string",
+        "UpdatedOn": "example-string",
+        "UpdatedByUserId": "example-string"
+      },
+      "sampleItemDynamoDBFormat": {
+        "StateAbbreviation": {
+          "S": "example-string"
+        },
+        "HasAttested": {
+          "S": "example-string"
+        },
+        "CreatedOn": {
+          "S": "example-string"
+        },
+        "StartDate": {
+          "S": "example-string"
+        },
+        "userId": {
+          "N": "12345"
+        },
+        "CreatedByUserId": {
+          "S": "example-string"
+        },
+        "AttestationType": {
+          "S": "example-string"
+        },
+        "validated": {
+          "S": "example-string"
+        },
+        "StateFullName": {
+          "S": "example-string"
+        },
+        "entryId": {
+          "N": "12345"
+        },
+        "UpdatedAt": {
+          "S": "example-string"
+        },
+        "UpdatedOn": {
+          "S": "example-string"
+        },
+        "UpdatedByUserId": {
+          "S": "example-string"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    },
+    "Licensures": {
+      "tableName": "Licensures",
+      "description": "Structure for the 'Licensures' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "userId",
+      "sortKey": "entryId",
+      "attributes": {
+        "licensureNumber": "String",
+        "professionalType": "String",
+        "issueDate": "String",
+        "licenseType": "String",
+        "userId": "Number",
+        "status": "String",
+        "jurisdiction": "String",
+        "validated": "String",
+        "entryId": "Number",
+        "licenseTypeEntry": "String",
+        "profession": "String"
+      },
+      "sampleItemShape": {
+        "licensureNumber": "example-string",
+        "professionalType": "example-string",
+        "issueDate": "example-string",
+        "licenseType": "example-string",
+        "userId": 12345,
+        "status": "example-string",
+        "jurisdiction": "example-string",
+        "validated": "example-string",
+        "entryId": 12345,
+        "licenseTypeEntry": "example-string",
+        "profession": "example-string"
+      },
+      "sampleItemDynamoDBFormat": {
+        "licensureNumber": {
+          "S": "example-string"
+        },
+        "professionalType": {
+          "S": "example-string"
+        },
+        "issueDate": {
+          "S": "example-string"
+        },
+        "licenseType": {
+          "S": "example-string"
+        },
+        "userId": {
+          "N": "12345"
+        },
+        "status": {
+          "S": "example-string"
+        },
+        "jurisdiction": {
+          "S": "example-string"
+        },
+        "validated": {
+          "S": "example-string"
+        },
+        "entryId": {
+          "N": "12345"
+        },
+        "licenseTypeEntry": {
+          "S": "example-string"
+        },
+        "profession": {
+          "S": "example-string"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    },
+    "PostLicensureWorkExperience": {
+      "tableName": "PostLicensureWorkExperience",
+      "description": "Structure for the 'PostLicensureWorkExperience' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "userId",
+      "sortKey": "entryId",
+      "attributes": {
+        "readyForAttestation": "String",
+        "endDate": "String",
+        "attesterName": "String",
+        "AttestationType": "String",
+        "validated": "String",
+        "entryId": "Number",
+        "employerName": "String",
+        "isFullTime": "String",
+        "userId": "Number",
+        "startDate": "String",
+        "HasAttestation": "Number",
+        "isSelfEmployed": "String",
+        "address1": "String",
+        "title": "String",
+        "dutiesDescription": "String",
+        "zip": "String",
+        "attesterPhone": "String",
+        "hoursPerWeek": "Number",
+        "attesterEmail": "String",
+        "state": "String",
+        "city": "String",
+        "attesterTitle": "String"
+      },
+      "sampleItemShape": {
+        "readyForAttestation": "example-string",
+        "endDate": "example-string",
+        "attesterName": "example-string",
+        "AttestationType": "example-string",
+        "validated": "example-string",
+        "entryId": 12345,
+        "employerName": "example-string",
+        "isFullTime": "example-string",
+        "userId": 12345,
+        "startDate": "example-string",
+        "HasAttestation": 12345,
+        "isSelfEmployed": "example-string",
+        "address1": "example-string",
+        "title": "example-string",
+        "dutiesDescription": "example-string",
+        "zip": "example-string",
+        "attesterPhone": "example-string",
+        "hoursPerWeek": 12345,
+        "attesterEmail": "example-string",
+        "state": "example-string",
+        "city": "example-string",
+        "attesterTitle": "example-string"
+      },
+      "sampleItemDynamoDBFormat": {
+        "readyForAttestation": {
+          "S": "example-string"
+        },
+        "endDate": {
+          "S": "example-string"
+        },
+        "attesterName": {
+          "S": "example-string"
+        },
+        "AttestationType": {
+          "S": "example-string"
+        },
+        "validated": {
+          "S": "example-string"
+        },
+        "entryId": {
+          "N": "12345"
+        },
+        "employerName": {
+          "S": "example-string"
+        },
+        "isFullTime": {
+          "S": "example-string"
+        },
+        "userId": {
+          "N": "12345"
+        },
+        "startDate": {
+          "S": "example-string"
+        },
+        "HasAttestation": {
+          "N": "12345"
+        },
+        "isSelfEmployed": {
+          "S": "example-string"
+        },
+        "address1": {
+          "S": "example-string"
+        },
+        "title": {
+          "S": "example-string"
+        },
+        "dutiesDescription": {
+          "S": "example-string"
+        },
+        "zip": {
+          "S": "example-string"
+        },
+        "attesterPhone": {
+          "S": "example-string"
+        },
+        "hoursPerWeek": {
+          "N": "12345"
+        },
+        "attesterEmail": {
+          "S": "example-string"
+        },
+        "state": {
+          "S": "example-string"
+        },
+        "city": {
+          "S": "example-string"
+        },
+        "attesterTitle": {
+          "S": "example-string"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    },
+    "Postdoctoral": {
+      "tableName": "Postdoctoral",
+      "description": "Structure for the 'Postdoctoral' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "userId",
+      "sortKey": "entryId",
+      "attributes": {
+        "tbDirectServices": "Number",
+        "tbIndirectServices": "Number",
+        "tbhoursPerWeekSupervisionOther": "Number",
+        "gSupervisionList": "String",
+        "seBeginDate": "String",
+        "seTrainingType": "String",
+        "agencyAddress1": "String",
+        "entryId": "Number",
+        "seDutiesDescription": "String",
+        "seEndDate": "String",
+        "userId": "Number",
+        "agencyState": "String",
+        "attesterPhone": "String",
+        "AgencyZip": "String",
+        "iSupervisionList": "String",
+        "attesterName": "String",
+        "attesterEmail": "String",
+        "AttestationType": "String",
+        "seSpecialtyArea": "String",
+        "agencyCity": "String",
+        "totalHoursGeneralServices": "Number",
+        "agencyName": "String",
+        "seClienteleDescription": "String",
+        "tbAvgHoursWeek": "Number",
+        "tbTotalWeeks": "Number",
+        "HasAttestation": "Number",
+        "seTitle": "String",
+        "seRemarks": "String"
+      },
+      "sampleItemShape": {
+        "tbDirectServices": 12345,
+        "tbIndirectServices": 12345,
+        "tbhoursPerWeekSupervisionOther": 12345,
+        "gSupervisionList": "example-string",
+        "seBeginDate": "example-string",
+        "seTrainingType": "example-string",
+        "agencyAddress1": "example-string",
+        "entryId": 12345,
+        "seDutiesDescription": "example-string",
+        "seEndDate": "example-string",
+        "userId": 12345,
+        "agencyState": "example-string",
+        "attesterPhone": "example-string",
+        "AgencyZip": "example-string",
+        "iSupervisionList": "example-string",
+        "attesterName": "example-string",
+        "attesterEmail": "example-string",
+        "AttestationType": "example-string",
+        "seSpecialtyArea": "example-string",
+        "agencyCity": "example-string",
+        "totalHoursGeneralServices": 12345,
+        "agencyName": "example-string",
+        "seClienteleDescription": "example-string",
+        "tbAvgHoursWeek": 12345,
+        "tbTotalWeeks": 12345,
+        "HasAttestation": 12345,
+        "seTitle": "example-string",
+        "seRemarks": "example-string"
+      },
+      "sampleItemDynamoDBFormat": {
+        "tbDirectServices": {
+          "N": "12345"
+        },
+        "tbIndirectServices": {
+          "N": "12345"
+        },
+        "tbhoursPerWeekSupervisionOther": {
+          "N": "12345"
+        },
+        "gSupervisionList": {
+          "S": "example-string"
+        },
+        "seBeginDate": {
+          "S": "example-string"
+        },
+        "seTrainingType": {
+          "S": "example-string"
+        },
+        "agencyAddress1": {
+          "S": "example-string"
+        },
+        "entryId": {
+          "N": "12345"
+        },
+        "seDutiesDescription": {
+          "S": "example-string"
+        },
+        "seEndDate": {
+          "S": "example-string"
+        },
+        "userId": {
+          "N": "12345"
+        },
+        "agencyState": {
+          "S": "example-string"
+        },
+        "attesterPhone": {
+          "S": "example-string"
+        },
+        "AgencyZip": {
+          "S": "example-string"
+        },
+        "iSupervisionList": {
+          "S": "example-string"
+        },
+        "attesterName": {
+          "S": "example-string"
+        },
+        "attesterEmail": {
+          "S": "example-string"
+        },
+        "AttestationType": {
+          "S": "example-string"
+        },
+        "seSpecialtyArea": {
+          "S": "example-string"
+        },
+        "agencyCity": {
+          "S": "example-string"
+        },
+        "totalHoursGeneralServices": {
+          "N": "12345"
+        },
+        "agencyName": {
+          "S": "example-string"
+        },
+        "seClienteleDescription": {
+          "S": "example-string"
+        },
+        "tbAvgHoursWeek": {
+          "N": "12345"
+        },
+        "tbTotalWeeks": {
+          "N": "12345"
+        },
+        "HasAttestation": {
+          "N": "12345"
+        },
+        "seTitle": {
+          "S": "example-string"
+        },
+        "seRemarks": {
+          "S": "example-string"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    },
+    "Practicum": {
+      "tableName": "Practicum",
+      "description": "Structure for the 'Practicum' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "userId",
+      "sortKey": "entryId",
+      "attributes": {
+        "avgHoursPerWeek": "String",
+        "validated": "String",
+        "agencyAddress1": "String",
+        "entryId": "Number",
+        "userId": "Number",
+        "agencyState": "String",
+        "studentTitle": "String",
+        "indirectHours": "String",
+        "toDate": "String",
+        "totalIndividualSupervisionHours": "String",
+        "dutiesDescription": "String",
+        "attesterPhone": "String",
+        "readyForAttestation": "String",
+        "attesterName": "String",
+        "totalGroupSupervisionHours": "String",
+        "attesterEmail": "String",
+        "serviceHours": "String",
+        "AttestationType": "String",
+        "totalNonLicensedIndividualSupervisionHours": "String",
+        "agencyCity": "String",
+        "agencyName": "String",
+        "fromDate": "String",
+        "courseTitleNumber": "String",
+        "HasAttestation": "Number",
+        "faceHours": "String",
+        "agencyZip": "String",
+        "totalWeeks": "String",
+        "totalNonLicensedGroupSupervisionHours": "String"
+      },
+      "sampleItemShape": {
+        "avgHoursPerWeek": "example-string",
+        "validated": "example-string",
+        "agencyAddress1": "example-string",
+        "entryId": 12345,
+        "userId": 12345,
+        "agencyState": "example-string",
+        "studentTitle": "example-string",
+        "indirectHours": "example-string",
+        "toDate": "example-string",
+        "totalIndividualSupervisionHours": "example-string",
+        "dutiesDescription": "example-string",
+        "attesterPhone": "example-string",
+        "readyForAttestation": "example-string",
+        "attesterName": "example-string",
+        "totalGroupSupervisionHours": "example-string",
+        "attesterEmail": "example-string",
+        "serviceHours": "example-string",
+        "AttestationType": "example-string",
+        "totalNonLicensedIndividualSupervisionHours": "example-string",
+        "agencyCity": "example-string",
+        "agencyName": "example-string",
+        "fromDate": "example-string",
+        "courseTitleNumber": "example-string",
+        "HasAttestation": 12345,
+        "faceHours": "example-string",
+        "agencyZip": "example-string",
+        "totalWeeks": "example-string",
+        "totalNonLicensedGroupSupervisionHours": "example-string"
+      },
+      "sampleItemDynamoDBFormat": {
+        "avgHoursPerWeek": {
+          "S": "example-string"
+        },
+        "validated": {
+          "S": "example-string"
+        },
+        "agencyAddress1": {
+          "S": "example-string"
+        },
+        "entryId": {
+          "N": "12345"
+        },
+        "userId": {
+          "N": "12345"
+        },
+        "agencyState": {
+          "S": "example-string"
+        },
+        "studentTitle": {
+          "S": "example-string"
+        },
+        "indirectHours": {
+          "S": "example-string"
+        },
+        "toDate": {
+          "S": "example-string"
+        },
+        "totalIndividualSupervisionHours": {
+          "S": "example-string"
+        },
+        "dutiesDescription": {
+          "S": "example-string"
+        },
+        "attesterPhone": {
+          "S": "example-string"
+        },
+        "readyForAttestation": {
+          "S": "example-string"
+        },
+        "attesterName": {
+          "S": "example-string"
+        },
+        "totalGroupSupervisionHours": {
+          "S": "example-string"
+        },
+        "attesterEmail": {
+          "S": "example-string"
+        },
+        "serviceHours": {
+          "S": "example-string"
+        },
+        "AttestationType": {
+          "S": "example-string"
+        },
+        "totalNonLicensedIndividualSupervisionHours": {
+          "S": "example-string"
+        },
+        "agencyCity": {
+          "S": "example-string"
+        },
+        "agencyName": {
+          "S": "example-string"
+        },
+        "fromDate": {
+          "S": "example-string"
+        },
+        "courseTitleNumber": {
+          "S": "example-string"
+        },
+        "HasAttestation": {
+          "N": "12345"
+        },
+        "faceHours": {
+          "S": "example-string"
+        },
+        "agencyZip": {
+          "S": "example-string"
+        },
+        "totalWeeks": {
+          "S": "example-string"
+        },
+        "totalNonLicensedGroupSupervisionHours": {
+          "S": "example-string"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    },
+    "Questionnaire": {
+      "tableName": "Questionnaire",
+      "description": "Structure for the 'Questionnaire' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "userId",
+      "sortKey": "activityId",
+      "attributes": {
+        "userId": "Number",
+        "activityId": "Number"
+      },
+      "sampleItemShape": {
+        "userId": 12345,
+        "activityId": 12345
+      },
+      "sampleItemDynamoDBFormat": {
+        "userId": {
+          "N": "12345"
+        },
+        "activityId": {
+          "N": "12345"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    },
+    "Renewal": {
+      "tableName": "Renewal",
+      "description": "Structure for the 'Renewal' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "userId",
+      "sortKey": null,
+      "attributes": {
+        "question11": "String",
+        "question5": "String",
+        "UpdatedAt": "String",
+        "question10": "String",
+        "question6": "String",
+        "question4": "String",
+        "userId": "Number",
+        "question9": "String",
+        "question7": "String",
+        "question8": "String",
+        "question3": "String",
+        "question1": "String",
+        "question2": "String",
+        "question6Explanation": "String",
+        "question11Explanation": "String",
+        "question8Explanation": "String",
+        "question4Explanation": "String",
+        "question5Explanation": "String",
+        "question10Explanation": "String",
+        "question7Explanation": "String",
+        "question9Explanation": "String",
+        "question1StatePeriodList": "String",
+        "question1Explanation": "String",
+        "question2Explanation": "String",
+        "question3Explanation": "String"
+      },
+      "sampleItemShape": {
+        "question11": "example-string",
+        "question5": "example-string",
+        "UpdatedAt": "example-string",
+        "question10": "example-string",
+        "question6": "example-string",
+        "question4": "example-string",
+        "userId": 12345,
+        "question9": "example-string",
+        "question7": "example-string",
+        "question8": "example-string",
+        "question3": "example-string",
+        "question1": "example-string",
+        "question2": "example-string",
+        "question6Explanation": "example-string",
+        "question11Explanation": "example-string",
+        "question8Explanation": "example-string",
+        "question4Explanation": "example-string",
+        "question5Explanation": "example-string",
+        "question10Explanation": "example-string",
+        "question7Explanation": "example-string",
+        "question9Explanation": "example-string",
+        "question1StatePeriodList": "example-string",
+        "question1Explanation": "example-string",
+        "question2Explanation": "example-string",
+        "question3Explanation": "example-string"
+      },
+      "sampleItemDynamoDBFormat": {
+        "question11": {
+          "S": "example-string"
+        },
+        "question5": {
+          "S": "example-string"
+        },
+        "UpdatedAt": {
+          "S": "example-string"
+        },
+        "question10": {
+          "S": "example-string"
+        },
+        "question6": {
+          "S": "example-string"
+        },
+        "question4": {
+          "S": "example-string"
+        },
+        "userId": {
+          "N": "12345"
+        },
+        "question9": {
+          "S": "example-string"
+        },
+        "question7": {
+          "S": "example-string"
+        },
+        "question8": {
+          "S": "example-string"
+        },
+        "question3": {
+          "S": "example-string"
+        },
+        "question1": {
+          "S": "example-string"
+        },
+        "question2": {
+          "S": "example-string"
+        },
+        "question6Explanation": {
+          "S": "example-string"
+        },
+        "question11Explanation": {
+          "S": "example-string"
+        },
+        "question8Explanation": {
+          "S": "example-string"
+        },
+        "question4Explanation": {
+          "S": "example-string"
+        },
+        "question5Explanation": {
+          "S": "example-string"
+        },
+        "question10Explanation": {
+          "S": "example-string"
+        },
+        "question7Explanation": {
+          "S": "example-string"
+        },
+        "question9Explanation": {
+          "S": "example-string"
+        },
+        "question1StatePeriodList": {
+          "S": "example-string"
+        },
+        "question1Explanation": {
+          "S": "example-string"
+        },
+        "question2Explanation": {
+          "S": "example-string"
+        },
+        "question3Explanation": {
+          "S": "example-string"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    },
+    "Renewal2": {
+      "tableName": "Renewal2",
+      "description": "Structure for the 'Renewal2' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "userId",
+      "sortKey": null,
+      "attributes": {
+        "UpdatedAt": "String",
+        "telecom_Interactive_Video_Conferencing": "String",
+        "telecom_Interactive_Video_Conferencing_specify": "String",
+        "question1": "String",
+        "userId": "Number",
+        "sessions_per_week": "String",
+        "population_Rural": "String",
+        "question1StatePeriodList": "String",
+        "questionnaireId": "String",
+        "specialty_clinical_psychology": "String",
+        "patientCount": "String",
+        "reason_relo_out_of_state": "String",
+        "specialty_clinical_child_adolescent_psychology": "String",
+        "telecom_Phone_call": "String",
+        "population_American_Native": "String",
+        "reason_temp_out_of_state": "String",
+        "specialty_clinical_health_Psychology": "String",
+        "telecom_Email": "String",
+        "population_Adults": "String",
+        "telecom_Texting": "String",
+        "reason_primary_mode": "String",
+        "telecom_Other": "String",
+        "population_Adolescents": "String",
+        "reason_specialty_care": "String",
+        "specialty_counseling_psychology": "String",
+        "telecom_Chat": "String",
+        "reason_preference": "String",
+        "population_Urban": "String",
+        "population_Children": "String",
+        "population_Native_Pacific": "String",
+        "population_African_American": "String",
+        "population_Unemployed": "String",
+        "population_Hispanic": "String",
+        "population_Asian_American": "String",
+        "population_Homeless": "String",
+        "population_Older_Adults": "String",
+        "population_White": "String",
+        "population_Suburban": "String",
+        "population_Organizations": "String",
+        "reason_user_rural": "String"
+      },
+      "sampleItemShape": {
+        "UpdatedAt": "example-string",
+        "telecom_Interactive_Video_Conferencing": "example-string",
+        "telecom_Interactive_Video_Conferencing_specify": "example-string",
+        "question1": "example-string",
+        "userId": 12345,
+        "sessions_per_week": "example-string",
+        "population_Rural": "example-string",
+        "question1StatePeriodList": "example-string",
+        "questionnaireId": "example-string",
+        "specialty_clinical_psychology": "example-string",
+        "patientCount": "example-string",
+        "reason_relo_out_of_state": "example-string",
+        "specialty_clinical_child_adolescent_psychology": "example-string",
+        "telecom_Phone_call": "example-string",
+        "population_American_Native": "example-string",
+        "reason_temp_out_of_state": "example-string",
+        "specialty_clinical_health_Psychology": "example-string",
+        "telecom_Email": "example-string",
+        "population_Adults": "example-string",
+        "telecom_Texting": "example-string",
+        "reason_primary_mode": "example-string",
+        "telecom_Other": "example-string",
+        "population_Adolescents": "example-string",
+        "reason_specialty_care": "example-string",
+        "specialty_counseling_psychology": "example-string",
+        "telecom_Chat": "example-string",
+        "reason_preference": "example-string",
+        "population_Urban": "example-string",
+        "population_Children": "example-string",
+        "population_Native_Pacific": "example-string",
+        "population_African_American": "example-string",
+        "population_Unemployed": "example-string",
+        "population_Hispanic": "example-string",
+        "population_Asian_American": "example-string",
+        "population_Homeless": "example-string",
+        "population_Older_Adults": "example-string",
+        "population_White": "example-string",
+        "population_Suburban": "example-string",
+        "population_Organizations": "example-string",
+        "reason_user_rural": "example-string"
+      },
+      "sampleItemDynamoDBFormat": {
+        "UpdatedAt": {
+          "S": "example-string"
+        },
+        "telecom_Interactive_Video_Conferencing": {
+          "S": "example-string"
+        },
+        "telecom_Interactive_Video_Conferencing_specify": {
+          "S": "example-string"
+        },
+        "question1": {
+          "S": "example-string"
+        },
+        "userId": {
+          "N": "12345"
+        },
+        "sessions_per_week": {
+          "S": "example-string"
+        },
+        "population_Rural": {
+          "S": "example-string"
+        },
+        "question1StatePeriodList": {
+          "S": "example-string"
+        },
+        "questionnaireId": {
+          "S": "example-string"
+        },
+        "specialty_clinical_psychology": {
+          "S": "example-string"
+        },
+        "patientCount": {
+          "S": "example-string"
+        },
+        "reason_relo_out_of_state": {
+          "S": "example-string"
+        },
+        "specialty_clinical_child_adolescent_psychology": {
+          "S": "example-string"
+        },
+        "telecom_Phone_call": {
+          "S": "example-string"
+        },
+        "population_American_Native": {
+          "S": "example-string"
+        },
+        "reason_temp_out_of_state": {
+          "S": "example-string"
+        },
+        "specialty_clinical_health_Psychology": {
+          "S": "example-string"
+        },
+        "telecom_Email": {
+          "S": "example-string"
+        },
+        "population_Adults": {
+          "S": "example-string"
+        },
+        "telecom_Texting": {
+          "S": "example-string"
+        },
+        "reason_primary_mode": {
+          "S": "example-string"
+        },
+        "telecom_Other": {
+          "S": "example-string"
+        },
+        "population_Adolescents": {
+          "S": "example-string"
+        },
+        "reason_specialty_care": {
+          "S": "example-string"
+        },
+        "specialty_counseling_psychology": {
+          "S": "example-string"
+        },
+        "telecom_Chat": {
+          "S": "example-string"
+        },
+        "reason_preference": {
+          "S": "example-string"
+        },
+        "population_Urban": {
+          "S": "example-string"
+        },
+        "population_Children": {
+          "S": "example-string"
+        },
+        "population_Native_Pacific": {
+          "S": "example-string"
+        },
+        "population_African_American": {
+          "S": "example-string"
+        },
+        "population_Unemployed": {
+          "S": "example-string"
+        },
+        "population_Hispanic": {
+          "S": "example-string"
+        },
+        "population_Asian_American": {
+          "S": "example-string"
+        },
+        "population_Homeless": {
+          "S": "example-string"
+        },
+        "population_Older_Adults": {
+          "S": "example-string"
+        },
+        "population_White": {
+          "S": "example-string"
+        },
+        "population_Suburban": {
+          "S": "example-string"
+        },
+        "population_Organizations": {
+          "S": "example-string"
+        },
+        "reason_user_rural": {
+          "S": "example-string"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    },
+    "Renewal2_v2": {
+      "tableName": "Renewal2_v2",
+      "description": "Structure for the 'Renewal2_v2' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "userId",
+      "sortKey": "activityId",
+      "attributes": {
+        "UpdatedAt": "String",
+        "specialty_cognitive_behavioral_Psychology": "String",
+        "question1": "String",
+        "sessions_per_week": "String",
+        "specialties_psypact_directory": "String",
+        "activityId": "Number",
+        "languages_psypact_directory": "String",
+        "telecom_Phone_call": "String",
+        "userId": "Number",
+        "question1StatePeriodList": "String",
+        "questionnaireId": "String",
+        "population_Adolescents": "String",
+        "patientCount": "String",
+        "specialty_psychoanalysis_psychology": "String",
+        "telecom_Email": "String",
+        "specialty_geropsychology": "String",
+        "population_Adults": "String",
+        "telecom_Texting": "String",
+        "specialty_clinical_health_Psychology": "String",
+        "specialty_clinical_child_adolescent_psychology": "String",
+        "specialty_counseling_psychology": "String",
+        "specialty_group_psychology": "String",
+        "population_Children": "String",
+        "specialty_clinical_neuropsychology": "String",
+        "telecom_Interactive_Video_Conferencing": "String",
+        "population_Rural": "String",
+        "specialty_couple_family_psychology": "String",
+        "telecom_Interactive_Video_Conferencing_specify": "String",
+        "specialty_school_psychology": "String",
+        "population_American_Native": "String",
+        "population_Urban": "String",
+        "telecom_Chat": "String",
+        "population_Native_Pacific": "String",
+        "population_African_American": "String"
+      },
+      "sampleItemShape": {
+        "UpdatedAt": "example-string",
+        "specialty_cognitive_behavioral_Psychology": "example-string",
+        "question1": "example-string",
+        "sessions_per_week": "example-string",
+        "specialties_psypact_directory": "example-string",
+        "activityId": 12345,
+        "languages_psypact_directory": "example-string",
+        "telecom_Phone_call": "example-string",
+        "userId": 12345,
+        "question1StatePeriodList": "example-string",
+        "questionnaireId": "example-string",
+        "population_Adolescents": "example-string",
+        "patientCount": "example-string",
+        "specialty_psychoanalysis_psychology": "example-string",
+        "telecom_Email": "example-string",
+        "specialty_geropsychology": "example-string",
+        "population_Adults": "example-string",
+        "telecom_Texting": "example-string",
+        "specialty_clinical_health_Psychology": "example-string",
+        "specialty_clinical_child_adolescent_psychology": "example-string",
+        "specialty_counseling_psychology": "example-string",
+        "specialty_group_psychology": "example-string",
+        "population_Children": "example-string",
+        "specialty_clinical_neuropsychology": "example-string",
+        "telecom_Interactive_Video_Conferencing": "example-string",
+        "population_Rural": "example-string",
+        "specialty_couple_family_psychology": "example-string",
+        "telecom_Interactive_Video_Conferencing_specify": "example-string",
+        "specialty_school_psychology": "example-string",
+        "population_American_Native": "example-string",
+        "population_Urban": "example-string",
+        "telecom_Chat": "example-string",
+        "population_Native_Pacific": "example-string",
+        "population_African_American": "example-string"
+      },
+      "sampleItemDynamoDBFormat": {
+        "UpdatedAt": {
+          "S": "example-string"
+        },
+        "specialty_cognitive_behavioral_Psychology": {
+          "S": "example-string"
+        },
+        "question1": {
+          "S": "example-string"
+        },
+        "sessions_per_week": {
+          "S": "example-string"
+        },
+        "specialties_psypact_directory": {
+          "S": "example-string"
+        },
+        "activityId": {
+          "N": "12345"
+        },
+        "languages_psypact_directory": {
+          "S": "example-string"
+        },
+        "telecom_Phone_call": {
+          "S": "example-string"
+        },
+        "userId": {
+          "N": "12345"
+        },
+        "question1StatePeriodList": {
+          "S": "example-string"
+        },
+        "questionnaireId": {
+          "S": "example-string"
+        },
+        "population_Adolescents": {
+          "S": "example-string"
+        },
+        "patientCount": {
+          "S": "example-string"
+        },
+        "specialty_psychoanalysis_psychology": {
+          "S": "example-string"
+        },
+        "telecom_Email": {
+          "S": "example-string"
+        },
+        "specialty_geropsychology": {
+          "S": "example-string"
+        },
+        "population_Adults": {
+          "S": "example-string"
+        },
+        "telecom_Texting": {
+          "S": "example-string"
+        },
+        "specialty_clinical_health_Psychology": {
+          "S": "example-string"
+        },
+        "specialty_clinical_child_adolescent_psychology": {
+          "S": "example-string"
+        },
+        "specialty_counseling_psychology": {
+          "S": "example-string"
+        },
+        "specialty_group_psychology": {
+          "S": "example-string"
+        },
+        "population_Children": {
+          "S": "example-string"
+        },
+        "specialty_clinical_neuropsychology": {
+          "S": "example-string"
+        },
+        "telecom_Interactive_Video_Conferencing": {
+          "S": "example-string"
+        },
+        "population_Rural": {
+          "S": "example-string"
+        },
+        "specialty_couple_family_psychology": {
+          "S": "example-string"
+        },
+        "telecom_Interactive_Video_Conferencing_specify": {
+          "S": "example-string"
+        },
+        "specialty_school_psychology": {
+          "S": "example-string"
+        },
+        "population_American_Native": {
+          "S": "example-string"
+        },
+        "population_Urban": {
+          "S": "example-string"
+        },
+        "telecom_Chat": {
+          "S": "example-string"
+        },
+        "population_Native_Pacific": {
+          "S": "example-string"
+        },
+        "population_African_American": {
+          "S": "example-string"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    },
+    "Renewal_v2": {
+      "tableName": "Renewal_v2",
+      "description": "Structure for the 'Renewal_v2' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "userId",
+      "sortKey": "activityId",
+      "attributes": {
+        "question11": "String",
+        "question5": "String",
+        "UpdatedAt": "String",
+        "question6": "String",
+        "question10": "String",
+        "question4": "String",
+        "userId": "Number",
+        "activityId": "Number",
+        "question9": "String",
+        "question7": "String",
+        "question8": "String",
+        "question6Explanation": "String",
+        "question11Explanation": "String",
+        "question8Explanation": "String",
+        "question5Explanation": "String",
+        "question10Explanation": "String",
+        "question7Explanation": "String",
+        "question9Explanation": "String"
+      },
+      "sampleItemShape": {
+        "question11": "example-string",
+        "question5": "example-string",
+        "UpdatedAt": "example-string",
+        "question6": "example-string",
+        "question10": "example-string",
+        "question4": "example-string",
+        "userId": 12345,
+        "activityId": 12345,
+        "question9": "example-string",
+        "question7": "example-string",
+        "question8": "example-string",
+        "question6Explanation": "example-string",
+        "question11Explanation": "example-string",
+        "question8Explanation": "example-string",
+        "question5Explanation": "example-string",
+        "question10Explanation": "example-string",
+        "question7Explanation": "example-string",
+        "question9Explanation": "example-string"
+      },
+      "sampleItemDynamoDBFormat": {
+        "question11": {
+          "S": "example-string"
+        },
+        "question5": {
+          "S": "example-string"
+        },
+        "UpdatedAt": {
+          "S": "example-string"
+        },
+        "question6": {
+          "S": "example-string"
+        },
+        "question10": {
+          "S": "example-string"
+        },
+        "question4": {
+          "S": "example-string"
+        },
+        "userId": {
+          "N": "12345"
+        },
+        "activityId": {
+          "N": "12345"
+        },
+        "question9": {
+          "S": "example-string"
+        },
+        "question7": {
+          "S": "example-string"
+        },
+        "question8": {
+          "S": "example-string"
+        },
+        "question6Explanation": {
+          "S": "example-string"
+        },
+        "question11Explanation": {
+          "S": "example-string"
+        },
+        "question8Explanation": {
+          "S": "example-string"
+        },
+        "question5Explanation": {
+          "S": "example-string"
+        },
+        "question10Explanation": {
+          "S": "example-string"
+        },
+        "question7Explanation": {
+          "S": "example-string"
+        },
+        "question9Explanation": {
+          "S": "example-string"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    },
+    "WaiverAndAcknowledgement": {
+      "tableName": "WaiverAndAcknowledgement",
+      "description": "Structure for the 'WaiverAndAcknowledgement' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+      "partitionKey": "userId",
+      "sortKey": null,
+      "attributes": {
+        "UpdatedAt": "String",
+        "legalAgree": "String",
+        "userId": "Number",
+        "attestationDate": "String",
+        "AttestationType": "String",
+        "legalName": "String",
+        "validated": "String"
+      },
+      "sampleItemShape": {
+        "UpdatedAt": "example-string",
+        "legalAgree": "example-string",
+        "userId": 12345,
+        "attestationDate": "example-string",
+        "AttestationType": "example-string",
+        "legalName": "example-string",
+        "validated": "example-string"
+      },
+      "sampleItemDynamoDBFormat": {
+        "UpdatedAt": {
+          "S": "example-string"
+        },
+        "legalAgree": {
+          "S": "example-string"
+        },
+        "userId": {
+          "N": "12345"
+        },
+        "attestationDate": {
+          "S": "example-string"
+        },
+        "AttestationType": {
+          "S": "example-string"
+        },
+        "legalName": {
+          "S": "example-string"
+        },
+        "validated": {
+          "S": "example-string"
+        }
+      },
+      "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+    }
+  }
+}

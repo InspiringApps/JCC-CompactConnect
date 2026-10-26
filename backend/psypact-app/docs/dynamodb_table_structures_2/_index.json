@@ -1,0 +1,264 @@
+{
+  "tableCount": 37,
+  "tables": [
+    {
+      "tableName": "Accommodations",
+      "file": "Accommodations.json",
+      "partitionKey": "userId",
+      "sortKey": null,
+      "attributeCount": 14
+    },
+    {
+      "tableName": "Acknowledgements",
+      "file": "Acknowledgements.json",
+      "partitionKey": "userId",
+      "sortKey": null,
+      "attributeCount": 1
+    },
+    {
+      "tableName": "Acknowledgements.APIT",
+      "file": "Acknowledgements.APIT.json",
+      "partitionKey": "userId",
+      "sortKey": null,
+      "attributeCount": 14
+    },
+    {
+      "tableName": "Acknowledgements.APIT_v2",
+      "file": "Acknowledgements.APIT_v2.json",
+      "partitionKey": "userId",
+      "sortKey": "activityId",
+      "attributeCount": 15
+    },
+    {
+      "tableName": "Acknowledgements.Epassport",
+      "file": "Acknowledgements.Epassport.json",
+      "partitionKey": "userId",
+      "sortKey": null,
+      "attributeCount": 14
+    },
+    {
+      "tableName": "Acknowledgements.Epassport_v2",
+      "file": "Acknowledgements.Epassport_v2.json",
+      "partitionKey": "userId",
+      "sortKey": "activityId",
+      "attributeCount": 15
+    },
+    {
+      "tableName": "Acknowledgements.Ipc",
+      "file": "Acknowledgements.Ipc.json",
+      "partitionKey": "userId",
+      "sortKey": null,
+      "attributeCount": 11
+    },
+    {
+      "tableName": "Acknowledgements.Ipc_v2",
+      "file": "Acknowledgements.Ipc_v2.json",
+      "partitionKey": "userId",
+      "sortKey": "activityId",
+      "attributeCount": 12
+    },
+    {
+      "tableName": "Acknowledgements.TAP",
+      "file": "Acknowledgements.TAP.json",
+      "partitionKey": "userId",
+      "sortKey": null,
+      "attributeCount": 12
+    },
+    {
+      "tableName": "Acknowledgements.TAP_v2",
+      "file": "Acknowledgements.TAP_v2.json",
+      "partitionKey": "userId",
+      "sortKey": "activityId",
+      "attributeCount": 13
+    },
+    {
+      "tableName": "Attestation",
+      "file": "Attestation.json",
+      "partitionKey": "attestationId",
+      "sortKey": null,
+      "attributeCount": 21
+    },
+    {
+      "tableName": "Attester",
+      "file": "Attester.json",
+      "partitionKey": "attesterEmail",
+      "sortKey": null,
+      "attributeCount": 16
+    },
+    {
+      "tableName": "Conduct",
+      "file": "Conduct.json",
+      "partitionKey": "userId",
+      "sortKey": null,
+      "attributeCount": 27
+    },
+    {
+      "tableName": "ContinuingEducation",
+      "file": "ContinuingEducation.json",
+      "partitionKey": "userId",
+      "sortKey": null,
+      "attributeCount": 7
+    },
+    {
+      "tableName": "Courses",
+      "file": "Courses.json",
+      "partitionKey": "userId",
+      "sortKey": "entryId",
+      "attributeCount": 13
+    },
+    {
+      "tableName": "Credentials",
+      "file": "Credentials.json",
+      "partitionKey": "userId",
+      "sortKey": null,
+      "attributeCount": 8
+    },
+    {
+      "tableName": "Declaration",
+      "file": "Declaration.json",
+      "partitionKey": "userId",
+      "sortKey": null,
+      "attributeCount": 66
+    },
+    {
+      "tableName": "Demographics",
+      "file": "Demographics.json",
+      "partitionKey": "userId",
+      "sortKey": null,
+      "attributeCount": 29
+    },
+    {
+      "tableName": "DidacticEducation",
+      "file": "DidacticEducation.json",
+      "partitionKey": "userId",
+      "sortKey": "entryId",
+      "attributeCount": 14
+    },
+    {
+      "tableName": "DidacticEducation.Extension",
+      "file": "DidacticEducation.Extension.json",
+      "partitionKey": "userId",
+      "sortKey": null,
+      "attributeCount": 13
+    },
+    {
+      "tableName": "DisciplinaryEntry",
+      "file": "DisciplinaryEntry.json",
+      "partitionKey": "disciplinaryEntryId",
+      "sortKey": null,
+      "attributeCount": 36
+    },
+    {
+      "tableName": "EPassportHomeStateDeclaration",
+      "file": "EPassportHomeStateDeclaration.json",
+      "partitionKey": "userId",
+      "sortKey": "entryId",
+      "attributeCount": 14
+    },
+    {
+      "tableName": "Education",
+      "file": "Education.json",
+      "partitionKey": "userId",
+      "sortKey": "entryId",
+      "attributeCount": 26
+    },
+    {
+      "tableName": "Examination",
+      "file": "Examination.json",
+      "partitionKey": "userId",
+      "sortKey": null,
+      "attributeCount": 6
+    },
+    {
+      "tableName": "HomeStateDeclaration",
+      "file": "HomeStateDeclaration.json",
+      "partitionKey": "userId",
+      "sortKey": "entryId",
+      "attributeCount": 2
+    },
+    {
+      "tableName": "Internship",
+      "file": "Internship.json",
+      "partitionKey": "userId",
+      "sortKey": "entryId",
+      "attributeCount": 33
+    },
+    {
+      "tableName": "IpcHomeStateDeclaration",
+      "file": "IpcHomeStateDeclaration.json",
+      "partitionKey": "userId",
+      "sortKey": "entryId",
+      "attributeCount": 13
+    },
+    {
+      "tableName": "Licensures",
+      "file": "Licensures.json",
+      "partitionKey": "userId",
+      "sortKey": "entryId",
+      "attributeCount": 11
+    },
+    {
+      "tableName": "PostLicensureWorkExperience",
+      "file": "PostLicensureWorkExperience.json",
+      "partitionKey": "userId",
+      "sortKey": "entryId",
+      "attributeCount": 22
+    },
+    {
+      "tableName": "Postdoctoral",
+      "file": "Postdoctoral.json",
+      "partitionKey": "userId",
+      "sortKey": "entryId",
+      "attributeCount": 28
+    },
+    {
+      "tableName": "Practicum",
+      "file": "Practicum.json",
+      "partitionKey": "userId",
+      "sortKey": "entryId",
+      "attributeCount": 28
+    },
+    {
+      "tableName": "Questionnaire",
+      "file": "Questionnaire.json",
+      "partitionKey": "userId",
+      "sortKey": "activityId",
+      "attributeCount": 2
+    },
+    {
+      "tableName": "Renewal",
+      "file": "Renewal.json",
+      "partitionKey": "userId",
+      "sortKey": null,
+      "attributeCount": 25
+    },
+    {
+      "tableName": "Renewal2",
+      "file": "Renewal2.json",
+      "partitionKey": "userId",
+      "sortKey": null,
+      "attributeCount": 40
+    },
+    {
+      "tableName": "Renewal2_v2",
+      "file": "Renewal2_v2.json",
+      "partitionKey": "userId",
+      "sortKey": "activityId",
+      "attributeCount": 34
+    },
+    {
+      "tableName": "Renewal_v2",
+      "file": "Renewal_v2.json",
+      "partitionKey": "userId",
+      "sortKey": "activityId",
+      "attributeCount": 18
+    },
+    {
+      "tableName": "WaiverAndAcknowledgement",
+      "file": "WaiverAndAcknowledgement.json",
+      "partitionKey": "userId",
+      "sortKey": null,
+      "attributeCount": 7
+    }
+  ]
+}

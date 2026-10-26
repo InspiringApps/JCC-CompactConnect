@@ -1,0 +1,193 @@
+{
+  "tableName": "DisciplinaryEntry",
+  "description": "Structure for the 'DisciplinaryEntry' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+  "partitionKey": "disciplinaryEntryId",
+  "sortKey": null,
+  "attributes": {
+    "ddrDate": "String",
+    "birthDate": "String",
+    "logDate": "String",
+    "addressList": "String",
+    "degree": "String",
+    "schoolName": "String",
+    "lengthType": "String",
+    "Entry.FirstName": "String",
+    "disciplinaryEntryId": "Number",
+    "Entry.LastName": "String",
+    "middleName": "String",
+    "automaticReinstatement": "String",
+    "graduationYear": "Number",
+    "disciplineDate": "String",
+    "Entry.DisciplinaryEntry": "Number",
+    "logLastName": "String",
+    "gender": "String",
+    "reasonList": "String",
+    "isLicensed": "String",
+    "monetaryPenalty": "Number",
+    "actionOnAppeal": "String",
+    "actionList": "String",
+    "licensesList": "String",
+    "actionDescription": "String",
+    "effectiveDate": "String",
+    "licenseType": "String",
+    "licenseNumber": "String",
+    "Entry.IsActive": "String",
+    "Jurisdiction": "String",
+    "licenseDate": "String",
+    "otherAliases": "String",
+    "birthPlace": "String",
+    "degreeSpecialty": "String",
+    "otherJurisdictions": "String",
+    "isActionConductRelated": "String",
+    "lengthMonths": "Number"
+  },
+  "sampleItemShape": {
+    "ddrDate": "example-string",
+    "birthDate": "example-string",
+    "logDate": "example-string",
+    "addressList": "example-string",
+    "degree": "example-string",
+    "schoolName": "example-string",
+    "lengthType": "example-string",
+    "Entry.FirstName": "example-string",
+    "disciplinaryEntryId": 12345,
+    "Entry.LastName": "example-string",
+    "middleName": "example-string",
+    "automaticReinstatement": "example-string",
+    "graduationYear": 12345,
+    "disciplineDate": "example-string",
+    "Entry.DisciplinaryEntry": 12345,
+    "logLastName": "example-string",
+    "gender": "example-string",
+    "reasonList": "example-string",
+    "isLicensed": "example-string",
+    "monetaryPenalty": 12345,
+    "actionOnAppeal": "example-string",
+    "actionList": "example-string",
+    "licensesList": "example-string",
+    "actionDescription": "example-string",
+    "effectiveDate": "example-string",
+    "licenseType": "example-string",
+    "licenseNumber": "example-string",
+    "Entry.IsActive": "example-string",
+    "Jurisdiction": "example-string",
+    "licenseDate": "example-string",
+    "otherAliases": "example-string",
+    "birthPlace": "example-string",
+    "degreeSpecialty": "example-string",
+    "otherJurisdictions": "example-string",
+    "isActionConductRelated": "example-string",
+    "lengthMonths": 12345
+  },
+  "sampleItemDynamoDBFormat": {
+    "ddrDate": {
+      "S": "example-string"
+    },
+    "birthDate": {
+      "S": "example-string"
+    },
+    "logDate": {
+      "S": "example-string"
+    },
+    "addressList": {
+      "S": "example-string"
+    },
+    "degree": {
+      "S": "example-string"
+    },
+    "schoolName": {
+      "S": "example-string"
+    },
+    "lengthType": {
+      "S": "example-string"
+    },
+    "Entry.FirstName": {
+      "S": "example-string"
+    },
+    "disciplinaryEntryId": {
+      "N": "12345"
+    },
+    "Entry.LastName": {
+      "S": "example-string"
+    },
+    "middleName": {
+      "S": "example-string"
+    },
+    "automaticReinstatement": {
+      "S": "example-string"
+    },
+    "graduationYear": {
+      "N": "12345"
+    },
+    "disciplineDate": {
+      "S": "example-string"
+    },
+    "Entry.DisciplinaryEntry": {
+      "N": "12345"
+    },
+    "logLastName": {
+      "S": "example-string"
+    },
+    "gender": {
+      "S": "example-string"
+    },
+    "reasonList": {
+      "S": "example-string"
+    },
+    "isLicensed": {
+      "S": "example-string"
+    },
+    "monetaryPenalty": {
+      "N": "12345"
+    },
+    "actionOnAppeal": {
+      "S": "example-string"
+    },
+    "actionList": {
+      "S": "example-string"
+    },
+    "licensesList": {
+      "S": "example-string"
+    },
+    "actionDescription": {
+      "S": "example-string"
+    },
+    "effectiveDate": {
+      "S": "example-string"
+    },
+    "licenseType": {
+      "S": "example-string"
+    },
+    "licenseNumber": {
+      "S": "example-string"
+    },
+    "Entry.IsActive": {
+      "S": "example-string"
+    },
+    "Jurisdiction": {
+      "S": "example-string"
+    },
+    "licenseDate": {
+      "S": "example-string"
+    },
+    "otherAliases": {
+      "S": "example-string"
+    },
+    "birthPlace": {
+      "S": "example-string"
+    },
+    "degreeSpecialty": {
+      "S": "example-string"
+    },
+    "otherJurisdictions": {
+      "S": "example-string"
+    },
+    "isActionConductRelated": {
+      "S": "example-string"
+    },
+    "lengthMonths": {
+      "N": "12345"
+    }
+  },
+  "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+}

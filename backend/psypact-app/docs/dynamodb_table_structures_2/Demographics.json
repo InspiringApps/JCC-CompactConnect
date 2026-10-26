@@ -1,0 +1,158 @@
+{
+  "tableName": "Demographics",
+  "description": "Structure for the 'Demographics' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+  "partitionKey": "userId",
+  "sortKey": null,
+  "attributes": {
+    "birthDate": "String",
+    "lastName": "String",
+    "primaryPhoneType": "String",
+    "primaryPhone": "String",
+    "validated": "String",
+    "professionalName": "String",
+    "firstName": "String",
+    "mailingCity": "String",
+    "languageFrench": "String",
+    "mailingAddress1": "String",
+    "userId": "Number",
+    "mailingAddress2": "String",
+    "languageEnglish": "String",
+    "citizenshipCountry": "String",
+    "mailingAddressType": "String",
+    "languageSpanish": "String",
+    "languageOthers": "String",
+    "mailingState": "String",
+    "mailingZip": "String",
+    "gender": "String",
+    "otherCurrentNames": "String",
+    "birthPlace": "String",
+    "phoneList": "String",
+    "mailingName": "String",
+    "addressList": "String",
+    "middleName": "String",
+    "primaryFax": "String",
+    "primaryFaxType": "String",
+    "maidenName": "String"
+  },
+  "sampleItemShape": {
+    "birthDate": "example-string",
+    "lastName": "example-string",
+    "primaryPhoneType": "example-string",
+    "primaryPhone": "example-string",
+    "validated": "example-string",
+    "professionalName": "example-string",
+    "firstName": "example-string",
+    "mailingCity": "example-string",
+    "languageFrench": "example-string",
+    "mailingAddress1": "example-string",
+    "userId": 12345,
+    "mailingAddress2": "example-string",
+    "languageEnglish": "example-string",
+    "citizenshipCountry": "example-string",
+    "mailingAddressType": "example-string",
+    "languageSpanish": "example-string",
+    "languageOthers": "example-string",
+    "mailingState": "example-string",
+    "mailingZip": "example-string",
+    "gender": "example-string",
+    "otherCurrentNames": "example-string",
+    "birthPlace": "example-string",
+    "phoneList": "example-string",
+    "mailingName": "example-string",
+    "addressList": "example-string",
+    "middleName": "example-string",
+    "primaryFax": "example-string",
+    "primaryFaxType": "example-string",
+    "maidenName": "example-string"
+  },
+  "sampleItemDynamoDBFormat": {
+    "birthDate": {
+      "S": "example-string"
+    },
+    "lastName": {
+      "S": "example-string"
+    },
+    "primaryPhoneType": {
+      "S": "example-string"
+    },
+    "primaryPhone": {
+      "S": "example-string"
+    },
+    "validated": {
+      "S": "example-string"
+    },
+    "professionalName": {
+      "S": "example-string"
+    },
+    "firstName": {
+      "S": "example-string"
+    },
+    "mailingCity": {
+      "S": "example-string"
+    },
+    "languageFrench": {
+      "S": "example-string"
+    },
+    "mailingAddress1": {
+      "S": "example-string"
+    },
+    "userId": {
+      "N": "12345"
+    },
+    "mailingAddress2": {
+      "S": "example-string"
+    },
+    "languageEnglish": {
+      "S": "example-string"
+    },
+    "citizenshipCountry": {
+      "S": "example-string"
+    },
+    "mailingAddressType": {
+      "S": "example-string"
+    },
+    "languageSpanish": {
+      "S": "example-string"
+    },
+    "languageOthers": {
+      "S": "example-string"
+    },
+    "mailingState": {
+      "S": "example-string"
+    },
+    "mailingZip": {
+      "S": "example-string"
+    },
+    "gender": {
+      "S": "example-string"
+    },
+    "otherCurrentNames": {
+      "S": "example-string"
+    },
+    "birthPlace": {
+      "S": "example-string"
+    },
+    "phoneList": {
+      "S": "example-string"
+    },
+    "mailingName": {
+      "S": "example-string"
+    },
+    "addressList": {
+      "S": "example-string"
+    },
+    "middleName": {
+      "S": "example-string"
+    },
+    "primaryFax": {
+      "S": "example-string"
+    },
+    "primaryFaxType": {
+      "S": "example-string"
+    },
+    "maidenName": {
+      "S": "example-string"
+    }
+  },
+  "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+}

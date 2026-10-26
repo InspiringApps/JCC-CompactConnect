@@ -1,0 +1,213 @@
+{
+  "tableName": "Renewal2",
+  "description": "Structure for the 'Renewal2' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+  "partitionKey": "userId",
+  "sortKey": null,
+  "attributes": {
+    "UpdatedAt": "String",
+    "telecom_Interactive_Video_Conferencing": "String",
+    "telecom_Interactive_Video_Conferencing_specify": "String",
+    "question1": "String",
+    "userId": "Number",
+    "sessions_per_week": "String",
+    "population_Rural": "String",
+    "question1StatePeriodList": "String",
+    "questionnaireId": "String",
+    "specialty_clinical_psychology": "String",
+    "patientCount": "String",
+    "reason_relo_out_of_state": "String",
+    "specialty_clinical_child_adolescent_psychology": "String",
+    "telecom_Phone_call": "String",
+    "population_American_Native": "String",
+    "reason_temp_out_of_state": "String",
+    "specialty_clinical_health_Psychology": "String",
+    "telecom_Email": "String",
+    "population_Adults": "String",
+    "telecom_Texting": "String",
+    "reason_primary_mode": "String",
+    "telecom_Other": "String",
+    "population_Adolescents": "String",
+    "reason_specialty_care": "String",
+    "specialty_counseling_psychology": "String",
+    "telecom_Chat": "String",
+    "reason_preference": "String",
+    "population_Urban": "String",
+    "population_Children": "String",
+    "population_Native_Pacific": "String",
+    "population_African_American": "String",
+    "population_Unemployed": "String",
+    "population_Hispanic": "String",
+    "population_Asian_American": "String",
+    "population_Homeless": "String",
+    "population_Older_Adults": "String",
+    "population_White": "String",
+    "population_Suburban": "String",
+    "population_Organizations": "String",
+    "reason_user_rural": "String"
+  },
+  "sampleItemShape": {
+    "UpdatedAt": "example-string",
+    "telecom_Interactive_Video_Conferencing": "example-string",
+    "telecom_Interactive_Video_Conferencing_specify": "example-string",
+    "question1": "example-string",
+    "userId": 12345,
+    "sessions_per_week": "example-string",
+    "population_Rural": "example-string",
+    "question1StatePeriodList": "example-string",
+    "questionnaireId": "example-string",
+    "specialty_clinical_psychology": "example-string",
+    "patientCount": "example-string",
+    "reason_relo_out_of_state": "example-string",
+    "specialty_clinical_child_adolescent_psychology": "example-string",
+    "telecom_Phone_call": "example-string",
+    "population_American_Native": "example-string",
+    "reason_temp_out_of_state": "example-string",
+    "specialty_clinical_health_Psychology": "example-string",
+    "telecom_Email": "example-string",
+    "population_Adults": "example-string",
+    "telecom_Texting": "example-string",
+    "reason_primary_mode": "example-string",
+    "telecom_Other": "example-string",
+    "population_Adolescents": "example-string",
+    "reason_specialty_care": "example-string",
+    "specialty_counseling_psychology": "example-string",
+    "telecom_Chat": "example-string",
+    "reason_preference": "example-string",
+    "population_Urban": "example-string",
+    "population_Children": "example-string",
+    "population_Native_Pacific": "example-string",
+    "population_African_American": "example-string",
+    "population_Unemployed": "example-string",
+    "population_Hispanic": "example-string",
+    "population_Asian_American": "example-string",
+    "population_Homeless": "example-string",
+    "population_Older_Adults": "example-string",
+    "population_White": "example-string",
+    "population_Suburban": "example-string",
+    "population_Organizations": "example-string",
+    "reason_user_rural": "example-string"
+  },
+  "sampleItemDynamoDBFormat": {
+    "UpdatedAt": {
+      "S": "example-string"
+    },
+    "telecom_Interactive_Video_Conferencing": {
+      "S": "example-string"
+    },
+    "telecom_Interactive_Video_Conferencing_specify": {
+      "S": "example-string"
+    },
+    "question1": {
+      "S": "example-string"
+    },
+    "userId": {
+      "N": "12345"
+    },
+    "sessions_per_week": {
+      "S": "example-string"
+    },
+    "population_Rural": {
+      "S": "example-string"
+    },
+    "question1StatePeriodList": {
+      "S": "example-string"
+    },
+    "questionnaireId": {
+      "S": "example-string"
+    },
+    "specialty_clinical_psychology": {
+      "S": "example-string"
+    },
+    "patientCount": {
+      "S": "example-string"
+    },
+    "reason_relo_out_of_state": {
+      "S": "example-string"
+    },
+    "specialty_clinical_child_adolescent_psychology": {
+      "S": "example-string"
+    },
+    "telecom_Phone_call": {
+      "S": "example-string"
+    },
+    "population_American_Native": {
+      "S": "example-string"
+    },
+    "reason_temp_out_of_state": {
+      "S": "example-string"
+    },
+    "specialty_clinical_health_Psychology": {
+      "S": "example-string"
+    },
+    "telecom_Email": {
+      "S": "example-string"
+    },
+    "population_Adults": {
+      "S": "example-string"
+    },
+    "telecom_Texting": {
+      "S": "example-string"
+    },
+    "reason_primary_mode": {
+      "S": "example-string"
+    },
+    "telecom_Other": {
+      "S": "example-string"
+    },
+    "population_Adolescents": {
+      "S": "example-string"
+    },
+    "reason_specialty_care": {
+      "S": "example-string"
+    },
+    "specialty_counseling_psychology": {
+      "S": "example-string"
+    },
+    "telecom_Chat": {
+      "S": "example-string"
+    },
+    "reason_preference": {
+      "S": "example-string"
+    },
+    "population_Urban": {
+      "S": "example-string"
+    },
+    "population_Children": {
+      "S": "example-string"
+    },
+    "population_Native_Pacific": {
+      "S": "example-string"
+    },
+    "population_African_American": {
+      "S": "example-string"
+    },
+    "population_Unemployed": {
+      "S": "example-string"
+    },
+    "population_Hispanic": {
+      "S": "example-string"
+    },
+    "population_Asian_American": {
+      "S": "example-string"
+    },
+    "population_Homeless": {
+      "S": "example-string"
+    },
+    "population_Older_Adults": {
+      "S": "example-string"
+    },
+    "population_White": {
+      "S": "example-string"
+    },
+    "population_Suburban": {
+      "S": "example-string"
+    },
+    "population_Organizations": {
+      "S": "example-string"
+    },
+    "reason_user_rural": {
+      "S": "example-string"
+    }
+  },
+  "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+}

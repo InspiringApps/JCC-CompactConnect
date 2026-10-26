@@ -1,0 +1,153 @@
+{
+  "tableName": "Postdoctoral",
+  "description": "Structure for the 'Postdoctoral' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+  "partitionKey": "userId",
+  "sortKey": "entryId",
+  "attributes": {
+    "tbDirectServices": "Number",
+    "tbIndirectServices": "Number",
+    "tbhoursPerWeekSupervisionOther": "Number",
+    "gSupervisionList": "String",
+    "seBeginDate": "String",
+    "seTrainingType": "String",
+    "agencyAddress1": "String",
+    "entryId": "Number",
+    "seDutiesDescription": "String",
+    "seEndDate": "String",
+    "userId": "Number",
+    "agencyState": "String",
+    "attesterPhone": "String",
+    "AgencyZip": "String",
+    "iSupervisionList": "String",
+    "attesterName": "String",
+    "attesterEmail": "String",
+    "AttestationType": "String",
+    "seSpecialtyArea": "String",
+    "agencyCity": "String",
+    "totalHoursGeneralServices": "Number",
+    "agencyName": "String",
+    "seClienteleDescription": "String",
+    "tbAvgHoursWeek": "Number",
+    "tbTotalWeeks": "Number",
+    "HasAttestation": "Number",
+    "seTitle": "String",
+    "seRemarks": "String"
+  },
+  "sampleItemShape": {
+    "tbDirectServices": 12345,
+    "tbIndirectServices": 12345,
+    "tbhoursPerWeekSupervisionOther": 12345,
+    "gSupervisionList": "example-string",
+    "seBeginDate": "example-string",
+    "seTrainingType": "example-string",
+    "agencyAddress1": "example-string",
+    "entryId": 12345,
+    "seDutiesDescription": "example-string",
+    "seEndDate": "example-string",
+    "userId": 12345,
+    "agencyState": "example-string",
+    "attesterPhone": "example-string",
+    "AgencyZip": "example-string",
+    "iSupervisionList": "example-string",
+    "attesterName": "example-string",
+    "attesterEmail": "example-string",
+    "AttestationType": "example-string",
+    "seSpecialtyArea": "example-string",
+    "agencyCity": "example-string",
+    "totalHoursGeneralServices": 12345,
+    "agencyName": "example-string",
+    "seClienteleDescription": "example-string",
+    "tbAvgHoursWeek": 12345,
+    "tbTotalWeeks": 12345,
+    "HasAttestation": 12345,
+    "seTitle": "example-string",
+    "seRemarks": "example-string"
+  },
+  "sampleItemDynamoDBFormat": {
+    "tbDirectServices": {
+      "N": "12345"
+    },
+    "tbIndirectServices": {
+      "N": "12345"
+    },
+    "tbhoursPerWeekSupervisionOther": {
+      "N": "12345"
+    },
+    "gSupervisionList": {
+      "S": "example-string"
+    },
+    "seBeginDate": {
+      "S": "example-string"
+    },
+    "seTrainingType": {
+      "S": "example-string"
+    },
+    "agencyAddress1": {
+      "S": "example-string"
+    },
+    "entryId": {
+      "N": "12345"
+    },
+    "seDutiesDescription": {
+      "S": "example-string"
+    },
+    "seEndDate": {
+      "S": "example-string"
+    },
+    "userId": {
+      "N": "12345"
+    },
+    "agencyState": {
+      "S": "example-string"
+    },
+    "attesterPhone": {
+      "S": "example-string"
+    },
+    "AgencyZip": {
+      "S": "example-string"
+    },
+    "iSupervisionList": {
+      "S": "example-string"
+    },
+    "attesterName": {
+      "S": "example-string"
+    },
+    "attesterEmail": {
+      "S": "example-string"
+    },
+    "AttestationType": {
+      "S": "example-string"
+    },
+    "seSpecialtyArea": {
+      "S": "example-string"
+    },
+    "agencyCity": {
+      "S": "example-string"
+    },
+    "totalHoursGeneralServices": {
+      "N": "12345"
+    },
+    "agencyName": {
+      "S": "example-string"
+    },
+    "seClienteleDescription": {
+      "S": "example-string"
+    },
+    "tbAvgHoursWeek": {
+      "N": "12345"
+    },
+    "tbTotalWeeks": {
+      "N": "12345"
+    },
+    "HasAttestation": {
+      "N": "12345"
+    },
+    "seTitle": {
+      "S": "example-string"
+    },
+    "seRemarks": {
+      "S": "example-string"
+    }
+  },
+  "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+}

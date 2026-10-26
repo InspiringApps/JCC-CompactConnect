@@ -1,0 +1,343 @@
+{
+  "tableName": "Declaration",
+  "description": "Structure for the 'Declaration' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+  "partitionKey": "userId",
+  "sortKey": null,
+  "attributes": {
+    "clinicalNeuro": "String",
+    "clinical": "String",
+    "english": "String",
+    "validated": "String",
+    "userId": "Number",
+    "familiesIntervention": "String",
+    "psycoanalysis": "String",
+    "adultsIntervention": "String",
+    "clinicalAssessment": "String",
+    "consultation": "String",
+    "familiesResearch": "String",
+    "adultsResearch": "String",
+    "groupsAssessment": "String",
+    "adultsConsultation": "String",
+    "research": "String",
+    "adolescentsAdministration": "String",
+    "adolescentsIntervention": "String",
+    "cognitive": "String",
+    "groupsConsultation": "String",
+    "treatment": "String",
+    "groupsResearch": "String",
+    "academic": "String",
+    "familiesAssessment": "String",
+    "familiesConsultation": "String",
+    "spanish": "String",
+    "adolescentsConsultation": "String",
+    "groupsAdministration": "String",
+    "familiesAdministration": "String",
+    "adultsAdministration": "String",
+    "adolescentsAssessment": "String",
+    "groupsIntervention": "String",
+    "adultsAssessment": "String",
+    "adolescentsResearch": "String",
+    "clinicalHealth": "String",
+    "elderlyAssessment": "String",
+    "organizationsAdministration": "String",
+    "elderlyIntervention": "String",
+    "elderlyResearch": "String",
+    "organizationsConsultation": "String",
+    "infantsAssessment": "String",
+    "childrenConsultation": "String",
+    "infantsConsultation": "String",
+    "childrenAssessment": "String",
+    "elderlyConsultation": "String",
+    "infantsIntervention": "String",
+    "childrenIntervention": "String",
+    "organizationsResearch": "String",
+    "remoteServices": "String",
+    "organizationsAssessment": "String",
+    "childrenResearch": "String",
+    "infantsResearch": "String",
+    "counseling": "String",
+    "elderlyAdministration": "String",
+    "otherLanguages": "String",
+    "forensic": "String",
+    "otherIntervention": "String",
+    "otherAdministration": "String",
+    "otherAssessment": "String",
+    "otherResearch": "String",
+    "otherConsultation": "String",
+    "correctional": "String",
+    "school": "String",
+    "rehabilitation": "String",
+    "organizationsIntervention": "String",
+    "childrenAdministration": "String",
+    "appliedBehavior": "String"
+  },
+  "sampleItemShape": {
+    "clinicalNeuro": "example-string",
+    "clinical": "example-string",
+    "english": "example-string",
+    "validated": "example-string",
+    "userId": 12345,
+    "familiesIntervention": "example-string",
+    "psycoanalysis": "example-string",
+    "adultsIntervention": "example-string",
+    "clinicalAssessment": "example-string",
+    "consultation": "example-string",
+    "familiesResearch": "example-string",
+    "adultsResearch": "example-string",
+    "groupsAssessment": "example-string",
+    "adultsConsultation": "example-string",
+    "research": "example-string",
+    "adolescentsAdministration": "example-string",
+    "adolescentsIntervention": "example-string",
+    "cognitive": "example-string",
+    "groupsConsultation": "example-string",
+    "treatment": "example-string",
+    "groupsResearch": "example-string",
+    "academic": "example-string",
+    "familiesAssessment": "example-string",
+    "familiesConsultation": "example-string",
+    "spanish": "example-string",
+    "adolescentsConsultation": "example-string",
+    "groupsAdministration": "example-string",
+    "familiesAdministration": "example-string",
+    "adultsAdministration": "example-string",
+    "adolescentsAssessment": "example-string",
+    "groupsIntervention": "example-string",
+    "adultsAssessment": "example-string",
+    "adolescentsResearch": "example-string",
+    "clinicalHealth": "example-string",
+    "elderlyAssessment": "example-string",
+    "organizationsAdministration": "example-string",
+    "elderlyIntervention": "example-string",
+    "elderlyResearch": "example-string",
+    "organizationsConsultation": "example-string",
+    "infantsAssessment": "example-string",
+    "childrenConsultation": "example-string",
+    "infantsConsultation": "example-string",
+    "childrenAssessment": "example-string",
+    "elderlyConsultation": "example-string",
+    "infantsIntervention": "example-string",
+    "childrenIntervention": "example-string",
+    "organizationsResearch": "example-string",
+    "remoteServices": "example-string",
+    "organizationsAssessment": "example-string",
+    "childrenResearch": "example-string",
+    "infantsResearch": "example-string",
+    "counseling": "example-string",
+    "elderlyAdministration": "example-string",
+    "otherLanguages": "example-string",
+    "forensic": "example-string",
+    "otherIntervention": "example-string",
+    "otherAdministration": "example-string",
+    "otherAssessment": "example-string",
+    "otherResearch": "example-string",
+    "otherConsultation": "example-string",
+    "correctional": "example-string",
+    "school": "example-string",
+    "rehabilitation": "example-string",
+    "organizationsIntervention": "example-string",
+    "childrenAdministration": "example-string",
+    "appliedBehavior": "example-string"
+  },
+  "sampleItemDynamoDBFormat": {
+    "clinicalNeuro": {
+      "S": "example-string"
+    },
+    "clinical": {
+      "S": "example-string"
+    },
+    "english": {
+      "S": "example-string"
+    },
+    "validated": {
+      "S": "example-string"
+    },
+    "userId": {
+      "N": "12345"
+    },
+    "familiesIntervention": {
+      "S": "example-string"
+    },
+    "psycoanalysis": {
+      "S": "example-string"
+    },
+    "adultsIntervention": {
+      "S": "example-string"
+    },
+    "clinicalAssessment": {
+      "S": "example-string"
+    },
+    "consultation": {
+      "S": "example-string"
+    },
+    "familiesResearch": {
+      "S": "example-string"
+    },
+    "adultsResearch": {
+      "S": "example-string"
+    },
+    "groupsAssessment": {
+      "S": "example-string"
+    },
+    "adultsConsultation": {
+      "S": "example-string"
+    },
+    "research": {
+      "S": "example-string"
+    },
+    "adolescentsAdministration": {
+      "S": "example-string"
+    },
+    "adolescentsIntervention": {
+      "S": "example-string"
+    },
+    "cognitive": {
+      "S": "example-string"
+    },
+    "groupsConsultation": {
+      "S": "example-string"
+    },
+    "treatment": {
+      "S": "example-string"
+    },
+    "groupsResearch": {
+      "S": "example-string"
+    },
+    "academic": {
+      "S": "example-string"
+    },
+    "familiesAssessment": {
+      "S": "example-string"
+    },
+    "familiesConsultation": {
+      "S": "example-string"
+    },
+    "spanish": {
+      "S": "example-string"
+    },
+    "adolescentsConsultation": {
+      "S": "example-string"
+    },
+    "groupsAdministration": {
+      "S": "example-string"
+    },
+    "familiesAdministration": {
+      "S": "example-string"
+    },
+    "adultsAdministration": {
+      "S": "example-string"
+    },
+    "adolescentsAssessment": {
+      "S": "example-string"
+    },
+    "groupsIntervention": {
+      "S": "example-string"
+    },
+    "adultsAssessment": {
+      "S": "example-string"
+    },
+    "adolescentsResearch": {
+      "S": "example-string"
+    },
+    "clinicalHealth": {
+      "S": "example-string"
+    },
+    "elderlyAssessment": {
+      "S": "example-string"
+    },
+    "organizationsAdministration": {
+      "S": "example-string"
+    },
+    "elderlyIntervention": {
+      "S": "example-string"
+    },
+    "elderlyResearch": {
+      "S": "example-string"
+    },
+    "organizationsConsultation": {
+      "S": "example-string"
+    },
+    "infantsAssessment": {
+      "S": "example-string"
+    },
+    "childrenConsultation": {
+      "S": "example-string"
+    },
+    "infantsConsultation": {
+      "S": "example-string"
+    },
+    "childrenAssessment": {
+      "S": "example-string"
+    },
+    "elderlyConsultation": {
+      "S": "example-string"
+    },
+    "infantsIntervention": {
+      "S": "example-string"
+    },
+    "childrenIntervention": {
+      "S": "example-string"
+    },
+    "organizationsResearch": {
+      "S": "example-string"
+    },
+    "remoteServices": {
+      "S": "example-string"
+    },
+    "organizationsAssessment": {
+      "S": "example-string"
+    },
+    "childrenResearch": {
+      "S": "example-string"
+    },
+    "infantsResearch": {
+      "S": "example-string"
+    },
+    "counseling": {
+      "S": "example-string"
+    },
+    "elderlyAdministration": {
+      "S": "example-string"
+    },
+    "otherLanguages": {
+      "S": "example-string"
+    },
+    "forensic": {
+      "S": "example-string"
+    },
+    "otherIntervention": {
+      "S": "example-string"
+    },
+    "otherAdministration": {
+      "S": "example-string"
+    },
+    "otherAssessment": {
+      "S": "example-string"
+    },
+    "otherResearch": {
+      "S": "example-string"
+    },
+    "otherConsultation": {
+      "S": "example-string"
+    },
+    "correctional": {
+      "S": "example-string"
+    },
+    "school": {
+      "S": "example-string"
+    },
+    "rehabilitation": {
+      "S": "example-string"
+    },
+    "organizationsIntervention": {
+      "S": "example-string"
+    },
+    "childrenAdministration": {
+      "S": "example-string"
+    },
+    "appliedBehavior": {
+      "S": "example-string"
+    }
+  },
+  "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+}

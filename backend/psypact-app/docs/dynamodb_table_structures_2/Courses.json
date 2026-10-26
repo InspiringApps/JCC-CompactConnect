@@ -1,0 +1,78 @@
+{
+  "tableName": "Courses",
+  "description": "Structure for the 'Courses' DynamoDB table, inferred from live key schema + a sample of up to 50 items. No real values are included below.",
+  "partitionKey": "userId",
+  "sortKey": "entryId",
+  "attributes": {
+    "courseNumber": "String",
+    "userId": "Number",
+    "year": "String",
+    "category": "String",
+    "credits": "String",
+    "term": "String",
+    "semesterQuarter": "String",
+    "institution": "String",
+    "hours": "String",
+    "validated": "String",
+    "title": "String",
+    "entryId": "Number",
+    "description": "String"
+  },
+  "sampleItemShape": {
+    "courseNumber": "example-string",
+    "userId": 12345,
+    "year": "example-string",
+    "category": "example-string",
+    "credits": "example-string",
+    "term": "example-string",
+    "semesterQuarter": "example-string",
+    "institution": "example-string",
+    "hours": "example-string",
+    "validated": "example-string",
+    "title": "example-string",
+    "entryId": 12345,
+    "description": "example-string"
+  },
+  "sampleItemDynamoDBFormat": {
+    "courseNumber": {
+      "S": "example-string"
+    },
+    "userId": {
+      "N": "12345"
+    },
+    "year": {
+      "S": "example-string"
+    },
+    "category": {
+      "S": "example-string"
+    },
+    "credits": {
+      "S": "example-string"
+    },
+    "term": {
+      "S": "example-string"
+    },
+    "semesterQuarter": {
+      "S": "example-string"
+    },
+    "institution": {
+      "S": "example-string"
+    },
+    "hours": {
+      "S": "example-string"
+    },
+    "validated": {
+      "S": "example-string"
+    },
+    "title": {
+      "S": "example-string"
+    },
+    "entryId": {
+      "N": "12345"
+    },
+    "description": {
+      "S": "example-string"
+    }
+  },
+  "notes": "Field list derived by sampling up to 50 items and recording attribute names/types only; all real values were discarded. 'sampleItemShape' is a plain JSON view; 'sampleItemDynamoDBFormat' mirrors the raw wire format returned by the DynamoDB API (AttributeValue type wrappers), both populated with generic placeholder values. This table may contain additional attributes not present in the sample."
+}

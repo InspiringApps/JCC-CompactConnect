@@ -7,6 +7,7 @@ from stacks.api_stack import ApiStack
 from stacks.disaster_recovery_stack import DisasterRecoveryStack
 from stacks.event_state_stack import EventStateStack
 from stacks.feature_flag_stack import FeatureFlagStack
+from stacks.ia_source_data_stack import IaSourceDataStack
 from stacks.managed_login_stack import ManagedLoginStack
 from stacks.notification_stack import NotificationStack
 from stacks.persistent_stack import PersistentStack
@@ -171,6 +172,22 @@ class BackendStage(Stage):
             persistent_stack=self.persistent_stack,
             search_persistent_stack=self.search_persistent_stack,
         )
+
+        # Opt in per environment by setting ia_source_snapshot_id to a snapshot already copied
+        # into that account. The id is an SSM context value, not a committed snapshot name.
+        self.ia_source_data_stack = None
+        snapshot_identifier = environment_context.get('ia_source_snapshot_id')
+        if snapshot_identifier:
+            self.ia_source_data_stack = IaSourceDataStack(
+                self,
+                'IaSourceDataStack',
+                env=environment,
+                environment_context=environment_context,
+                standard_tags=standard_tags,
+                environment_name=environment_name,
+                vpc_stack=self.vpc_stack,
+                snapshot_identifier=snapshot_identifier,
+            )
 
         # Reporting and notifications depend on emails, which depend on having a domain name. If we don't configure
         # a HostedZone we won't bother with these whole stacks.
