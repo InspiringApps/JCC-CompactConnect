@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import os
-
 from aws_cdk import Duration, Stack
 from aws_cdk.aws_dynamodb import ITable
 from aws_cdk.aws_kms import IKey
@@ -44,8 +42,8 @@ class AttestationsLambdas:
         handler = PythonFunction(
             scope,
             'AttestationsFunction',
-            index='handler.py',
-            lambda_dir='attestations',
+            index='attestations.py',
+            lambda_dir='compact-configuration',
             handler='attestations',
             environment=env_vars,
             timeout=Duration.seconds(30),

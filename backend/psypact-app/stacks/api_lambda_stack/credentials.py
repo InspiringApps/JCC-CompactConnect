@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import os
-
 from aws_cdk import Stack
 from aws_cdk.aws_cloudwatch import Alarm, ComparisonOperator, Stats, TreatMissingData
 from aws_cdk.aws_cloudwatch_actions import SnsAction
@@ -58,8 +56,8 @@ class CredentialsLambdas:
             'PostCredentialsPaymentProcessorHandler',
             description='Post credentials payment processor handler',
             runtime=Runtime.PYTHON_3_12,
-            lambda_dir='post-payment-processor-credentials',
-            index='handler.py',
+            lambda_dir='purchases',
+            index='post_payment_processor_credentials.py',
             handler='post_payment_processor_credentials',
             environment=env_vars,
             alarm_topic=alarm_topic,

@@ -46,3 +46,27 @@ def sync_common_lambdas_into_layer_entry(
         ignore=shutil.ignore_patterns('__pycache__', '*.pyc', '.ruff_cache'),
     )
     return dest
+
+
+_STAGE_IGNORE = shutil.ignore_patterns('tests', '__pycache__', '*.pyc', '.ruff_cache', '.pytest_cache', 'entries')
+
+
+def stage_shared_lambda_overlay(lambda_dir: str) -> str:
+    """Build a gitignored Lambda zip root from common-python, then the app directory.
+
+    common-python/lambdas/<lambda_dir> is copied first. The app's lambdas/python/<lambda_dir>
+    is copied over it, so an app file replaces the shared file at the same path. Tests are
+    left out of the zip. The result is lambdas/python/.shared-stage/<lambda_dir>, which is gitignored.
+    """
+    shared_dir = default_common_lambdas_source().parent / 'lambdas' / lambda_dir
+    app_dir = Path('lambdas', 'python', lambda_dir)
+    dest = Path('lambdas', 'python', '.shared-stage', lambda_dir)
+    if dest.exists():
+        shutil.rmtree(dest)
+    if shared_dir.is_dir():
+        shutil.copytree(shared_dir, dest, ignore=_STAGE_IGNORE)
+    else:
+        dest.mkdir(parents=True)
+    if app_dir.is_dir():
+        shutil.copytree(app_dir, dest, ignore=_STAGE_IGNORE, dirs_exist_ok=True)
+    return str(dest)

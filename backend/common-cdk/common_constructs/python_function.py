@@ -1,22 +1,20 @@
 from __future__ import annotations
 
 import os
-from pathlib import Path
 
 from aws_cdk import Duration
 from aws_cdk.aws_cloudwatch import Alarm, ComparisonOperator, Stats, TreatMissingData
 from aws_cdk.aws_cloudwatch_actions import SnsAction
 from aws_cdk.aws_iam import IRole, ManagedPolicy, Role, ServicePrincipal
-from aws_cdk.aws_lambda import CfnFunction, ILayerVersion, Runtime
+from aws_cdk.aws_lambda import ILayerVersion, Runtime
 from aws_cdk.aws_lambda_python_alpha import PythonFunction as CdkPythonFunction
 from aws_cdk.aws_logs import ILogGroup, LogGroup, RetentionDays
 from aws_cdk.aws_sns import ITopic
 from cdk_nag import NagSuppressions
 from constructs import Construct
 
+from common_constructs.common_lambdas_sync import stage_shared_lambda_overlay
 from common_constructs.python_common_layer_versions import PythonCommonLayerVersions
-
-_SHARED_LAMBDAS_ROOT = Path(__file__).resolve().parents[2] / 'common-python' / 'lambdas'
 
 
 class PythonFunction(CdkPythonFunction):
@@ -37,7 +35,6 @@ class PythonFunction(CdkPythonFunction):
         alarm_topic: ITopic = None,
         role: IRole = None,
         log_group: ILogGroup = None,
-        shared: bool = False,
         entry: str | None = None,
         **kwargs,
     ):
@@ -45,14 +42,6 @@ class PythonFunction(CdkPythonFunction):
             raise RuntimeError(
                 'The PythonCommonLayerVersions construct must be declared before these lambdas can be built'
             )
-
-        # A dotted handler is a module in the PSYPACT layer, such as the home-jurisdiction
-        # function. The alpha construct would append that string to the bundled index module.
-        layer_handler = kwargs.get('handler')
-        if isinstance(layer_handler, str) and layer_handler.startswith('cc_common.'):
-            kwargs['handler'] = 'handler'
-        else:
-            layer_handler = None
 
         defaults = {
             'timeout': Duration.seconds(28),
@@ -118,8 +107,8 @@ class PythonFunction(CdkPythonFunction):
         # setting its permissions.
 
         if entry is None:
-            if shared:
-                entry = str(_SHARED_LAMBDAS_ROOT / lambda_dir)
+            if self._common_layer_versions.include_shared_python:
+                entry = stage_shared_lambda_overlay(lambda_dir)
             else:
                 entry = os.path.join('lambdas', 'python', lambda_dir)
 
@@ -133,11 +122,6 @@ class PythonFunction(CdkPythonFunction):
             **defaults,
         )
         self.add_layers(self._get_common_layer())
-
-        if layer_handler is not None:
-            cfn_function = self.node.default_child
-            if isinstance(cfn_function, CfnFunction):
-                cfn_function.add_property_override('Handler', layer_handler)
 
         if alarm_topic is not None:
             self._add_alarms(alarm_topic)

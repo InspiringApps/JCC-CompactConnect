@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import os
-
 from aws_cdk import Duration, Stack
 from aws_cdk.aws_cloudwatch import (
     Alarm,
@@ -119,8 +117,8 @@ class StaffUsersLambdas:
         handler = PythonFunction(
             scope,
             'GetMeStaffUserHandler',
-            lambda_dir='staff-get-me',
-            index='handler.py',
+            lambda_dir='staff-users',
+            index='get_me.py',
             handler='get_me',
             environment=env_vars,
         )
@@ -148,8 +146,8 @@ class StaffUsersLambdas:
         handler = PythonFunction(
             scope,
             'PatchMeStaffUserHandler',
-            lambda_dir='staff-patch-me',
-            index='handler.py',
+            lambda_dir='staff-users',
+            index='patch_me.py',
             handler='patch_me',
             environment=env_vars,
         )
@@ -176,8 +174,8 @@ class StaffUsersLambdas:
         handler = PythonFunction(
             scope,
             'GetStaffUsersHandler',
-            lambda_dir='staff-get-users',
-            index='handler.py',
+            lambda_dir='staff-users',
+            index='get_users.py',
             handler='get_users',
             environment=env_vars,
         )
@@ -203,8 +201,8 @@ class StaffUsersLambdas:
         handler = PythonFunction(
             scope,
             'GetStaffUserHandler',
-            lambda_dir='staff-get-one-user',
-            index='handler.py',
+            lambda_dir='staff-users',
+            index='get_one_user.py',
             handler='get_one_user',
             environment=env_vars,
         )
@@ -237,8 +235,8 @@ class StaffUsersLambdas:
         handler = PythonFunction(
             scope,
             'PatchUserHandler',
-            lambda_dir='staff-patch-user',
-            index='handler.py',
+            lambda_dir='staff-users',
+            index='patch_user.py',
             handler='patch_user',
             environment=env_vars,
         )
@@ -267,8 +265,8 @@ class StaffUsersLambdas:
         handler = PythonFunction(
             scope,
             'DeleteStaffUserFunction',
-            lambda_dir='staff-delete-user',
-            index='handler.py',
+            lambda_dir='staff-users',
+            index='delete_user.py',
             handler='delete_user',
             environment=env_vars,
         )
@@ -390,8 +388,8 @@ class StaffUsersLambdas:
         handler = PythonFunction(
             scope,
             'PostStaffUserHandler',
-            lambda_dir='staff-post-user',
-            index='handler.py',
+            lambda_dir='staff-users',
+            index='post_user.py',
             handler='post_user',
             environment=env_vars,
         )
@@ -432,8 +430,8 @@ class StaffUsersLambdas:
         handler = PythonFunction(
             scope,
             'ReinviteStaffUserFunction',
-            lambda_dir='staff-reinvite-user',
-            index='handler.py',
+            lambda_dir='staff-users',
+            index='reinvite_user.py',
             handler='reinvite_user',
             environment=env_vars,
         )

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import os
-
 from aws_cdk import Duration, Stack
 from aws_cdk.aws_dynamodb import ITable
 from aws_cdk.aws_kms import IKey
@@ -51,8 +49,8 @@ class CompactConfigurationApiLambdas:
         handler = PythonFunction(
             scope,
             'CompactConfigurationApiFunction',
-            index='handler.py',
-            lambda_dir='compact-configuration-api',
+            index='compact_configuration_api_handler.py',
+            lambda_dir='compact-configuration',
             handler='compact_configuration_api_handler',
             environment=env_vars,
             timeout=Duration.seconds(28),

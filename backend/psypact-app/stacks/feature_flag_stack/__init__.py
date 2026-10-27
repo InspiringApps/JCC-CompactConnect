@@ -62,8 +62,6 @@ Custom Attributes:
 
 from __future__ import annotations
 
-import os
-
 from aws_cdk import Duration
 from aws_cdk.aws_logs import LogGroup, RetentionDays
 from aws_cdk.aws_secretsmanager import Secret
@@ -114,8 +112,8 @@ class FeatureFlagStack(AppStack):
         self.manage_function = PythonFunction(
             self,
             'ManageFunction',
-            index='handler.py',
-            lambda_dir='manage-feature-flag',
+            index='manage_feature_flag.py',
+            lambda_dir='feature-flag',
             handler='manage_feature_flag',
             log_retention=RetentionDays.ONE_MONTH,
             environment={'ENVIRONMENT_NAME': environment_name},

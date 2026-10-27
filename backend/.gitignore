@@ -12,6 +12,9 @@ cdk.out
 # Copied from backend/common-python at PsyPact CDK synth time for Lambda layer bundling
 psypact-app/lambdas/python/common/common_lambdas
 
+# Lambda zip roots staged at synth: common-python lambdas with the PsyPact directory overlaid
+psypact-app/lambdas/python/.shared-stage
+
 # Save for local config
 cdk.context.json
 *-cdk.context.json

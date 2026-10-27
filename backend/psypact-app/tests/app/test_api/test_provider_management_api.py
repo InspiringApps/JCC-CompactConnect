@@ -218,7 +218,7 @@ class TestProviderManagementApi(TestApi):
         api_lambda_stack_template.has_resource_properties(
             type=CfnFunction.CFN_RESOURCE_TYPE_NAME,
             props={
-                'Handler': 'handler.get_provider',
+                'Handler': 'get_provider.get_provider',
             },
         )
 
@@ -283,7 +283,7 @@ class TestProviderManagementApi(TestApi):
         api_lambda_stack_template.has_resource_properties(
             type=CfnFunction.CFN_RESOURCE_TYPE_NAME,
             props={
-                'Handler': 'handler.query_providers',
+                'Handler': 'query_providers.query_providers',
             },
         )
 
@@ -497,7 +497,7 @@ class TestProviderManagementApi(TestApi):
         api_lambda_stack_template.has_resource_properties(
             type=CfnFunction.CFN_RESOURCE_TYPE_NAME,
             props={
-                'Handler': 'handler.encumbrance_handler',
+                'Handler': 'encumbrance_handler.encumbrance_handler',
             },
         )
 

@@ -61,7 +61,7 @@ class TestProviderUsersApi(TestApi):
         api_lambda_stack_template.has_resource_properties(
             type=CfnFunction.CFN_RESOURCE_TYPE_NAME,
             props={
-                'Handler': 'handler.provider_users_api_handler',
+                'Handler': 'provider_users_api_handler.provider_users_api_handler',
             },
         )
 
@@ -136,7 +136,7 @@ class TestProviderUsersApi(TestApi):
         api_lambda_stack_template.has_resource_properties(
             type=CfnFunction.CFN_RESOURCE_TYPE_NAME,
             props={
-                'Handler': 'cc_common.psypact_home_jurisdiction.put_psypact_provider_home_jurisdiction',
+                'Handler': 'put_home_jurisdiction.put_psypact_provider_home_jurisdiction',
             },
         )
 
@@ -222,7 +222,7 @@ class TestProviderUsersApi(TestApi):
         api_lambda_stack_template.has_resource_properties(
             type=CfnFunction.CFN_RESOURCE_TYPE_NAME,
             props={
-                'Handler': 'handler.provider_users_api_handler',
+                'Handler': 'provider_users_api_handler.provider_users_api_handler',
             },
         )
 
@@ -309,7 +309,7 @@ class TestProviderUsersApi(TestApi):
         api_lambda_stack_template.has_resource_properties(
             type=CfnFunction.CFN_RESOURCE_TYPE_NAME,
             props={
-                'Handler': 'handler.provider_users_api_handler',
+                'Handler': 'provider_users_api_handler.provider_users_api_handler',
             },
         )
 
@@ -394,7 +394,7 @@ class TestProviderUsersApi(TestApi):
         api_lambda_stack_template.has_resource_properties(
             type=CfnFunction.CFN_RESOURCE_TYPE_NAME,
             props={
-                'Handler': 'handler.initiate_account_recovery',
+                'Handler': 'initiate_account_recovery.initiate_account_recovery',
             },
         )
 
@@ -475,7 +475,7 @@ class TestProviderUsersApi(TestApi):
         api_lambda_stack_template.has_resource_properties(
             type=CfnFunction.CFN_RESOURCE_TYPE_NAME,
             props={
-                'Handler': 'handler.verify_account_recovery',
+                'Handler': 'verify_account_recovery.verify_account_recovery',
             },
         )
 

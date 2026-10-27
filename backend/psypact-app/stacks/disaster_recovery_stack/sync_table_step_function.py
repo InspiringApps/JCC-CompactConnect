@@ -1,5 +1,3 @@
-import os
-
 from aws_cdk import ArnFormat, Duration
 from aws_cdk.aws_dynamodb import Table
 from aws_cdk.aws_iam import PolicyStatement, Role
@@ -105,8 +103,8 @@ class SyncTableDataStepFunctionConstruct(Construct):
             self,
             f'DR-{table.node.id}-SyncCleanup',
             description=f'Disaster Recovery cleanup sync step for {table.node.id}',
-            lambda_dir='cleanup-records',
-            index='handler.py',
+            lambda_dir='disaster-recovery',
+            index='cleanup_records.py',
             handler='cleanup_records',
             timeout=Duration.minutes(15),
             environment={
@@ -146,8 +144,8 @@ class SyncTableDataStepFunctionConstruct(Construct):
             self,
             f'DR-{table.node.id}-SyncCopy',
             description=f'Disaster Recovery copy sync step for {table.node.id}',
-            lambda_dir='copy-records',
-            index='handler.py',
+            lambda_dir='disaster-recovery',
+            index='copy_records.py',
             handler='copy_records',
             timeout=Duration.minutes(15),
             environment=copy_env_vars,

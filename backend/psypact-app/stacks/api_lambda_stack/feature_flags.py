@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import os
-
 from aws_cdk.aws_secretsmanager import Secret
 from cdk_nag import NagSuppressions
 from common_constructs.python_function import PythonFunction
@@ -40,8 +38,8 @@ class FeatureFlagsLambdas:
             self.scope,
             'CheckFeatureFlagHandler',
             description='Check feature flag handler',
-            lambda_dir='check-feature-flag',
-            index='handler.py',
+            lambda_dir='feature-flag',
+            index='check_feature_flag.py',
             handler='check_feature_flag',
             environment=lambda_environment,
             alarm_topic=self.persistent_stack.alarm_topic,

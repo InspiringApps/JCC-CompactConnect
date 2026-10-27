@@ -1,5 +1,3 @@
-import os
-
 from aws_cdk import Duration
 from aws_cdk.aws_dynamodb import ITable
 from aws_cdk.aws_ec2 import SubnetSelection
@@ -59,8 +57,8 @@ class PopulateProviderDocumentsHandler(Construct):
             self,
             'PopulateProviderDocumentsFunction',
             description='Populates OpenSearch indices with provider documents from DynamoDB',
-            index='handler.py',
-            lambda_dir='populate-provider-documents',
+            index='populate_provider_documents.py',
+            lambda_dir='search',
             handler='populate_provider_documents',
             role=lambda_role,
             log_retention=RetentionDays.ONE_MONTH,
