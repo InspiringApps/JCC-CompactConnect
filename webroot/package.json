@@ -104,6 +104,7 @@
     "typescript": "~5.1.6"
   },
   "resolutions": {
+    "follow-redirects": "^1.16.2",
     "stylelint-config-rational-order/**/trim": "^0.0.3",
     "stylelint-config-rational-order/stylelint": "^13.3.0",
     "@vue/cli-plugin-unit-mocha/mocha/minimatch": "^3.0.5",
