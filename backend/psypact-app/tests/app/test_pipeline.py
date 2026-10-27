@@ -57,33 +57,33 @@ class TestBackendPipeline(TstAppABC, TestCase):
 
         self._inspect_persistent_stack(
             self.app.test_backend_pipeline_stack.test_stage.persistent_stack,
-            domain_name='app.test.compactconnect.org',
+            domain_name='app.test.psypactportal.org',
             allow_local_ui=True,
         )
         self._inspect_persistent_stack(
             self.app.beta_backend_pipeline_stack.beta_backend_stage.persistent_stack,
-            domain_name='app.beta.compactconnect.org',
+            domain_name='app.beta.psypactportal.org',
             allow_local_ui=False,
         )
         self._inspect_persistent_stack(
-            self.app.prod_backend_pipeline_stack.prod_stage.persistent_stack, domain_name='app.compactconnect.org'
+            self.app.prod_backend_pipeline_stack.prod_stage.persistent_stack, domain_name='app.psypactportal.org'
         )
 
         self._inspect_provider_users_stack(
             self.app.test_backend_pipeline_stack.test_stage.provider_users_stack,
-            domain_name='app.test.compactconnect.org',
+            domain_name='app.test.psypactportal.org',
             allow_local_ui=True,
         )
 
         self._inspect_provider_users_stack(
             self.app.beta_backend_pipeline_stack.beta_backend_stage.provider_users_stack,
-            domain_name='app.beta.compactconnect.org',
+            domain_name='app.beta.psypactportal.org',
             allow_local_ui=False,
         )
 
         self._inspect_provider_users_stack(
             self.app.prod_backend_pipeline_stack.prod_stage.provider_users_stack,
-            domain_name='app.compactconnect.org',
+            domain_name='app.psypactportal.org',
         )
 
     def _when_testing_compact_resource_servers(self, persistent_stack):

@@ -11,8 +11,8 @@
       "beta": {
         "account_id": "222233334444",
         "region": "us-east-1",
-        "domain_name": "beta.psypact.compactconnect.org",
-        "ui_domain_name_override": "app.beta.compactconnect.org",
+        "domain_name": "beta.compact.psypactportal.org",
+        "ui_domain_name_override": "app.beta.psypactportal.org",
         "backup_enabled": false,
         "notifications": {
           "ses_operations_support_email": "justin@example.com",

@@ -41,6 +41,14 @@ The `cdk.json` file tells the CDK Toolkit how to execute your app, including con
 deployment. You can add local configuration that will be merged into the `cdk.json['context']` values with a
 `cdk.context.json` file that you will not check in.
 
+`ui_domain_aliases` adds hostnames to the same CloudFront distribution and certificate as `app.{domain_name}`.
+`app.compactconnect.org` stays on the distribution. Each alias may include `hosted_zone_name` when that zone is in
+this account, so CDK can write the certificate validation record and the alias. Omit `hosted_zone_name` when the zone
+is in another account: the name is still on the certificate, and the validation CNAME is created by hand. The stack
+output names that hostname. Official environments use `app.psypactportal.org`, `app.test.psypactportal.org`, and
+`app.beta.psypactportal.org`. IA environments use `app.psypact.jcc.iaapi.io`, `app.test.psypact.jcc.iaapi.io`, and
+`app.beta.psypact.jcc.iaapi.io` without `hosted_zone_name`, because those zones are in the PSYPACT accounts.
+
 This project is set up like a standard Python project. To use it, create and activate a python virtual environment
 using the tools of your choice (`pyenv` and `venv` are common).
 

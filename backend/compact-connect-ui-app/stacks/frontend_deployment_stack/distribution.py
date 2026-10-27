@@ -3,6 +3,7 @@
 
 import os
 
+from aws_cdk import CfnOutput
 from aws_cdk.aws_certificatemanager import Certificate, CertificateValidation
 from aws_cdk.aws_cloudfront import (
     AllowedMethods,
@@ -18,7 +19,7 @@ from aws_cdk.aws_cloudfront import (
 )
 from aws_cdk.aws_cloudfront_origins import S3BucketOrigin
 from aws_cdk.aws_lambda import Code, Function, Runtime
-from aws_cdk.aws_route53 import ARecord, RecordTarget
+from aws_cdk.aws_route53 import ARecord, HostedZone, RecordTarget
 from aws_cdk.aws_route53_targets import CloudFrontTarget
 from aws_cdk.aws_s3 import IBucket
 from cdk_nag import NagSuppressions
@@ -33,6 +34,33 @@ from common_constructs.webacl import WebACL, WebACLScope
 from constructs import Construct
 
 S3_URL_SUFFIX = '.s3.amazonaws.com'
+
+
+def _ui_domain_aliases(environment_context: dict) -> list[dict]:
+    """
+    Extra CloudFront names for this distribution.
+
+    Each entry is ``{'domain_name': str, 'hosted_zone_name': str | None}``.
+    When ``hosted_zone_name`` is set and that zone is in this account, CDK validates the
+    certificate there and creates the alias record. When it is omitted, the name is still
+    on the certificate and the distribution, and the validation CNAME is created by hand.
+    """
+    aliases = []
+    for alias in environment_context.get('ui_domain_aliases') or []:
+        if isinstance(alias, str):
+            aliases.append({'domain_name': alias, 'hosted_zone_name': None})
+        else:
+            aliases.append(
+                {
+                    'domain_name': alias['domain_name'],
+                    'hosted_zone_name': alias.get('hosted_zone_name'),
+                }
+            )
+    return aliases
+
+
+def _alias_construct_suffix(domain_name: str) -> str:
+    return ''.join(character if character.isalnum() else '' for character in domain_name)
 
 
 def generate_csp_lambda_code(
@@ -116,17 +144,51 @@ class UIDistribution(Distribution):
         stack: AppStack = AppStack.of(scope)
 
         domain_name_kwargs = {}
+        ui_domain_name = None
         if stack.hosted_zone is not None:
             ui_domain_name = f'app.{stack.hosted_zone.zone_name}'
+            alias_specs = _ui_domain_aliases(stack.environment_context)
+            domain_names = [ui_domain_name, *[alias['domain_name'] for alias in alias_specs]]
+            validation_zones = {ui_domain_name: stack.hosted_zone}
+            alias_zones = []
+            for alias in alias_specs:
+                zone_name = alias['hosted_zone_name']
+                if not zone_name:
+                    CfnOutput(
+                        scope,
+                        f'UiAliasManualValidation{_alias_construct_suffix(alias["domain_name"])}',
+                        value=alias['domain_name'],
+                        description=(
+                            'Add the ACM DNS validation CNAME for this name in its hosted zone. '
+                            'The record name and value are on this certificate in ACM until it is issued. '
+                            'Then alias the name to this distribution.'
+                        ),
+                    )
+                    continue
+                alias_zone = HostedZone.from_lookup(
+                    scope,
+                    f'UiAliasZone{_alias_construct_suffix(zone_name)}',
+                    domain_name=zone_name,
+                )
+                validation_zones[alias['domain_name']] = alias_zone
+                alias_zones.append((alias['domain_name'], alias_zone))
+            certificate_kwargs = {}
+            if len(domain_names) > 1:
+                certificate_kwargs['subject_alternative_names'] = domain_names[1:]
             domain_name_kwargs = {
-                'domain_names': [ui_domain_name],
+                'domain_names': domain_names,
                 'certificate': Certificate(
                     scope,
                     'UICert',
                     domain_name=ui_domain_name,
-                    validation=CertificateValidation.from_dns(hosted_zone=stack.hosted_zone),
+                    validation=CertificateValidation.from_dns_multi_zone(validation_zones)
+                    if len(domain_names) > 1
+                    else CertificateValidation.from_dns(hosted_zone=stack.hosted_zone),
+                    **certificate_kwargs,
                 ),
             }
+        else:
+            alias_zones = []
 
         web_acl = WebACL(
             scope,
@@ -240,6 +302,16 @@ class UIDistribution(Distribution):
                 target=RecordTarget(alias_target=CloudFrontTarget(self)),
             )
             self.base_url = f'https://{ui_domain_name}'
+            self.alias_records = [
+                ARecord(
+                    self,
+                    f'UiAliasARecord{_alias_construct_suffix(alias_domain_name)}',
+                    zone=alias_zone,
+                    record_name=alias_domain_name,
+                    target=RecordTarget(alias_target=CloudFrontTarget(self)),
+                )
+                for alias_domain_name, alias_zone in alias_zones
+            ]
 
         NagSuppressions.add_resource_suppressions(
             self,

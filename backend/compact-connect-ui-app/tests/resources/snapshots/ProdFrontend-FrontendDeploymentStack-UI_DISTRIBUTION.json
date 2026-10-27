@@ -4,7 +4,8 @@
     "Properties": {
       "DistributionConfig": {
         "Aliases": [
-          "app.compactconnect.org"
+          "app.compactconnect.org",
+          "app.psypactportal.org"
         ],
         "CacheBehaviors": [
           {

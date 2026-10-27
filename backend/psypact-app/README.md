@@ -48,19 +48,23 @@ deployment. You can add local configuration that will be merged into the `cdk.js
 ### `ui_domain_name_override`
 
 **Important:** Because the PSYPACT backend is hosted on a different domain than the shared frontend UI application (e.g. the
-backend hosted zone is `psypact.compactconnect.org` but the UI lives at `app.compactconnect.org`), each
+backend hosted zone is `compact.psypactportal.org` but the UI lives at `app.psypactportal.org`), each
 environment's context must include a `ui_domain_name_override` field that specifies the correct UI domain name. Without
 this override, the UI domain would be incorrectly derived from the backend's hosted zone (e.g.
-`app.psypact.compactconnect.org` instead of `app.compactconnect.org`). This value is used for CORS allowed origins,
+`app.compact.psypactportal.org` instead of `app.psypactportal.org`). This value is used for CORS allowed origins,
 Cognito callback/logout URLs, and email template links.
 
 Example:
 ```json
 {
-  "domain_name": "psypact.compactconnect.org",
-  "ui_domain_name_override": "app.compactconnect.org"
+  "domain_name": "compact.psypactportal.org",
+  "ui_domain_name_override": "app.psypactportal.org"
 }
 ```
+
+Test uses `test.compact.psypactportal.org` and `app.test.psypactportal.org`. Beta uses `beta.compact.psypactportal.org` and `app.beta.psypactportal.org`.
+
+These values are stored in the pipeline deployment account parameters `test-psypact-context`, `beta-psypact-context`, and `prod-psypact-context`. After editing the example context for an environment, push it with `bin/put_ssm_context.sh <environment>` from the deploy account. That replaces `psypact.compactconnect.org` (and its test and beta names) with the `compact.psypactportal.org` zones.
 
 This project is set up like a standard Python project. To use it, create and activate a python virtual environment
 using the tools of your choice (`pyenv` and `venv` are common).
@@ -381,6 +385,8 @@ Once the pipelines are established with the above steps, deployments will be aut
 
 The psypact backend application creates SSM parameters containing frontend configuration values (Cognito domains, API endpoints, etc.) that the frontend application needs during deployment. Since the frontend deploys from a different AWS account (the pipeline/deployment account), these SSM parameters must be **manually copied** to the frontend account whenever they are created **or updated**.
 
+Moving the backend onto `compact.psypactportal.org` changes the staff and licensee Cognito domains. After that backend deploy finishes, and before the frontend deploy, copy both parameters below into the matching frontend account. On IA, the Cognito domains stay on `psypact.jcc.iaapi.io`. Copy the persistent-stack parameter anyway when `ui_domain_name_override` changes, because that parameter also carries the UI host. The test pipelines do not wait on each other, so push a `ui-test-*` tag after the backend deploy completes.
+
 There are **two** parameters to copy, and the frontend deployment fails unless both are present:
 
 | Parameter | Created by | Contains |
@@ -578,26 +584,15 @@ environment as well, should you choose to deploy one.
 
 ### Setting up psypactportal.org
 
-PSYPACT uses its own dedicated domain for the frontend UI, `psypactportal.org`, rather than a subdomain of `compactconnect.org`.
-This domain is registered with a third-party registrar (GoDaddy), not Route53, so its setup has an
-extra, one-time step to delegate the domain itself into AWS before the pattern above (production hosted zone delegating
-NS authority down to beta/test subdomain zones) can be applied.
+PSYPACT uses `psypactportal.org` for the frontend and `compact.psypactportal.org` for the backend. The current test, beta, and production zones already exist. The steps below are what a person creates by hand for a new environment. CDK creates `api.`, `state-api.`, `search.`, `staff-auth.`, `licensee-auth.`, and the SES DKIM, SPF, and DMARC records. Do not create those by hand.
 
-1) **Create the production hosted zone.** In the CSG production AWS account, create a new public hosted zone named
-   `psypactportal.org` (Console: Route53 → Hosted zones → Create hosted zone → Domain name: `psypactportal.org`,
-   Type: Public hosted zone; CLI: `aws route53 create-hosted-zone --name psypactportal.org --caller-reference
-   psypactportal-prod-$(date +%s)`).
-2) **Delegate the domain.** `psypactportal.org` will not resolve anywhere until the original domain registrar is told to use Route53's name servers for it. Open the hosted zone you just created and copy the four values from its auto-created NS record. Send those four values to whoever manages the domain, and have them enter the values there.
+1. **Delegate `psypactportal.org` at the registrar.** The domain is registered outside Route 53. Create a public hosted zone named `psypactportal.org`, copy its four NS record values, and set those as the domain's name servers at the registrar. Confirm with `dig psypactportal.org NS +short`.
+2. **Create the UI environment zones** `test.psypactportal.org` and `beta.psypactportal.org` in their accounts. Delegate each with an NS record on `psypactportal.org`, using the same NS copy described above for `test.compactconnect.org`. The UI hosts are `app.psypactportal.org`, `app.test.psypactportal.org`, and `app.beta.psypactportal.org`. Do not add an apex A record on `psypactportal.org` for the app hostname. That name is `app`, not the zone apex.
+3. **Create the backend zones** in each PSYPACT backend account: `compact.psypactportal.org` in production, `test.compact.psypactportal.org` in test, and `beta.compact.psypactportal.org` in beta. Delegate `test` and `beta` with NS records on `compact.psypactportal.org`.
+4. **Add an apex A record on each backend zone** if one is not already there, before the deploy that creates Cognito custom domains. Cognito checks the parent of `staff-auth.{zone}` and `licensee-auth.{zone}` when those domains are created. The address does not matter. Skip this when the record already exists. IA zones that already serve those auth domains do not need a new apex A record.
+5. **Certificate validation and the `app` alias.** When the portal zone is in the frontend account, the frontend stack writes the validation record and the `app` alias. When it is not, add the ACM DNS validation CNAME for `app.{zone}` in that zone. The record name and value are on the certificate in ACM until it is issued. The stack output names the hostname. Then create an alias record named `app` pointing at the CloudFront distribution.
 
-   Before moving on, confirm the delegation has propagated with `dig psypactportal.org NS +short` — it should return
-   the same four Route53 name servers.
-3) **Create the beta and test hosted zones** in their respective AWS accounts, as subdomains of the production zone:
-   `beta.psypactportal.org` in the Beta account, and `test.psypactportal.org` in the Test account.
-4) **Delegate NS authority from production to each subdomain zone**, following the same procedure described above for
-   `test.compactconnect.org`: copy the NS record values from each new subdomain zone, then create a matching NS
-   record back in the production `psypactportal.org` zone (Record name: `beta.psypactportal.org` /
-   `test.psypactportal.org`, Type: `NS`, Value: the four subdomain name servers).
- TODO -- define subdomain off of psypactportal.org for hosted zones to be created in the backend psypact accounts
+IA does not get a `compact` zone. The backend zones are already `psypact.jcc.iaapi.io`, `test.psypact.jcc.iaapi.io`, and `beta.psypact.jcc.iaapi.io`. The only records to add there are the `app` alias and, because those zones are not in the frontend account, the validation CNAME for `app.psypact.jcc.iaapi.io`, `app.test.psypact.jcc.iaapi.io`, and `app.beta.psypact.jcc.iaapi.io`. The `app` name is not the zone apex, so it does not replace the existing apex A record. Add the alias and the validation CNAME before the backend deploy that changes Cognito callback URLs.
 
 ## More Info
 [Back to top](#compact-connect---backend-developer-documentation)
