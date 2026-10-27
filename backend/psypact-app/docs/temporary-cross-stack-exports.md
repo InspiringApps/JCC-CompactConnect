@@ -4,13 +4,6 @@ These exports are kept so a deploy can update the stacks that import them before
 
 The API lambda placeholders from the first removal list are gone. Test-APIStack no longer imports them.
 
-`GetPrivilegeHistory` and `DeactivatePrivilegeHandler` are placeholder functions again. Test-APIStack still imports their ARN exports. Remove `_retain_removed_api_handler_export` for both after the test deploy updates Test-APIStack.
-
-| Export |
-| --- |
-| `ExportsOutputFnGetAttGetPrivilegeHistory60AB0634ArnD4E26DC9` |
-| `ExportsOutputFnGetAttDeactivatePrivilegeHandler50A25446Arn240F0B9F` |
-
 Do not remove a row's resources until the stack that still imports the export has been deleted. CDK does not delete a stack that was removed from the pipeline stage. Delete the stack in CloudFormation first, then remove the resources and `export_value` calls.
 
 ## Test-StateAPIStack
