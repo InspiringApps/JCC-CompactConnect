@@ -133,7 +133,8 @@ class PsypactProviderUserRecords(ProviderUserRecords):
         Home is the license in currentHomeJurisdiction. A stored authorization does not
         generate an active privilege by itself. It is valid only when it is approved,
         unexpired, and that home license is compact-eligible. Each valid authorization
-        produces one privilege in every live jurisdiction except home.
+        produces one privilege in every live jurisdiction except home. The privilege
+        expires on that authorization's date. The home license expiration is not used.
 
         An authorization that is not valid still produces an inactive privilege where a
         destination has an unlifted privilege encumbrance or an open privilege investigation.
@@ -189,8 +190,6 @@ class PsypactProviderUserRecords(ProviderUserRecords):
                             authorization_type=authorization.authorizationType,
                         )
                         continue
-                    home_expiration = _as_date(home_license.dateOfExpiration)
-                    authorization_expiration = _as_date(authorization.dateOfExpiration)
                     privilege_dict = {
                         'type': 'privilege',
                         'administratorSetStatus': ActiveInactiveStatus.ACTIVE.value,
@@ -199,7 +198,7 @@ class PsypactProviderUserRecords(ProviderUserRecords):
                         'jurisdiction': jurisdiction,
                         'licenseJurisdiction': home_jurisdiction,
                         'licenseType': home_license.licenseType,
-                        'dateOfExpiration': min(home_expiration, authorization_expiration),
+                        'dateOfExpiration': _as_date(authorization.dateOfExpiration),
                         'privilegeAuthorizationType': authorization.authorizationType,
                         'status': ActiveInactiveStatus.ACTIVE.value
                         if authorization_is_valid and not privilege_unlifted
