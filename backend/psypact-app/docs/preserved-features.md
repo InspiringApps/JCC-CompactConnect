@@ -45,7 +45,7 @@ The route is `GET /v1/compacts/{compact}/attestations/{attestationId}`.
 
 ## Authorize.Net
 
-The payment client is copied so a later application-submission flow can charge a card. The privilege-purchase routes (`POST /v1/purchases/privileges` and the purchase-options route) are not wired.
+The payment client is copied so a later application-submission flow can charge a card. The JCC privilege-purchase routes are not carried. `Purchases`, `PurchasesLambdas`, and `purchases/handlers/privileges.py` are removed. Credentials, transaction history, and reporting stay in `common-python` and are called from the owning app instead of copied.
 
 | Where it runs | Source |
 | --- | --- |
@@ -110,3 +110,16 @@ Copied from Cosmetology, except the attestation handler listed above.
 Shared Cosmetology modules used by those handlers include `common_lambdas/config.py`, `exceptions.py`, `utils.py`, `feature_flag_client.py`, `license_util.py`, `signature_auth.py`, and `event_batch_writer.py`.
 
 Compact Connect also contributes `common_lambdas/event_bus_client.py` and `common_lambdas/event_state_client.py`, from `backend/compact-connect/lambdas/python/common/cc_common/`.
+
+## Intentionally not carried
+
+Privileges are generated at read time, so these JCC flows are not carried:
+
+- Privilege history, including `provider-data-v1/handlers/privilege_history.py` and the history route.
+- The privilege deactivation route. `provider-data-v1/handlers/privileges.py` stays. It has no `common-python` counterpart, and the purchase-notification handler in that file calls `send_privilege_purchase_email`.
+- Military audit, including `provider-data-v1/handlers/military_audit.py`, the NotificationStack listener, and `data-events/handlers/military_audit_events.py`. Creating and ending a military affiliation stays.
+- `EventListenerStack` and `data-events/handlers/license_deactivation_events.py`. Encumbrance listeners stay on NotificationStack.
+
+NotificationStack stays, including the privilege-purchase notification chain, for the coming purchase flow. The chain is defined and not yet called from the stack constructor. A different email is a new template and a client method. The Python handler keeps calling the shared email client.
+
+`ExpirationReminderStack`, `search/handlers/expiration_reminders.py`, and `search/expiration_reminder_tracker.py` stay for privilege expiration reminders. The stack is not in the pipeline. The handler queries OpenSearch for stored privilege documents, so the query and email data need to match generated privileges before it is deployed.
