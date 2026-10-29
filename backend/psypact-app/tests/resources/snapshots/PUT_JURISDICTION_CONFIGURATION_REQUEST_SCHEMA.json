@@ -8,8 +8,7 @@
         "properties": {
           "licenseTypeAbbreviation": {
             "enum": [
-              "psych",
-              "schpsych"
+              "psych"
             ],
             "type": "string"
           },
