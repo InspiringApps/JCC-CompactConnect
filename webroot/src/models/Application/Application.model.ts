@@ -18,15 +18,48 @@ export enum ApplicationType {
 
 export enum ApplicationStatus {
     STARTED = 'started',
-    SUBMITTED = 'submitted',
     STAFF_REVIEW = 'staff-review',
     FIRST_REVIEW = 'first-review',
     SECOND_REVIEW = 'second-review',
     FINAL_REVIEW = 'final-review',
+    COMMITTEE_REVIEW = 'committee-review',
     AWAITING_APPLICANT = 'awaiting-applicant',
     APPROVED = 'approved',
     REJECTED = 'rejected',
     DEACTIVATED = 'deactivated',
+}
+
+export enum ApplicantSectionStatus {
+    INCOMPLETE = 'incomplete',
+    COMPLETE = 'complete',
+    NEEDS_ATTENTION = 'needs-attention',
+    CONFIRM_DETAILS = 'confirm-details',
+}
+
+export enum ReviewSectionStatus {
+    PENDING = 'pending',
+    AWAITING_APPLICANT = 'awaiting-applicant',
+    APPROVED = 'approved',
+    REJECTED = 'rejected',
+}
+
+export enum ReviewerType {
+    FIRST_REVIEWER = 'first-reviewer',
+    SECOND_REVIEWER = 'second-reviewer',
+    FINAL_REVIEWER = 'final-reviewer',
+}
+
+export interface ApplicationReview {
+    assignedDate?: string | null;
+    reviewer?: {
+        id?: string | null,
+        firstName?: string | null;
+        lastName?: string | null;
+    };
+    reviewerType: ReviewerType;
+    reviewerStatus: ApplicationStatus | ReviewSectionStatus;
+    notesForApplicant?: string | null;
+    notesForReviewers?: string | null;
 }
 
 export enum ApplicationLicenseStatus {
@@ -45,14 +78,13 @@ export interface InterfaceApplicationCreate {
     types?: Array<ApplicationType>;
     isRenewal?: boolean;
     status?: ApplicationStatus;
-    notesForApplicant?: string | null;
-    notesForReviewers?: string | null;
+    reviews?: Array<ApplicationReview>;
     attestations?: Array<string>;
     paymentCompensated?: Array<ApplicationType>;
     personalInformation?: {
-        status?: ApplicationStatus;
-        notesForApplicant?: string | null;
-        notesForReviewers?: string | null;
+        applicantStatus: ApplicantSectionStatus,
+        reviewStatus?: ReviewSectionStatus;
+        reviews?: Array<ApplicationReview>;
         firstName?: string | null;
         middleName?: string | null;
         lastName?: string | null;
@@ -74,9 +106,9 @@ export interface InterfaceApplicationCreate {
         mainingZip?: string | null;
     };
     licenseHistory?: {
-        status?: ApplicationStatus,
-        notesForApplicant?: string | null;
-        notesForReviewers?: string | null;
+        applicantStatus: ApplicantSectionStatus,
+        reviewStatus?: ReviewSectionStatus;
+        reviews?: Array<ApplicationReview>;
         ePassport?: {
             mobilityNumber?: string | null,
             issueDate?: string | null,
@@ -95,9 +127,9 @@ export interface InterfaceApplicationCreate {
         ];
     };
     education?: {
-        status?: ApplicationStatus,
-        notesForApplicant?: string | null;
-        notesForReviewers?: string | null;
+        applicantStatus: ApplicantSectionStatus,
+        reviewStatus?: ReviewSectionStatus;
+        reviews?: Array<ApplicationReview>;
         nameAtTime?: string | null;
         institution?: string | null;
         city?: string | null;
@@ -128,9 +160,9 @@ export interface InterfaceApplicationCreate {
         }>;
     };
     conductHistory?: {
-        status?: ApplicationStatus,
-        notesForApplicant?: string | null;
-        notesForReviewers?: string | null;
+        applicantStatus: ApplicantSectionStatus,
+        reviewStatus?: ReviewSectionStatus;
+        reviews?: Array<ApplicationReview>;
         attestations?: Array<string>;
         convictions?: Array<{
             charge?: string | null,
@@ -146,9 +178,9 @@ export interface InterfaceApplicationCreate {
         }>;
     };
     homeState?: {
-        status?: ApplicationStatus,
-        notesForApplicant?: string | null;
-        notesForReviewers?: string | null;
+        applicantStatus: ApplicantSectionStatus,
+        reviewStatus?: ReviewSectionStatus;
+        reviews?: Array<ApplicationReview>;
         applicationTypes?: Array<{
             applicationType?: ApplicationType,
             state?: string | null,
@@ -163,9 +195,9 @@ export interface InterfaceApplicationCreate {
         }>;
     };
     acknowledgements?: {
-        status?: ApplicationStatus,
-        notesForApplicant?: string | null;
-        notesForReviewers?: string | null;
+        applicantStatus: ApplicantSectionStatus,
+        reviewStatus?: ReviewSectionStatus;
+        reviews?: Array<ApplicationReview>;
         attestations?: Array<string>;
         signatureName?: string | null;
     };
