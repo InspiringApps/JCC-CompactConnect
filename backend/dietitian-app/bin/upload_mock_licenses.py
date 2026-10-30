@@ -2,6 +2,9 @@
 # ruff: noqa: T201 we use print statements for scripts run locally
 """Create valid mock licenses and upload them to a sandbox State API.
 
+For a full environment (live jurisdictions, licenses, registered providers, and privileges),
+use bin/populate_dietitian_environment.py instead.
+
 Run from backend/dietitian-app (AWS credentials must be able to create a Cognito app client
 in the state-auth user pool named in tests/smoke/smoke_tests_env.json):
 

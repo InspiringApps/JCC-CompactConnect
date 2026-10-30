@@ -2,6 +2,9 @@
 # ruff: noqa: T201 we use print statements for local scripts
 """
 Script to generate test privilege purchase data for test environments.
+
+For a full environment (live jurisdictions, licenses, registered providers, and privileges),
+use bin/populate_dietitian_environment.py instead.
 It creates privilege records directly in the database to simulate recent privilege purchases.
 
 Run from 'backend/compact-connect' like:

@@ -19,3 +19,5 @@ cdk.context-internal.json
 # smoke test env. Copy smoke_tests_env_example.json to smoke_tests_env.json locally.
 *smoke_tests_env.json
 *smoke_tests_env-*.json
+# local roster written by bin/populate_dietitian_environment.py
+dietitian_population.json

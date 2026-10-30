@@ -2,6 +2,9 @@
 # ruff: noqa: T201 we use print statements for scripts run locally
 """Register an already-uploaded sandbox provider without the frontend.
 
+For a full environment (live jurisdictions, licenses, registered providers, and privileges),
+use bin/populate_dietitian_environment.py instead.
+
 Looks up the provider by id, creates a Cognito user bound to that id, sets a permanent
 password, and writes the registration fields on the provider record.
 
