@@ -35,13 +35,13 @@ class TestSandbox(TstSandbox):
 
         self._inspect_persistent_stack(
             self.app.sandbox_backend_stage.persistent_stack,
-            domain_name='app.justin.compactconnect.org',
+            domain_name='app.justin.psypactportal.org',
             allow_local_ui=True,
         )
 
         self._inspect_provider_users_stack(
             self.app.sandbox_backend_stage.provider_users_stack,
-            domain_name='app.justin.compactconnect.org',
+            domain_name='app.justin.psypactportal.org',
             allow_local_ui=True,
         )
 

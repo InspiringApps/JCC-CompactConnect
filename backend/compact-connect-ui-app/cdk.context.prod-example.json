@@ -12,6 +12,12 @@
         "account_id": "000011112222",
         "region": "us-east-1",
         "domain_name": "compactconnect.org",
+        "ui_domain_aliases": [
+          {
+            "domain_name": "app.psypactportal.org",
+            "hosted_zone_name": "psypactportal.org"
+          }
+        ],
         "robots_meta": "index,follow",
         "recaptcha_public_key": "123-KFEUsjehfuejILDVUKkRnAF9SSzb8o9uv5lY7Ih",
         "statsig_key": "client-KFEUsjehfuejILDVUKkRnAF9SSzb8o9uv5lY7Ih",
