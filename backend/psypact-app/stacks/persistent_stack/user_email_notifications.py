@@ -1,5 +1,3 @@
-import os
-
 from aws_cdk import CustomResource, Duration
 from aws_cdk.aws_iam import PolicyStatement, ServicePrincipal
 from aws_cdk.aws_kms import IKey
@@ -113,8 +111,8 @@ class UserEmailNotifications(Construct):
         verification_function = PythonFunction(
             self,
             'DomainVerificationFunction',
-            lambda_dir='verify-ses-email-identity',
-            index='handler.py',
+            lambda_dir='custom-resources',
+            index='verify_ses_email_identity.py',
             handler='verify_ses_email_identity',
             description='Verifies that a SES email identity is verified',
             timeout=Duration.minutes(15),  # Long timeout to allow for verification

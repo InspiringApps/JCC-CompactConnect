@@ -1,5 +1,3 @@
-import os
-
 from aws_cdk import Duration
 from aws_cdk.aws_cloudwatch import Alarm, ComparisonOperator, Stats, TreatMissingData
 from aws_cdk.aws_cloudwatch_actions import SnsAction
@@ -67,8 +65,8 @@ class ProviderUpdateIngestHandler(Construct):
             'ProviderUpdateIngestFunction',
             description='Processes SQS messages with DynamoDB stream events and indexes provider documents into '
             'OpenSearch',
-            index='handler.py',
-            lambda_dir='provider-update-ingest',
+            index='provider_update_ingest_handler.py',
+            lambda_dir='search',
             handler='provider_update_ingest_handler',
             role=lambda_role,
             log_retention=RetentionDays.ONE_MONTH,

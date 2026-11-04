@@ -71,6 +71,9 @@ MOCK_MILITARY_AFFILIATION_S3_COPY_EVENT = {
 @mock_aws
 class TestProviderUserBucketS3Events(TstFunction):
     def _call_post_military_affiliation_endpoint(self):
+        from cc_common.runtime import install
+
+        install()
         from handlers.provider_users import provider_users_api_handler
 
         with open('../common/tests/resources/api-event.json') as f:

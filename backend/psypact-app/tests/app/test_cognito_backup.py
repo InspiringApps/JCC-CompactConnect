@@ -52,7 +52,7 @@ class TestCognitoBackup(TstAppABC, TestCase):
                 props=Match.object_like(
                     {
                         'Properties': {
-                            'Handler': 'handler.backup_handler',
+                            'Handler': 'backup_handler.backup_handler',
                             'Description': 'Export user pool data for backup purposes',
                         }
                     }

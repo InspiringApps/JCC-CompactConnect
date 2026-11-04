@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import os
-
 from aws_cdk import ArnFormat, Duration
 from aws_cdk.aws_cloudwatch import Alarm, ComparisonOperator, TreatMissingData
 from aws_cdk.aws_cloudwatch_actions import SnsAction
@@ -51,8 +49,8 @@ class TransactionHistoryProcessingWorkflow(Construct):
             f'{compact}-TransactionHistoryProcessor',
             description=f'Processes transaction history records for {compact} compact',
             runtime=Runtime.PYTHON_3_12,
-            lambda_dir='process-settled-transactions',
-            index='handler.py',
+            lambda_dir='purchases',
+            index='process_settled_transactions.py',
             handler='process_settled_transactions',
             timeout=Duration.minutes(15),
             environment={

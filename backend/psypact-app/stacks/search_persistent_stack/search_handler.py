@@ -1,5 +1,3 @@
-import os
-
 from aws_cdk import Duration
 from aws_cdk.aws_cloudwatch import Alarm, ComparisonOperator, TreatMissingData
 from aws_cdk.aws_cloudwatch_actions import SnsAction
@@ -53,8 +51,8 @@ class SearchHandler(Construct):
             self,
             'SearchProvidersFunction',
             description='Search handler for OpenSearch queries',
-            index='handler.py',
-            lambda_dir='search-providers',
+            index='search_api_handler.py',
+            lambda_dir='search',
             handler='search_api_handler',
             role=lambda_role,
             log_retention=RetentionDays.ONE_MONTH,
@@ -75,8 +73,8 @@ class SearchHandler(Construct):
             self,
             'PublicSearchProvidersFunction',
             description='Public search handler for OpenSearch license queries',
-            index='handler.py',
-            lambda_dir='public-search',
+            index='public_search_api_handler.py',
+            lambda_dir='search',
             handler='public_search_api_handler',
             role=lambda_role,
             log_retention=RetentionDays.ONE_MONTH,

@@ -131,7 +131,7 @@ class TestCognitoUserBackup(TestCase):
             CfnFunction.CFN_RESOURCE_TYPE_NAME,
             {
                 'Properties': {
-                    'Handler': 'handler.backup_handler',
+                    'Handler': 'backup_handler.backup_handler',
                     'Description': 'Export user pool data for backup purposes',
                 }
             },

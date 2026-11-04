@@ -1,5 +1,4 @@
 import json
-import os
 
 import yaml
 from aws_cdk import CustomResource, Duration
@@ -32,8 +31,8 @@ class CompactConfigurationUpload(Construct):
         self.compact_configuration_upload_function = PythonFunction(
             scope,
             'CompactConfigurationUploadFunction',
-            lambda_dir='upload-compact-configuration',
-            index='handler.py',
+            lambda_dir='custom-resources',
+            index='upload_compact_configuration.py',
             handler='upload_compact_configuration',
             description='Uploads configurations to the compact configuration Dynamo table',
             timeout=Duration.minutes(5),

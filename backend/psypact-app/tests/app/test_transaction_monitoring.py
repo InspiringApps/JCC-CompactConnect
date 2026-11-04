@@ -86,7 +86,10 @@ class TestTransactionMonitoring(TstAppABC, TestCase):
                 transaction_monitoring_stack_template.find_resources(CfnFunction.CFN_RESOURCE_TYPE_NAME),
             )
 
-            self.assertEqual('handler.process_settled_transactions', lambda_properties['Handler'])
+            self.assertEqual(
+                'process_settled_transactions.process_settled_transactions',
+                lambda_properties['Handler'],
+            )
 
             handler_role_logical_id = transaction_monitoring_stack.get_logical_id(
                 transaction_monitoring_stack.compact_state_machines[

@@ -1,5 +1,3 @@
-import os
-
 from aws_cdk import CustomResource, Duration
 from aws_cdk.aws_ec2 import SubnetSelection
 from aws_cdk.aws_iam import IRole
@@ -65,8 +63,8 @@ class IndexManagerCustomResource(Construct):
         self.manage_function = PythonFunction(
             self,
             'IndexManagerFunction',
-            index='handler.py',
-            lambda_dir='manage-opensearch-indices',
+            index='manage_opensearch_indices.py',
+            lambda_dir='search',
             handler='manage_opensearch_indices',
             role=lambda_role,
             log_retention=RetentionDays.ONE_MONTH,

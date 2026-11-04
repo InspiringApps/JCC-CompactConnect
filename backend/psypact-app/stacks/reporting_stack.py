@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
 
 from aws_cdk import Duration
 from aws_cdk.aws_cloudwatch import Alarm, ComparisonOperator, Stats, TreatMissingData
@@ -39,8 +38,8 @@ class ReportingStack(AppStack):
             description='Transaction report generator',
             handler='generate_transaction_reports',
             runtime=Runtime.PYTHON_3_12,
-            lambda_dir='generate-transaction-reports',
-            index='handler.py',
+            lambda_dir='purchases',
+            index='generate_transaction_reports.py',
             timeout=Duration.minutes(15),
             # This lambda sends email notifications, so we do not want it to retry in the event of a failure
             # we will instead trigger an alert for support to investigate and address as needed.

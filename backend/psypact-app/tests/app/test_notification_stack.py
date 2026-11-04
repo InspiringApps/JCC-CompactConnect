@@ -44,7 +44,7 @@ class TestNotificationStack(TstAppABC, TestCase):
             resources=notification_template.find_resources(CfnFunction.CFN_RESOURCE_TYPE_NAME),
         )
         self.assertEqual(
-            'handler.home_jurisdiction_change_notification_listener',
+            'home_jurisdiction_change_notification_listener.home_jurisdiction_change_notification_listener',
             handler['Handler'],
         )
 
@@ -68,7 +68,7 @@ class TestNotificationStack(TstAppABC, TestCase):
         )
 
         self.assertEqual(
-            'handler.license_encumbrance_notification_listener',
+            'license_encumbrance_notification_listener.license_encumbrance_notification_listener',
             license_encumbrance_notification_handler['Handler'],
         )
 
@@ -179,7 +179,7 @@ class TestNotificationStack(TstAppABC, TestCase):
         )
 
         self.assertEqual(
-            'handler.license_encumbrance_lifting_notification_listener',
+            'license_encumbrance_lifting_notification_listener.license_encumbrance_lifting_notification_listener',
             license_encumbrance_lifting_notification_handler['Handler'],
         )
 
@@ -292,7 +292,7 @@ class TestNotificationStack(TstAppABC, TestCase):
         )
 
         self.assertEqual(
-            'handler.privilege_encumbrance_notification_listener',
+            'privilege_encumbrance_notification_listener.privilege_encumbrance_notification_listener',
             privilege_encumbrance_handler['Handler'],
         )
 
@@ -400,7 +400,7 @@ class TestNotificationStack(TstAppABC, TestCase):
         )
 
         self.assertEqual(
-            'handler.privilege_encumbrance_lifting_notification_listener',
+            'privilege_encumbrance_lifting_notification_listener.privilege_encumbrance_lifting_notification_listener',
             privilege_encumbrance_lifting_handler['Handler'],
         )
 
@@ -511,7 +511,7 @@ class TestNotificationStack(TstAppABC, TestCase):
         )
 
         self.assertEqual(
-            'handler.license_investigation_notification_listener',
+            'license_investigation_notification_listener.license_investigation_notification_listener',
             license_investigation_handler['Handler'],
         )
 
@@ -620,7 +620,7 @@ class TestNotificationStack(TstAppABC, TestCase):
         )
 
         self.assertEqual(
-            'handler.license_investigation_closed_notification_listener',
+            'license_investigation_closed_notification_listener.license_investigation_closed_notification_listener',
             license_investigation_closed_handler['Handler'],
         )
 
@@ -692,7 +692,7 @@ class TestNotificationStack(TstAppABC, TestCase):
         )
 
         self.assertEqual(
-            'handler.privilege_investigation_notification_listener',
+            'privilege_investigation_notification_listener.privilege_investigation_notification_listener',
             privilege_investigation_handler['Handler'],
         )
 
@@ -764,7 +764,7 @@ class TestNotificationStack(TstAppABC, TestCase):
         )
 
         self.assertEqual(
-            'handler.privilege_investigation_closed_notification_listener',
+            'privilege_investigation_closed_notification_listener.privilege_investigation_closed_notification_listener',
             privilege_investigation_closed_handler['Handler'],
         )
 

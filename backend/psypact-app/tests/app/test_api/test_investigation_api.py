@@ -282,7 +282,7 @@ class TestInvestigationApi(TestApi):
             api_lambda_stack_template.find_resources(CfnFunction.CFN_RESOURCE_TYPE_NAME),
         )
 
-        self.assertEqual(investigation_handler['Handler'], 'handler.investigation_handler')
+        self.assertEqual(investigation_handler['Handler'], 'investigation_handler.investigation_handler')
 
     def test_synth_generates_post_privilege_investigation_endpoint(self):
         """Test that the POST privilege investigation endpoint is configured correctly."""

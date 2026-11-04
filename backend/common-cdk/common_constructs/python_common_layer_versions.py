@@ -28,6 +28,9 @@ class PythonCommonLayerVersions(Construct):
 
         from common_constructs.python_function import PythonFunction
 
+        # PsyPact sets this so each Lambda zip is the common-python package with the app
+        # directory copied over it. Other compacts leave it false and zip their own tree.
+        self.include_shared_python = include_shared_python
         PythonFunction.register_layer_versions(self)
 
         self._python_layers = {}
