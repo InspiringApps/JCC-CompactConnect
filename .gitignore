@@ -42,5 +42,8 @@ package-lock.json
 # Local working copy of the shared PSY|PRO DynamoDB export
 ia-export/
 
+# Inspiring Apps internal-account notes. Official READMEs stay written for JCC accounts.
+README.ia.md
+
 # Public RDS CA fetched into the query lambda asset. Not a credential.
 rds-global-bundle.pem
