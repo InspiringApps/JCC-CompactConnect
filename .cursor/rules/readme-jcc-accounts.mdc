@@ -1,0 +1,19 @@
+---
+description: Checked-in READMEs describe official JCC accounts, not Inspiring Apps internal accounts
+globs: "**/README.md"
+alwaysApply: true
+---
+
+# READMEs stay on official JCC accounts
+
+Checked-in READMEs describe deploying this project in the official JCC accounts. Use `compactconnect.org`, `psypactportal.org`, and their test and beta names.
+
+Inspiring Apps internal-account steps belong in a gitignored `README.ia.md` next to the README they would have changed. The root `.gitignore` already ignores that filename. Keep account ids, `*.iaapi.io` hostnames, and IA-only hosted-zone steps in that file.
+
+```markdown
+# README.md
+Test uses `test.compact.psypactportal.org` and `app.test.psypactportal.org`.
+
+# README.ia.md
+Test backend zone stays `test.psypact.jcc.iaapi.io`. Delegate `app` into the frontend account.
+```

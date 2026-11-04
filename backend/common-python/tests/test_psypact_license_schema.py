@@ -208,6 +208,38 @@ class TestPsypactPrivilegeGeneration(unittest.TestCase):
         self.assertEqual(expirations['APIT'], date(2028, 1, 1))
         self.assertEqual(expirations['TAP'], date(2029, 6, 1))
 
+    def test_privilege_expiration_matches_its_authorization_when_the_license_expires_sooner(self):
+        from common_lambdas.data_model.schema.common import CompactEligibilityStatus
+
+        records = self._records(
+            [
+                _license_record(
+                    jurisdiction='co',
+                    expiration=date(2099, 1, 1),
+                    eligibility=CompactEligibilityStatus.ELIGIBLE,
+                )
+            ],
+            [
+                _authorization(authorization_type='APIT', expiration=date(2099, 6, 1)),
+                _authorization(authorization_type='TAP', expiration=date(2100, 3, 15)),
+            ],
+        )
+
+        privileges = records.generate_privileges_for_provider()
+        expirations = {
+            (privilege['jurisdiction'], privilege['privilegeAuthorizationType']): privilege['dateOfExpiration']
+            for privilege in privileges
+        }
+        self.assertEqual(
+            expirations,
+            {
+                ('oh', 'APIT'): date(2099, 6, 1),
+                ('ut', 'APIT'): date(2099, 6, 1),
+                ('oh', 'TAP'): date(2100, 3, 15),
+                ('ut', 'TAP'): date(2100, 3, 15),
+            },
+        )
+
     def test_no_authorization_records_generate_no_privileges(self):
         from common_lambdas.data_model.schema.common import CompactEligibilityStatus
 

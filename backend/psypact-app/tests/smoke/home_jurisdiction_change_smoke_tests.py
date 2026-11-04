@@ -133,17 +133,11 @@ def test_privileges_are_generated_from_the_home_license():
             f'Expected {expected_jurisdictions}, got {actual_jurisdictions}'
         )
 
-    home_expiration = str(home_license['dateOfExpiration'])[:10]
     for privilege in privileges:
         if privilege.get('licenseJurisdiction', '').lower() != home_jurisdiction:
             raise SmokeTestFailureException(
                 f'Privilege in {privilege.get("jurisdiction")} has licenseJurisdiction '
                 f'{privilege.get("licenseJurisdiction")!r}, expected {home_jurisdiction!r}'
-            )
-        if str(privilege.get('dateOfExpiration', ''))[:10] != home_expiration:
-            raise SmokeTestFailureException(
-                'Generated privilege expiration does not match the home license. '
-                f'Privilege {privilege.get("dateOfExpiration")}, license {home_license["dateOfExpiration"]}'
             )
         if privilege.get('administratorSetStatus') != 'active':
             raise SmokeTestFailureException(
