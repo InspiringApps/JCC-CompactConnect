@@ -7,28 +7,69 @@ The resource ``Table`` API cannot express ``TransactGetItems`` or ``TransactWrit
 from collections.abc import Mapping
 from dataclasses import dataclass
 from hashlib import sha256
+from uuid import uuid4
 
 from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
 from botocore.exceptions import ClientError
 from common_lambdas.exceptions import CCConflictException, CCInvalidRequestException, CCNotFoundException
 
 from cc_common.applicants.application_state import (
+    APPLICANT_EDITABLE_STATES,
     STATE_DEFINITIONS,
     ActorRole,
+    ApplicationStatus,
+    ReviewerType,
+    ReviewSectionStatus,
     SectionName,
     StateName,
+    WorkflowAction,
+    reviewer_edit_states,
+    validate_reviewer_assignment,
 )
 
 APPLICATION_SK = 'APPLICATION'
 APPLICATION_RECORD_TYPE = 'application'
 APPLICATION_SECTION_RECORD_TYPE = 'applicationSection'
 APPLICATION_TRANSITION_RECORD_TYPE = 'applicationTransition'
+APPLICATION_REQUEST_RECORD_TYPE = 'applicationRequest'
 
 _REVIEWER_SUB_FIELDS = {
     ActorRole.FIRST_REVIEWER: 'firstReviewerSub',
     ActorRole.SECOND_REVIEWER: 'secondReviewerSub',
     ActorRole.FINAL_REVIEWER: 'finalReviewerSub',
 }
+
+_ROLE_FIELDS = {
+    ActorRole.FIRST_REVIEWER: (
+        'firstReviewerSub',
+        'firstReviewerAssignmentId',
+        'firstReviewerFirstName',
+        'firstReviewerLastName',
+        ReviewerType.FIRST_REVIEWER,
+    ),
+    ActorRole.SECOND_REVIEWER: (
+        'secondReviewerSub',
+        'secondReviewerAssignmentId',
+        'secondReviewerFirstName',
+        'secondReviewerLastName',
+        ReviewerType.SECOND_REVIEWER,
+    ),
+    ActorRole.FINAL_REVIEWER: (
+        'finalReviewerSub',
+        'finalReviewerAssignmentId',
+        'finalReviewerFirstName',
+        'finalReviewerLastName',
+        ReviewerType.FINAL_REVIEWER,
+    ),
+}
+
+_ASSIGNABLE_STATUSES = (
+    ApplicationStatus.STAFF_REVIEW,
+    ApplicationStatus.FIRST_REVIEW,
+    ApplicationStatus.SECOND_REVIEW,
+    ApplicationStatus.FINAL_REVIEW,
+    ApplicationStatus.COMMITTEE_REVIEW,
+)
 
 _serializer = TypeSerializer()
 _deserializer = TypeDeserializer()
@@ -88,6 +129,103 @@ def _condition_failed(error: ClientError) -> bool:
     return not codes or 'ConditionalCheckFailed' in codes
 
 
+def _is_conflict(error: ClientError) -> bool:
+    if error.response['Error']['Code'] == 'ConditionalCheckFailedException':
+        return True
+    return _condition_failed(error)
+
+
+def _actor_role(role: ActorRole | str) -> ActorRole:
+    return role if isinstance(role, ActorRole) else ActorRole(role)
+
+
+def _merge_section_data(existing: Mapping | None, patch: Mapping | None) -> dict:
+    merged = dict(existing or {})
+    merged.update(dict(patch or {}))
+    return merged
+
+
+def _reviewer_identity(sub: str, first_name: str | None, last_name: str | None) -> dict:
+    reviewer = {'id': sub}
+    if first_name:
+        reviewer['firstName'] = first_name
+    if last_name:
+        reviewer['lastName'] = last_name
+    return reviewer
+
+
+def _review_shell(
+    *,
+    assignment_id: str,
+    reviewer_type: ReviewerType,
+    sub: str,
+    first_name: str | None,
+    last_name: str | None,
+    assigned_date: str,
+    section: bool,
+) -> dict:
+    shell = {
+        'assignmentId': assignment_id,
+        'reviewerType': reviewer_type.value,
+        'reviewer': _reviewer_identity(sub, first_name, last_name),
+        'assignedDate': assigned_date,
+    }
+    if section:
+        shell['reviewerSelectedApplicationSectionStatus'] = ReviewSectionStatus.PENDING.value
+    return shell
+
+
+def _matching_review(reviews: list | None, *, reviewer_type: str, sub: str | None, assignment_id: str | None):
+    """Return the review whose type, reviewer sub, and assignment id all match."""
+    if not reviews or not sub or not assignment_id:
+        return None
+    for index, review in enumerate(reviews):
+        reviewer = review.get('reviewer') or {}
+        if (
+            review.get('reviewerType') == reviewer_type
+            and review.get('assignmentId') == assignment_id
+            and reviewer.get('id') == sub
+        ):
+            return index, review
+    return None
+
+
+def _locate_active_review(application_item: Mapping, role: ActorRole | str) -> dict | None:
+    """Return the current assignment's application review, or None when it is absent.
+
+    The match is reviewer type, the role's current sub, and that role's current assignment id.
+    A sub alone is not enough, because one person may hold more than one role.
+    """
+    actor_role = _actor_role(role)
+    sub_field, assignment_field, _first_name, _last_name, reviewer_type = _ROLE_FIELDS[actor_role]
+    located = _matching_review(
+        application_item.get('reviews'),
+        reviewer_type=reviewer_type.value,
+        sub=application_item.get(sub_field),
+        assignment_id=application_item.get(assignment_field),
+    )
+    if located is None:
+        return None
+    return located[1]
+
+
+def _locate_active_section_review(
+    section_item: Mapping, application_item: Mapping, role: ActorRole | str
+) -> dict | None:
+    """Return the current assignment's section review, or None when it is absent."""
+    actor_role = _actor_role(role)
+    sub_field, assignment_field, _first_name, _last_name, reviewer_type = _ROLE_FIELDS[actor_role]
+    located = _matching_review(
+        section_item.get('reviews'),
+        reviewer_type=reviewer_type.value,
+        sub=application_item.get(sub_field),
+        assignment_id=application_item.get(assignment_field),
+    )
+    if located is None:
+        return None
+    return located[1]
+
+
 def _recorded_token_matches(item: Mapping, task_token: str | None, *, terminal: bool) -> bool:
     stored = item.get('taskTokenHash')
     if terminal:
@@ -103,6 +241,14 @@ class ApplicationSnapshot:
 
     application: dict
     sections: dict[SectionName, dict]
+
+
+@dataclass(frozen=True, slots=True)
+class ReviewerAssignmentResult:
+    """Result of assigning one or more reviewers."""
+
+    snapshot: ApplicationSnapshot
+    all_reviewers_set: bool
 
 
 class ApplicationClient:
@@ -462,3 +608,633 @@ class ApplicationClient:
             if error.response['Error']['Code'] == 'ConditionalCheckFailedException':
                 return
             raise
+
+    def patch_section(
+        self,
+        compact: str,
+        application_id: str,
+        section: SectionName | str,
+        data: Mapping,
+        *,
+        actor_provider_id: str,
+    ) -> ApplicationSnapshot:
+        """Merge fields into one section while the applicant is allowed to edit.
+
+        The section write is conditioned on the ``updated`` value that was read.
+        The application write requires an applicant-editable state, no pending action,
+        no reopen lock, and the applicant's provider id. It bumps ``version``.
+        """
+        section_name = section if isinstance(section, SectionName) else SectionName(section)
+        current = self._get_keyed_item(compact, application_id, self.section_sk(section_name))
+        if current is None:
+            raise CCNotFoundException('Application section not found')
+
+        updated = self._timestamp()
+        merged = _merge_section_data(current.get('data'), data)
+        previous_updated = current.get('updated')
+        if previous_updated is None:
+            section_condition = 'attribute_not_exists(updated)'
+            section_values = {':data': merged, ':now': updated}
+        else:
+            section_condition = 'updated = :previousUpdated'
+            section_values = {':data': merged, ':now': updated, ':previousUpdated': previous_updated}
+
+        state_placeholders = []
+        application_values = {':now': updated, ':one': 1, ':pid': actor_provider_id}
+        for index, state_name in enumerate(sorted(APPLICANT_EDITABLE_STATES, key=lambda state: state.value)):
+            placeholder = f':editableState{index}'
+            state_placeholders.append(placeholder)
+            application_values[placeholder] = state_name.value
+
+        try:
+            self.config.dynamodb_client.transact_write_items(
+                TransactItems=[
+                    {
+                        'Update': {
+                            'TableName': self.config.application_table_name,
+                            'Key': _serialize_item(
+                                {'pk': self.pk(compact, application_id), 'sk': self.section_sk(section_name)}
+                            ),
+                            'UpdateExpression': 'SET #data = :data, updated = :now',
+                            'ConditionExpression': section_condition,
+                            'ExpressionAttributeNames': {'#data': 'data'},
+                            'ExpressionAttributeValues': _attribute_values(section_values),
+                        }
+                    },
+                    {
+                        'Update': {
+                            'TableName': self.config.application_table_name,
+                            'Key': _serialize_item({'pk': self.pk(compact, application_id), 'sk': APPLICATION_SK}),
+                            'UpdateExpression': 'SET dateOfUpdate = :now ADD version :one',
+                            'ConditionExpression': (
+                                f'stateName IN ({", ".join(state_placeholders)}) '
+                                'AND attribute_not_exists(pendingAction) '
+                                'AND attribute_not_exists(reopenLock) '
+                                'AND providerId = :pid'
+                            ),
+                            'ExpressionAttributeValues': _attribute_values(application_values),
+                        }
+                    },
+                ]
+            )
+        except ClientError as error:
+            if _is_conflict(error):
+                raise CCConflictException('Section update was rejected') from error
+            raise
+        return self.get_snapshot(compact, application_id)
+
+    def assign_reviewers(
+        self,
+        compact: str,
+        application_id: str,
+        request: Mapping,
+        *,
+        expected_version: int,
+    ) -> ReviewerAssignmentResult:
+        """Assign or reassign reviewers and create their pending review shells.
+
+        Each changed role gets a new assignment id. Previous review objects stay on the
+        application and on every section. The write is fenced by version, status, and
+        the first/second distinctness rule.
+        """
+        application = self.get_application(compact, application_id)
+        if application is None:
+            raise CCNotFoundException('Application not found')
+
+        resulting = {
+            ActorRole.FIRST_REVIEWER: request.get('firstReviewerSub', application.get('firstReviewerSub')),
+            ActorRole.SECOND_REVIEWER: request.get('secondReviewerSub', application.get('secondReviewerSub')),
+            ActorRole.FINAL_REVIEWER: request.get('finalReviewerSub', application.get('finalReviewerSub')),
+        }
+        validate_reviewer_assignment(
+            resulting[ActorRole.FIRST_REVIEWER],
+            resulting[ActorRole.SECOND_REVIEWER],
+            resulting[ActorRole.FINAL_REVIEWER],
+        )
+
+        updated = self._timestamp()
+        changes = []
+        for role, (sub_field, _assignment_field, first_field, last_field, _reviewer_type) in _ROLE_FIELDS.items():
+            if sub_field not in request or not request.get(sub_field):
+                continue
+            new_sub = str(request[sub_field])
+            if new_sub == application.get(sub_field):
+                continue
+            changes.append(
+                {
+                    'role': role,
+                    'sub': new_sub,
+                    'assignment_id': str(uuid4()),
+                    'first_name': request.get(first_field),
+                    'last_name': request.get(last_field),
+                    'sub_field': sub_field,
+                    'assignment_field': _assignment_field,
+                    'first_field': first_field,
+                    'last_field': last_field,
+                    'reviewer_type': _reviewer_type,
+                }
+            )
+
+        if not changes:
+            snapshot = self.get_snapshot(compact, application_id)
+            return ReviewerAssignmentResult(
+                snapshot=snapshot,
+                all_reviewers_set=_all_reviewers_set(snapshot.application),
+            )
+
+        application_reviews = [
+            _review_shell(
+                assignment_id=change['assignment_id'],
+                reviewer_type=change['reviewer_type'],
+                sub=change['sub'],
+                first_name=change['first_name'],
+                last_name=change['last_name'],
+                assigned_date=updated,
+                section=False,
+            )
+            for change in changes
+        ]
+        section_reviews = [
+            _review_shell(
+                assignment_id=change['assignment_id'],
+                reviewer_type=change['reviewer_type'],
+                sub=change['sub'],
+                first_name=change['first_name'],
+                last_name=change['last_name'],
+                assigned_date=updated,
+                section=True,
+            )
+            for change in changes
+        ]
+        try:
+            self.config.dynamodb_client.transact_write_items(
+                TransactItems=[
+                    self._assign_application_update(
+                        compact=compact,
+                        application_id=application_id,
+                        application=application,
+                        changes=changes,
+                        new_reviews=application_reviews,
+                        expected_version=expected_version,
+                        updated=updated,
+                    ),
+                    *[
+                        self._append_section_reviews_update(
+                            compact=compact,
+                            application_id=application_id,
+                            section=section,
+                            new_reviews=section_reviews,
+                            updated=updated,
+                        )
+                        for section in SectionName
+                    ],
+                ]
+            )
+        except ClientError as error:
+            if _is_conflict(error):
+                raise CCConflictException('Reviewer assignment was rejected') from error
+            raise
+
+        snapshot = self.get_snapshot(compact, application_id)
+        return ReviewerAssignmentResult(snapshot=snapshot, all_reviewers_set=_all_reviewers_set(snapshot.application))
+
+    @staticmethod
+    def locate_active_review(application_item: Mapping, role: ActorRole | str) -> dict | None:
+        return _locate_active_review(application_item, role)
+
+    @staticmethod
+    def locate_active_section_review(
+        section_item: Mapping, application_item: Mapping, role: ActorRole | str
+    ) -> dict | None:
+        return _locate_active_section_review(section_item, application_item, role)
+
+    def save_section_review(
+        self,
+        compact: str,
+        application_id: str,
+        section: SectionName | str,
+        role: ActorRole | str,
+        caller_sub: str,
+        section_status: ReviewSectionStatus | str,
+        notes: Mapping | None = None,
+    ) -> ApplicationSnapshot:
+        """Save the caller's active section review for one role.
+
+        The section condition keeps the write on that assignment. The application condition
+        allows only the review node and committee node for the role, and only that role's
+        current assignee.
+        """
+        actor_role = _actor_role(role)
+        section_name = section if isinstance(section, SectionName) else SectionName(section)
+        status = section_status.value if isinstance(section_status, ReviewSectionStatus) else str(section_status)
+        application = self.get_application(compact, application_id)
+        if application is None:
+            raise CCNotFoundException('Application not found')
+        section_item = self._get_keyed_item(compact, application_id, self.section_sk(section_name))
+        if section_item is None:
+            raise CCNotFoundException('Application section not found')
+
+        sub_field, assignment_field, _first, _last, reviewer_type = _ROLE_FIELDS[actor_role]
+        located = _matching_review(
+            section_item.get('reviews'),
+            reviewer_type=reviewer_type.value,
+            sub=application.get(sub_field),
+            assignment_id=application.get(assignment_field),
+        )
+        if located is None:
+            raise CCInvalidRequestException('Active section review is missing')
+        index, _review = located
+        assignment_id = application.get(assignment_field)
+        updated = self._timestamp()
+        review_node, committee_node = reviewer_edit_states(actor_role)
+        set_parts = [
+            f'reviews[{index}].reviewerSelectedApplicationSectionStatus = :sectionStatus',
+            f'reviews[{index}].reviewCompletionDate = :now',
+        ]
+        section_values = {':sectionStatus': status, ':now': updated, ':assignmentId': assignment_id}
+        for note_field in ('notesForApplicant', 'notesForReviewers'):
+            if notes and note_field in notes and notes[note_field] is not None:
+                set_parts.append(f'reviews[{index}].{note_field} = :{note_field}')
+                section_values[f':{note_field}'] = notes[note_field]
+        application_values = {
+            ':now': updated,
+            ':one': 1,
+            ':callerSub': caller_sub,
+            ':assignmentId': assignment_id,
+            ':reviewNode': review_node.value,
+            ':committeeNode': committee_node.value,
+        }
+
+        try:
+            self.config.dynamodb_client.transact_write_items(
+                TransactItems=[
+                    {
+                        'Update': {
+                            'TableName': self.config.application_table_name,
+                            'Key': _serialize_item(
+                                {'pk': self.pk(compact, application_id), 'sk': self.section_sk(section_name)}
+                            ),
+                            'UpdateExpression': f'SET {", ".join(set_parts)}',
+                            'ConditionExpression': f'reviews[{index}].assignmentId = :assignmentId',
+                            'ExpressionAttributeValues': _attribute_values(section_values),
+                        }
+                    },
+                    {
+                        'Update': {
+                            'TableName': self.config.application_table_name,
+                            'Key': _serialize_item({'pk': self.pk(compact, application_id), 'sk': APPLICATION_SK}),
+                            'UpdateExpression': 'SET dateOfUpdate = :now ADD version :one',
+                            'ConditionExpression': (
+                                'stateName IN (:reviewNode, :committeeNode) '
+                                'AND attribute_not_exists(pendingAction) '
+                                f'AND {sub_field} = :callerSub '
+                                f'AND {assignment_field} = :assignmentId'
+                            ),
+                            'ExpressionAttributeValues': _attribute_values(application_values),
+                        }
+                    },
+                ]
+            )
+        except ClientError as error:
+            if _is_conflict(error):
+                raise CCConflictException('Section review was rejected') from error
+            raise
+        return self.get_snapshot(compact, application_id)
+
+    def require_complete_reviews(self, snapshot: ApplicationSnapshot, role: ActorRole | str) -> None:
+        """Require every current section review for this role to be approved or rejected."""
+        for section_name in SectionName:
+            review = _locate_active_section_review(snapshot.sections[section_name], snapshot.application, role)
+            status = None if review is None else review.get('reviewerSelectedApplicationSectionStatus')
+            if status in (None, ReviewSectionStatus.PENDING.value):
+                raise CCInvalidRequestException('Section reviews are incomplete')
+
+    def begin_transition(
+        self,
+        compact: str,
+        application_id: str,
+        *,
+        expected_version: int,
+        expected_state_name: StateName | str,
+        pending_action: Mapping,
+        application_review_update: Mapping | None = None,
+        extra_set: Mapping | None = None,
+    ) -> dict:
+        """Claim a transition by storing ``pendingAction`` and bumping ``version``.
+
+        The condition is the fencing check: the expected version and state, and no
+        pending action or reopen lock. A losing caller gets a conflict.
+        """
+        state_name = _state(expected_state_name)
+        updated = self._timestamp()
+        values = {
+            ':version': expected_version,
+            ':stateName': state_name.value,
+            ':pendingAction': dict(pending_action),
+            ':now': updated,
+            ':one': 1,
+        }
+        set_parts = ['pendingAction = :pendingAction', 'dateOfUpdate = :now']
+        if application_review_update is not None:
+            application = self.get_application(compact, application_id)
+            if application is None:
+                raise CCNotFoundException('Application not found')
+
+        if application_review_update is not None:
+            self._add_application_review_update(
+                application=application,
+                review_update=application_review_update,
+                updated=updated,
+                set_parts=set_parts,
+                values=values,
+            )
+
+        applied_extra = dict(extra_set or {})
+        if (
+            _string_value(pending_action.get('action')) == WorkflowAction.SUBMIT.value
+            and 'submitted' not in applied_extra
+        ):
+            applied_extra['submitted'] = updated
+        for index, (field_name, field_value) in enumerate(applied_extra.items()):
+            placeholder = f':extra{index}'
+            set_parts.append(f'{field_name} = {placeholder}')
+            values[placeholder] = field_value
+
+        try:
+            self.config.dynamodb_client.update_item(
+                TableName=self.config.application_table_name,
+                Key=_serialize_item({'pk': self.pk(compact, application_id), 'sk': APPLICATION_SK}),
+                UpdateExpression=f'SET {", ".join(set_parts)} ADD version :one',
+                ConditionExpression=(
+                    'version = :version AND stateName = :stateName '
+                    'AND attribute_not_exists(pendingAction) AND attribute_not_exists(reopenLock)'
+                ),
+                ExpressionAttributeValues=_attribute_values(values),
+            )
+        except ClientError as error:
+            if _is_conflict(error):
+                raise CCConflictException('Transition was rejected') from error
+            raise
+        stored = self.get_application(compact, application_id)
+        if stored is None:
+            raise CCNotFoundException('Application not found')
+        return stored
+
+    def clear_pending_action(self, compact: str, application_id: str, request_id: str) -> bool:
+        """Remove ``pendingAction`` only when its request id still matches."""
+        try:
+            self.config.dynamodb_client.update_item(
+                TableName=self.config.application_table_name,
+                Key=_serialize_item({'pk': self.pk(compact, application_id), 'sk': APPLICATION_SK}),
+                UpdateExpression='REMOVE pendingAction SET dateOfUpdate = :now ADD version :one',
+                ConditionExpression='pendingAction.requestId = :requestId',
+                ExpressionAttributeValues=_attribute_values(
+                    {':requestId': request_id, ':now': self._timestamp(), ':one': 1}
+                ),
+            )
+        except ClientError as error:
+            if _is_conflict(error):
+                return False
+            raise
+        return True
+
+    def record_delivery_attempt(self, compact: str, application_id: str, request_id: str) -> dict:
+        """Increment ``pendingAction.attempts`` for the matching request."""
+        try:
+            self.config.dynamodb_client.update_item(
+                TableName=self.config.application_table_name,
+                Key=_serialize_item({'pk': self.pk(compact, application_id), 'sk': APPLICATION_SK}),
+                UpdateExpression=(
+                    'SET pendingAction.attempts = if_not_exists(pendingAction.attempts, :zero) + :one, '
+                    'dateOfUpdate = :now ADD version :one'
+                ),
+                ConditionExpression='pendingAction.requestId = :requestId',
+                ExpressionAttributeValues=_attribute_values(
+                    {':requestId': request_id, ':zero': 0, ':one': 1, ':now': self._timestamp()}
+                ),
+            )
+        except ClientError as error:
+            if _is_conflict(error):
+                raise CCConflictException('Pending action does not match this request') from error
+            raise
+        stored = self.get_application(compact, application_id)
+        if stored is None:
+            raise CCNotFoundException('Application not found')
+        return stored
+
+    def put_request_record(
+        self,
+        compact: str,
+        application_id: str,
+        request_id: str,
+        *,
+        action: WorkflowAction | str,
+        result: Mapping | None = None,
+        ttl: int,
+        created_at: str | None = None,
+    ) -> dict:
+        """Store an idempotency record. A second put of the same request id conflicts."""
+        item = {
+            'pk': self.pk(compact, application_id),
+            'sk': self.request_sk(request_id),
+            'type': APPLICATION_REQUEST_RECORD_TYPE,
+            'compact': compact,
+            'applicationId': application_id,
+            'requestId': request_id,
+            'action': _string_value(action),
+            'createdAt': created_at or self._timestamp(),
+            'ttl': ttl,
+        }
+        if result is not None:
+            item['result'] = dict(result)
+        try:
+            self.config.dynamodb_client.put_item(
+                TableName=self.config.application_table_name,
+                Item=_serialize_item(item),
+                ConditionExpression='attribute_not_exists(pk)',
+            )
+        except ClientError as error:
+            if _is_conflict(error):
+                raise CCConflictException('Request record already exists') from error
+            raise
+        return item
+
+    def get_request_record(self, compact: str, application_id: str, request_id: str) -> dict | None:
+        """Return the request idempotency item, or None when it does not exist."""
+        return self._get_keyed_item(compact, application_id, self.request_sk(request_id))
+
+    def _timestamp(self) -> str:
+        return self.config.current_standard_datetime.isoformat()
+
+    def _get_keyed_item(self, compact: str, application_id: str, sort_key: str) -> dict | None:
+        response = self.config.dynamodb_client.get_item(
+            TableName=self.config.application_table_name,
+            Key=_serialize_item({'pk': self.pk(compact, application_id), 'sk': sort_key}),
+            ConsistentRead=True,
+        )
+        item = response.get('Item')
+        if not item:
+            return None
+        return _deserialize_item(item)
+
+    def _assign_application_update(
+        self,
+        *,
+        compact: str,
+        application_id: str,
+        application: Mapping,
+        changes: list[dict],
+        new_reviews: list[dict],
+        expected_version: int,
+        updated: str,
+    ) -> dict:
+        values = {
+            ':version': expected_version,
+            ':one': 1,
+            ':updated': updated,
+            ':emptyReviews': [],
+            ':newReviews': new_reviews,
+        }
+        set_parts = [
+            'dateOfUpdate = :updated',
+            'reviews = list_append(if_not_exists(reviews, :emptyReviews), :newReviews)',
+        ]
+        remove_parts = []
+        changed_roles = {change['role'] for change in changes}
+        only_first = changed_roles == {ActorRole.FIRST_REVIEWER}
+        only_second = changed_roles == {ActorRole.SECOND_REVIEWER}
+        for change in changes:
+            set_parts.append(f'{change["sub_field"]} = :{change["sub_field"]}')
+            set_parts.append(f'{change["assignment_field"]} = :{change["assignment_field"]}')
+            values[f':{change["sub_field"]}'] = change['sub']
+            values[f':{change["assignment_field"]}'] = change['assignment_id']
+            if change['first_name']:
+                set_parts.append(f'{change["first_field"]} = :{change["first_field"]}')
+                values[f':{change["first_field"]}'] = change['first_name']
+            else:
+                remove_parts.append(change['first_field'])
+            if change['last_name']:
+                set_parts.append(f'{change["last_field"]} = :{change["last_field"]}')
+                values[f':{change["last_field"]}'] = change['last_name']
+            else:
+                remove_parts.append(change['last_field'])
+            if only_first and change['role'] is ActorRole.FIRST_REVIEWER:
+                values[':distinctSub'] = change['sub']
+            if only_second and change['role'] is ActorRole.SECOND_REVIEWER:
+                values[':distinctSub'] = change['sub']
+
+        state = _state(application['stateName']) if application.get('stateName') else None
+        if state is not None and STATE_DEFINITIONS[state].actor_role in changed_roles:
+            actor_role = STATE_DEFINITIONS[state].actor_role
+            actor_sub = next(change['sub'] for change in changes if change['role'] is actor_role)
+            status = application.get('status')
+            if actor_sub and status:
+                set_parts.extend(['actorGSIPK = :actorGSIPK', 'actorGSISK = :actorGSISK'])
+                values[':actorGSIPK'] = f'{compact}#ACTOR#{actor_sub}'
+                values[':actorGSISK'] = f'{status}#{application_id}'
+
+        status_placeholders = []
+        for index, status in enumerate(_ASSIGNABLE_STATUSES):
+            placeholder = f':assignStatus{index}'
+            status_placeholders.append(placeholder)
+            values[placeholder] = status.value
+        condition = (
+            'version = :version AND attribute_not_exists(pendingAction) '
+            f'AND #status IN ({", ".join(status_placeholders)})'
+        )
+        if only_first:
+            condition += ' AND (attribute_not_exists(secondReviewerSub) OR secondReviewerSub <> :distinctSub)'
+        elif only_second:
+            condition += ' AND (attribute_not_exists(firstReviewerSub) OR firstReviewerSub <> :distinctSub)'
+
+        expression = f'SET {", ".join(set_parts)}'
+        if remove_parts:
+            expression += f' REMOVE {", ".join(remove_parts)}'
+        expression += ' ADD version :one'
+        return {
+            'Update': {
+                'TableName': self.config.application_table_name,
+                'Key': _serialize_item({'pk': self.pk(compact, application_id), 'sk': APPLICATION_SK}),
+                'UpdateExpression': expression,
+                'ConditionExpression': condition,
+                'ExpressionAttributeNames': {'#status': 'status'},
+                'ExpressionAttributeValues': _attribute_values(values),
+            }
+        }
+
+    def _append_section_reviews_update(
+        self,
+        *,
+        compact: str,
+        application_id: str,
+        section: SectionName,
+        new_reviews: list[dict],
+        updated: str,
+    ) -> dict:
+        return {
+            'Update': {
+                'TableName': self.config.application_table_name,
+                'Key': _serialize_item({'pk': self.pk(compact, application_id), 'sk': self.section_sk(section)}),
+                'UpdateExpression': (
+                    'SET reviews = list_append(if_not_exists(reviews, :emptyReviews), :newReviews), updated = :updated'
+                ),
+                'ExpressionAttributeValues': _attribute_values(
+                    {':emptyReviews': [], ':newReviews': new_reviews, ':updated': updated}
+                ),
+            }
+        }
+
+    def _add_application_review_update(
+        self,
+        *,
+        application: Mapping,
+        review_update: Mapping,
+        updated: str,
+        set_parts: list[str],
+        values: dict,
+    ) -> None:
+        role = _actor_role(review_update['role'])
+        sub_field, assignment_field, first_field, last_field, reviewer_type = _ROLE_FIELDS[role]
+        located = _matching_review(
+            application.get('reviews'),
+            reviewer_type=reviewer_type.value,
+            sub=application.get(sub_field),
+            assignment_id=application.get(assignment_field),
+        )
+        if located is None:
+            shell = _review_shell(
+                assignment_id=str(application.get(assignment_field) or uuid4()),
+                reviewer_type=reviewer_type,
+                sub=str(application.get(sub_field) or ''),
+                first_name=application.get(first_field),
+                last_name=application.get(last_field),
+                assigned_date=updated,
+                section=False,
+            )
+            if review_update.get('reviewerSelectedApplicationStatus'):
+                shell['reviewerSelectedApplicationStatus'] = _string_value(
+                    review_update['reviewerSelectedApplicationStatus']
+                )
+            for note_field in ('notesForApplicant', 'notesForReviewers'):
+                if review_update.get(note_field):
+                    shell[note_field] = review_update[note_field]
+            shell['reviewCompletionDate'] = updated
+            set_parts.append('reviews = list_append(if_not_exists(reviews, :emptyReviews), :newApplicationReview)')
+            values[':emptyReviews'] = []
+            values[':newApplicationReview'] = [shell]
+            return
+
+        index, _review = located
+        if review_update.get('reviewerSelectedApplicationStatus'):
+            set_parts.append(f'reviews[{index}].reviewerSelectedApplicationStatus = :selectedStatus')
+            values[':selectedStatus'] = _string_value(review_update['reviewerSelectedApplicationStatus'])
+        for note_field in ('notesForApplicant', 'notesForReviewers'):
+            if note_field in review_update and review_update[note_field] is not None:
+                set_parts.append(f'reviews[{index}].{note_field} = :{note_field}')
+                values[f':{note_field}'] = review_update[note_field]
+        set_parts.append(f'reviews[{index}].reviewCompletionDate = :reviewCompleted')
+        values[':reviewCompleted'] = updated
+
+
+def _all_reviewers_set(application: Mapping) -> bool:
+    return all(application.get(field) for field in _REVIEWER_SUB_FIELDS.values())
