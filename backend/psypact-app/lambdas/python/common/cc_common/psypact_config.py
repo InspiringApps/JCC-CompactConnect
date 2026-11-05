@@ -55,3 +55,29 @@ class PsypactConfig(_Config):
     @property
     def compact_transaction_id_gsi_name(self):
         return os.environ['COMPACT_TRANSACTION_ID_GSI_NAME']
+
+    @property
+    def application_table_name(self):
+        return os.environ['APPLICATION_TABLE_NAME']
+
+    @property
+    def application_table(self):
+        return boto3.resource('dynamodb').Table(self.application_table_name)
+
+    @property
+    def application_status_gsi_name(self):
+        return os.environ['APPLICATION_STATUS_GSI_NAME']
+
+    @property
+    def application_actor_gsi_name(self):
+        return os.environ['APPLICATION_ACTOR_GSI_NAME']
+
+    @property
+    def application_applicant_gsi_name(self):
+        return os.environ['APPLICATION_APPLICANT_GSI_NAME']
+
+    @cached_property
+    def application_client(self):
+        from cc_common.applicants.application_client import ApplicationClient
+
+        return ApplicationClient(self)
