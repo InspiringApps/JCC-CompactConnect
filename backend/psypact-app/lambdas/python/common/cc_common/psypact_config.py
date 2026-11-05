@@ -76,6 +76,26 @@ class PsypactConfig(_Config):
     def application_applicant_gsi_name(self):
         return os.environ['APPLICATION_APPLICANT_GSI_NAME']
 
+    @property
+    def application_state_machine_arn(self):
+        return os.environ['APPLICATION_STATE_MACHINE_ARN']
+
+    @cached_property
+    def stepfunctions_client(self):
+        return boto3.client('stepfunctions')
+
+    @cached_property
+    def application_workflow_client(self):
+        from cc_common.applicants.application_workflow_client import ApplicationWorkflowClient
+
+        return ApplicationWorkflowClient(self.application_state_machine_arn, self.stepfunctions_client)
+
+    @cached_property
+    def application_transition_service(self):
+        from cc_common.applicants.application_transition_service import ApplicationTransitionService
+
+        return ApplicationTransitionService(self)
+
     @cached_property
     def application_client(self):
         from cc_common.applicants.application_client import ApplicationClient

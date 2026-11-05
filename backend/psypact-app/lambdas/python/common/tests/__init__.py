@@ -46,6 +46,9 @@ class TstLambdas(TestCase):
                 'APPLICATION_STATUS_GSI_NAME': 'statusGSI',
                 'APPLICATION_ACTOR_GSI_NAME': 'actorGSI',
                 'APPLICATION_APPLICANT_GSI_NAME': 'applicantGSI',
+                'APPLICATION_STATE_MACHINE_ARN': (
+                    'arn:aws:states:us-east-1:000000000000:stateMachine:ApplicationWorkflow'
+                ),
                 'COMPACTS': '["aslp", "octp", "coun", "psypact"]',
                 'JURISDICTIONS': json.dumps(
                     [
