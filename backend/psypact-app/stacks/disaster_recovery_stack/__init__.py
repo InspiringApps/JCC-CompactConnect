@@ -93,6 +93,7 @@ class DisasterRecoveryStack(AppStack):
         dr_enabled_tables = [
             persistent_stack.transaction_history_table,
             persistent_stack.provider_table,
+            persistent_stack.application_table,
             persistent_stack.compact_configuration_table,
             persistent_stack.data_event_table,
             persistent_stack.staff_users.user_table,

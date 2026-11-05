@@ -330,8 +330,9 @@ class TstAppABC(ABC):
         """Validate that backup resources are created for tables and buckets with backup plans."""
         from aws_cdk.aws_backup import CfnBackupPlan, CfnBackupSelection
 
-        # if in env with backup_enabled, Should have 8 backup plans, 8 backup selections:
+        # if in env with backup_enabled, Should have 9 backup plans, 9 backup selections:
         # - provider table
+        # - application table
         # - SSN table
         # - compact config table
         # - transaction history table
@@ -343,11 +344,12 @@ class TstAppABC(ABC):
         # Every other environment should be 0
 
         if persistent_stack.environment_context['backup_enabled']:
-            persistent_stack_template.resource_count_is(CfnBackupPlan.CFN_RESOURCE_TYPE_NAME, 8)
-            persistent_stack_template.resource_count_is(CfnBackupSelection.CFN_RESOURCE_TYPE_NAME, 8)
+            persistent_stack_template.resource_count_is(CfnBackupPlan.CFN_RESOURCE_TYPE_NAME, 9)
+            persistent_stack_template.resource_count_is(CfnBackupSelection.CFN_RESOURCE_TYPE_NAME, 9)
 
             for plan in [
                 persistent_stack.provider_table.backup_plan,
+                persistent_stack.application_table.backup_plan,
                 persistent_stack.ssn_table.backup_plan,
                 persistent_stack.compact_configuration_table.backup_plan,
                 persistent_stack.transaction_history_table.backup_plan,
@@ -363,6 +365,7 @@ class TstAppABC(ABC):
 
             # Verify that backup plans are None when backups are disabled
             self.assertIsNone(persistent_stack.provider_table.backup_plan)
+            self.assertIsNone(persistent_stack.application_table.backup_plan)
             self.assertIsNone(persistent_stack.ssn_table.backup_plan)
             self.assertIsNone(persistent_stack.compact_configuration_table.backup_plan)
             self.assertIsNone(persistent_stack.transaction_history_table.backup_plan)
