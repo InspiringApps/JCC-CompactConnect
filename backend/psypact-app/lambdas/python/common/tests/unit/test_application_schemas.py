@@ -5,29 +5,29 @@ from unittest import TestCase
 os.environ.setdefault('COMPACTS', '["aslp", "octp", "coun", "psypact"]')
 os.environ.setdefault('JURISDICTIONS', '["oh"]')
 
-from cc_common.schema.application.api import (  # noqa: E402
+from cc_common.applicants.schema.api import (  # noqa: E402
     ApplicationResponseSchema,
     AssignReviewersRequestSchema,
     TransitionRequestSchema,
     assemble_application_response,
     section_patch_schema,
 )
-from cc_common.schema.application.calculated import (  # noqa: E402
+from cc_common.applicants.schema.calculated import (  # noqa: E402
     calculate_applicant_status,
     calculate_review_comparison,
 )
-from cc_common.schema.application.records import (  # noqa: E402
+from cc_common.applicants.schema.records import (  # noqa: E402
     ApplicationData,
     ApplicationRecordSchema,
     ApplicationRequestRecordSchema,
     ApplicationSectionRecordSchema,
     ApplicationTransitionRecordSchema,
 )
-from cc_common.schema.application.reviews import (  # noqa: E402
+from cc_common.applicants.schema.reviews import (  # noqa: E402
     ApplicationReviewSchema,
     ApplicationSectionReviewSchema,
 )
-from cc_common.schema.application.sections import (  # noqa: E402
+from cc_common.applicants.schema.sections import (  # noqa: E402
     HomeStateApplicationTypeSchema,
     LicenseHistorySchema,
     PersonalInformationSchema,

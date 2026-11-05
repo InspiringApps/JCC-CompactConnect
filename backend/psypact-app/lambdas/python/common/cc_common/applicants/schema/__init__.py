@@ -1,6 +1,6 @@
 """Marshmallow schemas for the PSYPACT practitioner application."""
 
-from cc_common.schema.application.api import (
+from cc_common.applicants.schema.api import (
     ApplicationResponseSchema,
     AssignReviewersRequestSchema,
     ReopenApplicationRequestSchema,
@@ -10,11 +10,11 @@ from cc_common.schema.application.api import (
     assemble_application_response,
     section_patch_schema,
 )
-from cc_common.schema.application.calculated import (
+from cc_common.applicants.schema.calculated import (
     calculate_applicant_status,
     calculate_review_comparison,
 )
-from cc_common.schema.application.records import (
+from cc_common.applicants.schema.records import (
     APPLICATION_RECORD_TYPE,
     APPLICATION_REQUEST_RECORD_TYPE,
     APPLICATION_SECTION_RECORD_TYPE,
@@ -28,11 +28,11 @@ from cc_common.schema.application.records import (
     ApplicationTransitionData,
     ApplicationTransitionRecordSchema,
 )
-from cc_common.schema.application.reviews import (
+from cc_common.applicants.schema.reviews import (
     ApplicationReviewSchema,
     ApplicationSectionReviewSchema,
 )
-from cc_common.schema.application.sections import SECTION_DATA_SCHEMAS, section_data_schema
+from cc_common.applicants.schema.sections import SECTION_DATA_SCHEMAS, section_data_schema
 
 __all__ = [
     'APPLICATION_RECORD_TYPE',

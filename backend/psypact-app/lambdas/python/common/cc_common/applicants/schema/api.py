@@ -7,7 +7,7 @@ from marshmallow import RAISE
 from marshmallow.fields import Boolean, List, Nested, String
 from marshmallow.validate import Length, OneOf
 
-from cc_common.application_state import (
+from cc_common.applicants.application_state import (
     ApplicantSectionStatus,
     ApplicationStatus,
     ApplicationType,
@@ -18,13 +18,13 @@ from cc_common.application_state import (
     StateName,
     WorkflowAction,
 )
-from cc_common.schema.application.calculated import calculate_applicant_status, calculate_review_comparison
-from cc_common.schema.application.reviews import (
+from cc_common.applicants.schema.calculated import calculate_applicant_status, calculate_review_comparison
+from cc_common.applicants.schema.reviews import (
     NOTE_MAX_LENGTH,
     ApplicationReviewSchema,
     ApplicationSectionReviewSchema,
 )
-from cc_common.schema.application.sections import (
+from cc_common.applicants.schema.sections import (
     AcknowledgementsSchema,
     ConductHistorySchema,
     EducationSchema,

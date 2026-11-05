@@ -13,7 +13,7 @@ from marshmallow import EXCLUDE
 from marshmallow.fields import Boolean, Integer, List, Nested, String
 from marshmallow.validate import OneOf
 
-from cc_common.application_state import ApplicationLicenseStatus, ApplicationType, SectionName
+from cc_common.applicants.application_state import ApplicationLicenseStatus, ApplicationType, SectionName
 
 
 class ApplicationValueSchema(CCRequestSchema, ForgivingSchema):

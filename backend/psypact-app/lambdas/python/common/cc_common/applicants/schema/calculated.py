@@ -4,7 +4,7 @@ CONFIRM_DETAILS is unused until renewal-specific required fields exist.
 ``is_renewal`` is accepted so callers can pass it now; it does not change the result.
 """
 
-from cc_common.application_state import (
+from cc_common.applicants.application_state import (
     ApplicantSectionStatus,
     ApplicationStatus,
     ReviewComparisonStatus,

@@ -4,8 +4,8 @@
 from marshmallow.fields import Nested, String
 from marshmallow.validate import Length, OneOf
 
-from cc_common.application_state import ApplicationStatus, ReviewerType, ReviewSectionStatus
-from cc_common.schema.application.sections import ApplicationValueSchema, _str
+from cc_common.applicants.application_state import ApplicationStatus, ReviewerType, ReviewSectionStatus
+from cc_common.applicants.schema.sections import ApplicationValueSchema, _str
 
 NOTE_MAX_LENGTH = 1000
 

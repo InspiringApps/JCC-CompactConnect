@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from cc_common.application_state import (
+from cc_common.applicants.application_state import (
     ACTIONS_REQUIRING_COMPLETE_REVIEWS,
     ADMIN_OVERRIDE_TARGETS,
     APPLICANT_EDITABLE_STATES,

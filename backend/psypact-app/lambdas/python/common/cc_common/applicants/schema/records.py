@@ -11,9 +11,15 @@ from marshmallow import ValidationError, post_load, pre_dump
 from marshmallow.fields import AwareDateTime, Boolean, Dict, Integer, List, Nested, Raw, String
 from marshmallow.validate import OneOf
 
-from cc_common.application_state import ApplicationStatus, ApplicationType, SectionName, StateName, WorkflowAction
-from cc_common.schema.application.reviews import ApplicationReviewSchema, ApplicationSectionReviewSchema
-from cc_common.schema.application.sections import SECTION_DATA_SCHEMAS, ApplicationValueSchema, _str
+from cc_common.applicants.application_state import (
+    ApplicationStatus,
+    ApplicationType,
+    SectionName,
+    StateName,
+    WorkflowAction,
+)
+from cc_common.applicants.schema.reviews import ApplicationReviewSchema, ApplicationSectionReviewSchema
+from cc_common.applicants.schema.sections import SECTION_DATA_SCHEMAS, ApplicationValueSchema, _str
 
 APPLICATION_RECORD_TYPE = 'application'
 APPLICATION_SECTION_RECORD_TYPE = 'applicationSection'
