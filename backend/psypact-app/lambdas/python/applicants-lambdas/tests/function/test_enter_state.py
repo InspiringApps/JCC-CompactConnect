@@ -159,6 +159,17 @@ class TestEnterState(TstLambdas):
         )
         self.assertNotIn(CALLBACK_VALUE, json.dumps(result))
 
+    def test_terminal_admin_deactivate_records_the_transition_action(self):
+        self._create()
+        enter_state(self._event(), self.mock_context)
+        event = self._terminal_event(state_name=StateName.DEACTIVATED)
+        event['transition'] = {'action': 'ADMIN_DEACTIVATE'}
+
+        enter_state(event, self.mock_context)
+
+        stored = self.client.get_application(COMPACT, APPLICATION_ID)
+        self.assertEqual('ADMIN_DEACTIVATE', stored['deactivationReason'])
+
     def test_terminal_schedule_delete_failure_does_not_fail_the_handler(self):
         self._create()
         enter_state(self._event(), self.mock_context)

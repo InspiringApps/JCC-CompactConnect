@@ -10,7 +10,7 @@ from collections.abc import Mapping
 
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from cc_common.applicants.application_schedule_client import ApplicationScheduleClient
-from cc_common.applicants.application_state import StateName
+from cc_common.applicants.application_state import StateName, WorkflowAction
 from cc_common.config import logger, metrics
 from common_lambdas.exceptions import CCConflictException, CCInvalidRequestException, CCNotFoundException
 
@@ -74,17 +74,19 @@ def _state_name(value) -> StateName:
         raise CCInvalidRequestException('Unknown application state') from error
 
 
-def _terminal_reason(error) -> str | None:
-    if error is None:
-        return None
+def _terminal_reason(error, transition: Mapping | None = None) -> str | None:
+    """Read the terminal reason from the caught error, or from an admin deactivation."""
     if isinstance(error, str):
         stripped = error.strip()
-        return stripped or None
+        if stripped:
+            return stripped
     if isinstance(error, Mapping):
         for key in ('reason', 'Error', 'error'):
             value = error.get(key)
             if isinstance(value, str) and value.strip():
                 return value.strip()
+    if isinstance(transition, Mapping) and transition.get('action') == WorkflowAction.ADMIN_DEACTIVATE.value:
+        return WorkflowAction.ADMIN_DEACTIVATE.value
     return None
 
 
@@ -141,7 +143,7 @@ def enter_state(event: dict, context: LambdaContext):  # noqa: ARG001 the decora
             entered_time=event['enteredTime'],
             task_token=None if mode == _TERMINAL else token,
             terminal=mode == _TERMINAL,
-            reason=_terminal_reason(event.get('error')) if mode == _TERMINAL else None,
+            reason=(_terminal_reason(event.get('error'), event.get('transition')) if mode == _TERMINAL else None),
         )
         if mode == _TERMINAL:
             _delete_expiry_schedule(stored, application_id)

@@ -551,6 +551,7 @@ class TstAppABC(ABC):
         self._check_no_stack_annotations(stage.provider_users_stack)
         self._check_no_stack_annotations(stage.search_api_stack)
         self._check_no_stack_annotations(stage.search_persistent_stack)
+        self._check_no_stack_annotations(stage.application_workflow_stack)
         self._check_no_stack_annotations(stage.transaction_monitoring_stack)
         # These are only present if a hosted zone is configured
         if stage.persistent_stack.hosted_zone:
@@ -593,6 +594,7 @@ class TstAppABC(ABC):
             ('provider_users_stack', stage.provider_users_stack),
             ('search_api_stack', stage.search_api_stack),
             ('search_persistent_stack', stage.search_persistent_stack),
+            ('application_workflow_stack', stage.application_workflow_stack),
             ('transaction_monitoring_stack', stage.transaction_monitoring_stack),
         ]
         if stage.persistent_stack.hosted_zone:
