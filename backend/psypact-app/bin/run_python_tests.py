@@ -23,6 +23,7 @@ APP_DIR = Path(__file__).parent.parent.absolute()
 # Define the test directories to include
 TEST_DIRS = (
     'lambdas/python/common',
+    'lambdas/python/applicants-lambdas',
     'lambdas/python/cognito-backup',
     'lambdas/python/compact-configuration',
     'lambdas/python/custom-resources',
