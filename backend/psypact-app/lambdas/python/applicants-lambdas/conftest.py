@@ -5,7 +5,7 @@ from pathlib import Path
 # Common code and the shared runtime live outside it.
 _AREA_DIR = Path(__file__).resolve().parent
 _COMMON_DIR = _AREA_DIR.parent / 'common'
-_COMMON_PYTHON = _AREA_DIR.parents[4] / 'common-python'
+_COMMON_PYTHON = _AREA_DIR.parents[3] / 'common-python'
 for _path in (_AREA_DIR, _COMMON_DIR, _COMMON_PYTHON):
     if _path.is_dir():
         _path_text = str(_path)

@@ -702,9 +702,9 @@ class ApplicationClient:
             raise CCNotFoundException('Application not found')
 
         resulting = {
-            ActorRole.FIRST_REVIEWER: request.get('firstReviewerSub', application.get('firstReviewerSub')),
-            ActorRole.SECOND_REVIEWER: request.get('secondReviewerSub', application.get('secondReviewerSub')),
-            ActorRole.FINAL_REVIEWER: request.get('finalReviewerSub', application.get('finalReviewerSub')),
+            ActorRole.FIRST_REVIEWER: _resulting_reviewer_sub(request, application, 'firstReviewerSub'),
+            ActorRole.SECOND_REVIEWER: _resulting_reviewer_sub(request, application, 'secondReviewerSub'),
+            ActorRole.FINAL_REVIEWER: _resulting_reviewer_sub(request, application, 'finalReviewerSub'),
         }
         validate_reviewer_assignment(
             resulting[ActorRole.FIRST_REVIEWER],
@@ -1032,6 +1032,7 @@ class ApplicationClient:
         result: Mapping | None = None,
         ttl: int,
         created_at: str | None = None,
+        actor_sub: str | None = None,
     ) -> dict:
         """Store an idempotency record. A second put of the same request id conflicts."""
         item = {
@@ -1045,6 +1046,8 @@ class ApplicationClient:
             'createdAt': created_at or self._timestamp(),
             'ttl': ttl,
         }
+        if actor_sub is not None:
+            item['actorSub'] = actor_sub
         if result is not None:
             item['result'] = dict(result)
         try:
@@ -1101,8 +1104,8 @@ class ApplicationClient:
         ]
         remove_parts = []
         changed_roles = {change['role'] for change in changes}
-        only_first = changed_roles == {ActorRole.FIRST_REVIEWER}
-        only_second = changed_roles == {ActorRole.SECOND_REVIEWER}
+        first_change = None
+        second_change = None
         for change in changes:
             set_parts.append(f'{change["sub_field"]} = :{change["sub_field"]}')
             set_parts.append(f'{change["assignment_field"]} = :{change["assignment_field"]}')
@@ -1118,10 +1121,10 @@ class ApplicationClient:
                 values[f':{change["last_field"]}'] = change['last_name']
             else:
                 remove_parts.append(change['last_field'])
-            if only_first and change['role'] is ActorRole.FIRST_REVIEWER:
-                values[':distinctSub'] = change['sub']
-            if only_second and change['role'] is ActorRole.SECOND_REVIEWER:
-                values[':distinctSub'] = change['sub']
+            if change['role'] is ActorRole.FIRST_REVIEWER:
+                first_change = change
+            elif change['role'] is ActorRole.SECOND_REVIEWER:
+                second_change = change
 
         state = _state(application['stateName']) if application.get('stateName') else None
         if state is not None and STATE_DEFINITIONS[state].actor_role in changed_roles:
@@ -1142,9 +1145,11 @@ class ApplicationClient:
             'version = :version AND attribute_not_exists(pendingAction) '
             f'AND #status IN ({", ".join(status_placeholders)})'
         )
-        if only_first:
+        if first_change is not None and second_change is None:
+            values[':distinctSub'] = first_change['sub']
             condition += ' AND (attribute_not_exists(secondReviewerSub) OR secondReviewerSub <> :distinctSub)'
-        elif only_second:
+        elif second_change is not None and first_change is None:
+            values[':distinctSub'] = second_change['sub']
             condition += ' AND (attribute_not_exists(firstReviewerSub) OR firstReviewerSub <> :distinctSub)'
 
         expression = f'SET {", ".join(set_parts)}'
@@ -1234,6 +1239,17 @@ class ApplicationClient:
                 values[f':{note_field}'] = review_update[note_field]
         set_parts.append(f'reviews[{index}].reviewCompletionDate = :reviewCompleted')
         values[':reviewCompleted'] = updated
+
+
+def _resulting_reviewer_sub(request: Mapping, application: Mapping, field: str):
+    """Return the sub that will be stored for one reviewer role.
+
+    A missing or null request field keeps the current assignment. Validation has to see
+    that stored value, not the null that arrived on the request.
+    """
+    if field in request and request[field]:
+        return str(request[field])
+    return application.get(field)
 
 
 def _all_reviewers_set(application: Mapping) -> bool:

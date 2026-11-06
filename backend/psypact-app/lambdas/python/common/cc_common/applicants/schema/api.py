@@ -44,8 +44,8 @@ _ASSIGNMENT_ID_FIELDS = {
 }
 
 
-def _enum(enum_cls) -> String:
-    return _str(validate=OneOf([member.value for member in enum_cls]))
+def _enum(enum_cls, **kwargs) -> String:
+    return _str(validate=OneOf([member.value for member in enum_cls]), **kwargs)
 
 
 def _note() -> String:
@@ -70,16 +70,16 @@ class SectionReviewRequestSchema(StrictRequestSchema):
 
 
 class TransitionRequestSchema(StrictRequestSchema):
-    action = _enum(WorkflowAction)
+    action = _enum(WorkflowAction, required=True, allow_none=False)
     notesForApplicant = _note()
     notesForReviewers = _note()
-    requestId = _str()
+    requestId = _str(required=True, allow_none=False)
 
 
 class SetApplicationStatusRequestSchema(StrictRequestSchema):
-    targetState = _enum(StateName)
+    targetState = _enum(StateName, required=True, allow_none=False)
     reason = _note()
-    requestId = _str()
+    requestId = _str(required=True, allow_none=False)
 
 
 class AssignReviewersRequestSchema(StrictRequestSchema):

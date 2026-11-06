@@ -2,7 +2,7 @@
 
 import time
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from aws_lambda_powertools.metrics import MetricUnit
 from botocore.exceptions import BotoCoreError, ClientError
@@ -298,13 +298,17 @@ class ApplicationTransitionService:
         notes_for_reviewers: str | None,
         reviewer_selected_application_status: str | None,
     ) -> TransitionResult:
-        stored = self._stored_result(compact, application_id, request_id)
+        stored_record = self.applications.get_request_record(compact, application_id, request_id)
+        stored = _completed_record_result(stored_record, application_id, request_id)
         if stored is not None:
+            _require_claim_match(stored_record, caller, action)
             return stored
 
         application = self._require_application(compact, application_id)
         pending = application.get('pendingAction') or {}
         if pending.get('requestId') == request_id:
+            _require_claim_match(pending, caller, action)
+            _authorize_claimed_state(compact, application, pending, caller, action)
             return self._deliver_and_wait(application, pending)
         if pending:
             raise CCConflictException('A transition is already pending')
@@ -371,6 +375,7 @@ class ApplicationTransitionService:
                 str(application['compact']),
                 delivered,
                 str(pending_action['action']),
+                pending_action.get('actorSub'),
             )
         return delivered
 
@@ -412,6 +417,7 @@ class ApplicationTransitionService:
             str(pending_action['requestId']),
             expected_status,
             str(pending_action['action']),
+            pending_action.get('actorSub'),
         )
 
     def _completed_result(
@@ -420,6 +426,7 @@ class ApplicationTransitionService:
         request_id: str,
         expected_status: str,
         action: str,
+        actor_sub: str | None = None,
     ) -> TransitionResult:
         result = TransitionResult(
             application_id=str(application['applicationId']),
@@ -431,10 +438,16 @@ class ApplicationTransitionService:
             state_name=application.get('stateName'),
             generation=_generation(application),
         )
-        self._store_result(application, result, action)
+        self._store_result(application, result, action, actor_sub)
         return result
 
-    def _store_result(self, application: Mapping, result: TransitionResult, action: str) -> None:
+    def _store_result(
+        self,
+        application: Mapping,
+        result: TransitionResult,
+        action: str,
+        actor_sub: str | None = None,
+    ) -> None:
         try:
             self.applications.put_request_record(
                 str(application['compact']),
@@ -443,27 +456,14 @@ class ApplicationTransitionService:
                 action=action,
                 result=result.as_dict(),
                 ttl=_ttl(self.config),
+                actor_sub=actor_sub,
             )
         except CCConflictException:
             return
 
     def _stored_result(self, compact: str, application_id: str, request_id: str) -> TransitionResult | None:
         stored = self.applications.get_request_record(compact, application_id, request_id)
-        if not stored or not stored.get('result'):
-            return None
-        result = stored['result']
-        if result.get('pending'):
-            return None
-        return TransitionResult(
-            application_id=application_id,
-            request_id=request_id,
-            pending=bool(result.get('pending')),
-            accepted=bool(result.get('accepted')),
-            status=result.get('status'),
-            expected_status=result.get('expectedStatus'),
-            state_name=result.get('stateName'),
-            generation=result.get('generation'),
-        )
+        return _completed_record_result(stored, application_id, request_id)
 
     def _clear_if_not_running(self, application: Mapping, request_id: str) -> bool:
         """Clear the claim only when the execution is proven stopped and the workflow did not advance."""
@@ -484,13 +484,25 @@ class ApplicationTransitionService:
             return False
         return self.applications.clear_pending_action(compact, application_id, request_id)
 
-    def _poll_until_settled(self, compact: str, delivered: TransitionResult, action: str) -> TransitionResult:
+    def _poll_until_settled(
+        self,
+        compact: str,
+        delivered: TransitionResult,
+        action: str,
+        actor_sub: str | None = None,
+    ) -> TransitionResult:
         deadline = time.monotonic() + self._poll_timeout
         while True:
             latest = self._require_application(compact, delivered.application_id)
             pending = latest.get('pendingAction') or {}
             if pending.get('requestId') != delivered.request_id:
-                return self._completed_result(latest, delivered.request_id, delivered.expected_status or '', action)
+                return self._completed_result(
+                    latest,
+                    delivered.request_id,
+                    delivered.expected_status or '',
+                    action,
+                    actor_sub,
+                )
             if time.monotonic() >= deadline:
                 return delivered
             self._sleep(_POLL_INTERVAL_SECONDS)
@@ -578,6 +590,53 @@ class ApplicationTransitionService:
 
 def _noop_schedule(**_kwargs) -> None:
     return None
+
+
+def _completed_record_result(stored: Mapping | None, application_id: str, request_id: str) -> TransitionResult | None:
+    if not stored or not stored.get('result'):
+        return None
+    result = stored['result']
+    if result.get('pending'):
+        return None
+    return TransitionResult(
+        application_id=application_id,
+        request_id=request_id,
+        pending=bool(result.get('pending')),
+        accepted=bool(result.get('accepted')),
+        status=result.get('status'),
+        expected_status=result.get('expectedStatus'),
+        state_name=result.get('stateName'),
+        generation=result.get('generation'),
+    )
+
+
+def _require_claim_match(claim: Mapping, caller, action: WorkflowAction) -> None:
+    """Reject a replay whose caller or action differs from the claim.
+
+    Request records and pending claims do not always carry both fields. Compare each one
+    only when the claim has it.
+    """
+    claimed_action = claim.get('action')
+    if claimed_action is not None and claimed_action != action:
+        raise CCConflictException('Request does not match this transition')
+    claimed_actor = claim.get('actorSub')
+    if claimed_actor is not None and claimed_actor != caller.sub:
+        raise CCConflictException('Request does not match this transition')
+
+
+def _authorize_claimed_state(
+    compact: str,
+    application: Mapping,
+    pending: Mapping,
+    caller,
+    action: WorkflowAction,
+) -> None:
+    """Authorize a retry against the state recorded on the claim."""
+    expected_state = pending.get('expectedStateName')
+    if not expected_state:
+        return
+    context = replace(_auth_context(compact, application), state_name=StateName(expected_state))
+    authorize_action(caller, context, action, compact)
 
 
 def _auth_context(compact: str, application: Mapping) -> ApplicationAuthContext:

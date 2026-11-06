@@ -8,6 +8,7 @@ os.environ.setdefault('JURISDICTIONS', '["oh"]')
 from cc_common.applicants.schema.api import (  # noqa: E402
     ApplicationResponseSchema,
     AssignReviewersRequestSchema,
+    SetApplicationStatusRequestSchema,
     TransitionRequestSchema,
     assemble_application_response,
     section_patch_schema,
@@ -359,7 +360,20 @@ class TestRecordSchemas(TestCase):
     def test_unknown_request_field_is_rejected_and_section_patch_strips_text(self):
         with self.assertRaises(ValidationError):
             TransitionRequestSchema().load({'action': 'SUBMIT', 'extra': True})
-        self.assertEqual('req-1', TransitionRequestSchema().load({'requestId': '  req-1  '})['requestId'])
+        loaded = TransitionRequestSchema().load({'action': ' SUBMIT ', 'requestId': '  req-1  '})
+        self.assertEqual({'action': 'SUBMIT', 'requestId': 'req-1'}, loaded)
+        with self.assertRaises(ValidationError):
+            TransitionRequestSchema().load({'requestId': 'req-1'})
+        with self.assertRaises(ValidationError):
+            TransitionRequestSchema().load({'action': 'SUBMIT', 'requestId': None})
+        status = SetApplicationStatusRequestSchema().load(
+            {'targetState': 'Started', 'requestId': 'req-1', 'reason': None}
+        )
+        self.assertEqual({'targetState': 'Started', 'requestId': 'req-1', 'reason': None}, status)
+        with self.assertRaises(ValidationError):
+            SetApplicationStatusRequestSchema().load({'targetState': None, 'requestId': 'req-1'})
+        with self.assertRaises(ValidationError):
+            SetApplicationStatusRequestSchema().load({'reason': 'because'})
         assigned = AssignReviewersRequestSchema().load({'firstReviewerSub': 'sub-1'})
         self.assertEqual({'firstReviewerSub': 'sub-1'}, assigned)
         patched = section_patch_schema('personalInformation').load({'firstName': '  Ada  ', 'mainingZip': 'nope'})

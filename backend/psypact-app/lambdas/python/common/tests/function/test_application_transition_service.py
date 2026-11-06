@@ -391,6 +391,88 @@ class TestApplicationTransitionService(TstLambdas):
         self.assertEqual(2, self.sfn.send_task_success.call_count)
         self.assertEqual('req-1', self.client.get_application(COMPACT, APPLICATION_ID)['pendingAction']['requestId'])
 
+    def test_replay_rejects_a_different_caller_or_action_before_delivery(self):
+        self._create()
+        self._enter(StateName.STARTED)
+        self.sfn.send_task_success.return_value = {}
+
+        pending = self.service.submit_or_transition(
+            COMPACT,
+            APPLICATION_ID,
+            APPLICANT,
+            WorkflowAction.SUBMIT,
+            'req-1',
+        )
+        self.assertTrue(pending.pending)
+        sends_before = self.sfn.send_task_success.call_count
+
+        with self.assertRaises(CCConflictException):
+            self.service.submit_or_transition(
+                COMPACT,
+                APPLICATION_ID,
+                OTHER_APPLICANT,
+                WorkflowAction.SUBMIT,
+                'req-1',
+            )
+        with self.assertRaises(CCConflictException):
+            self.service.submit_or_transition(
+                COMPACT,
+                APPLICATION_ID,
+                APPLICANT,
+                WorkflowAction.ADVANCE,
+                'req-1',
+            )
+        self.assertEqual(sends_before, self.sfn.send_task_success.call_count)
+
+        retried = self.service.submit_or_transition(
+            COMPACT,
+            APPLICATION_ID,
+            APPLICANT,
+            WorkflowAction.SUBMIT,
+            'req-1',
+        )
+        self.assertTrue(retried.accepted)
+        self.assertEqual(sends_before + 1, self.sfn.send_task_success.call_count)
+
+    def test_stored_replay_rejects_a_different_caller_or_action(self):
+        self._create()
+        self._enter(StateName.STARTED)
+
+        def send(**_kwargs):
+            self._enter(StateName.STAFF_REVIEW)
+            raise _client_error('InvalidToken')
+
+        self.sfn.send_task_success.side_effect = send
+        result = self.service.submit_or_transition(COMPACT, APPLICATION_ID, APPLICANT, WorkflowAction.SUBMIT, 'req-1')
+        self.sfn.send_task_success.side_effect = None
+
+        with self.assertRaises(CCConflictException):
+            self.service.submit_or_transition(
+                COMPACT,
+                APPLICATION_ID,
+                OTHER_APPLICANT,
+                WorkflowAction.SUBMIT,
+                'req-1',
+            )
+        with self.assertRaises(CCConflictException):
+            self.service.submit_or_transition(
+                COMPACT,
+                APPLICATION_ID,
+                APPLICANT,
+                WorkflowAction.ADVANCE,
+                'req-1',
+            )
+
+        repeated = self.service.submit_or_transition(
+            COMPACT,
+            APPLICATION_ID,
+            APPLICANT,
+            WorkflowAction.SUBMIT,
+            'req-1',
+        )
+        self.assertEqual(result.as_dict(), repeated.as_dict())
+        self.assertEqual(1, self.sfn.send_task_success.call_count)
+
     def test_admin_override_sends_the_target_and_rejects_an_unassigned_reviewer_state(self):
         self._create()
         self._enter(StateName.STARTED)

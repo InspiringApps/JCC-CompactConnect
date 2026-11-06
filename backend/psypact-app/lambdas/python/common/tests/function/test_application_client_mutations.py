@@ -319,6 +319,52 @@ class TestAssignReviewers(ApplicationTableCase):
         self.assertEqual(FIRST, application['secondReviewerSub'])
         self.assertNotIn('firstReviewerSub', application)
 
+    def test_null_reviewer_field_keeps_the_existing_assignment(self):
+        result = self._staff_then_assign({'firstReviewerSub': FIRST, 'secondReviewerSub': SECOND})
+        version = int(result.snapshot.application['version'])
+        with self.assertRaises(CCInvalidRequestException) as raised:
+            self.client.assign_reviewers(
+                COMPACT,
+                APPLICATION_ID,
+                {'firstReviewerSub': None, 'secondReviewerSub': FIRST},
+                expected_version=version,
+            )
+        self.assertEqual(FIRST_AND_SECOND_REVIEWER_MUST_DIFFER, raised.exception.message)
+        application = self._application()
+        self.assertEqual(FIRST, application['firstReviewerSub'])
+        self.assertEqual(SECOND, application['secondReviewerSub'])
+
+        kept = self.client.assign_reviewers(
+            COMPACT,
+            APPLICATION_ID,
+            {'firstReviewerSub': None, 'finalReviewerSub': FINAL},
+            expected_version=version,
+        )
+        self.assertEqual(FIRST, kept.snapshot.application['firstReviewerSub'])
+        self.assertEqual(FINAL, kept.snapshot.application['finalReviewerSub'])
+
+    def test_distinctness_condition_applies_when_another_role_changes(self):
+        self._create()
+        self._enter(StateName.STAFF_REVIEW)
+        version = int(self._application()['version'])
+        real_transact = self.client.config.dynamodb_client.transact_write_items
+        captured = {}
+
+        def wrapped(**kwargs):
+            captured['items'] = kwargs['TransactItems']
+            return real_transact(**kwargs)
+
+        self.client.config.dynamodb_client.transact_write_items = wrapped
+        self.client.assign_reviewers(
+            COMPACT,
+            APPLICATION_ID,
+            {'firstReviewerSub': FIRST, 'finalReviewerSub': FINAL},
+            expected_version=version,
+        )
+
+        condition = captured['items'][0]['Update']['ConditionExpression']
+        self.assertIn('secondReviewerSub <> :distinctSub', condition)
+
 
 @mock_aws
 class TestSectionReviews(ApplicationTableCase):
