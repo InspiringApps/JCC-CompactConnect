@@ -82,7 +82,7 @@ class ApplicationTransitionService:
         self.config = config
         self.applications = config.application_client
         self.workflow = workflow_client if workflow_client is not None else config.application_workflow_client
-        self._schedule_creator = schedule_creator if schedule_creator is not None else _noop_schedule
+        self._schedule_creator = schedule_creator if schedule_creator is not None else _default_schedule_creator(config)
         self._sleep = sleeper if sleeper is not None else time.sleep
         self._poll_timeout = poll_timeout_seconds
         self._backoff = backoff_seconds
@@ -588,8 +588,23 @@ class ApplicationTransitionService:
         return application
 
 
-def _noop_schedule(**_kwargs) -> None:
-    return None
+def _default_schedule_creator(config):
+    """Create the generation's expiry schedule from the runtime configuration."""
+
+    def create(**kwargs):
+        from cc_common.applicants.application_schedule_client import ApplicationScheduleClient
+
+        ApplicationScheduleClient().create_expiry_schedule(
+            kwargs['compact'],
+            kwargs['application_id'],
+            int(kwargs['generation']),
+            kwargs['workflow_expires_at'],
+            group_name=config.application_schedule_group_name,
+            target_arn=config.application_expiry_function_arn,
+            role_arn=config.application_scheduler_role_arn,
+        )
+
+    return create
 
 
 def _completed_record_result(stored: Mapping | None, application_id: str, request_id: str) -> TransitionResult | None:

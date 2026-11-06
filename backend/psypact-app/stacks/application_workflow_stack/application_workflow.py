@@ -6,8 +6,10 @@ from pathlib import Path
 from aws_cdk import ArnFormat, Duration
 from aws_cdk.aws_cloudwatch import Alarm, ComparisonOperator, TreatMissingData
 from aws_cdk.aws_cloudwatch_actions import SnsAction
-from aws_cdk.aws_iam import Effect, PolicyStatement
-from aws_cdk.aws_logs import LogGroup, RetentionDays
+from aws_cdk.aws_events import EventPattern, Rule
+from aws_cdk.aws_events_targets import LambdaFunction
+from aws_cdk.aws_iam import Effect, PolicyStatement, Role, ServicePrincipal
+from aws_cdk.aws_logs import FilterPattern, LogGroup, MetricFilter, RetentionDays
 from aws_cdk.aws_scheduler import CfnScheduleGroup
 from aws_cdk.aws_stepfunctions import (
     Choice,
@@ -77,6 +79,11 @@ class ApplicationWorkflow(Construct):
 
         self._add_enter_state_function(stack, persistent_stack)
         self._add_state_machine(stack, persistent_stack)
+        self._add_expiry_function(stack, persistent_stack)
+        self._add_reconciler_function(stack, persistent_stack)
+        self._add_scheduler_role(stack)
+        self._add_execution_status_rule()
+        self._add_workflow_metric_alarms(persistent_stack)
 
     def _add_enter_state_function(self, stack: Stack, persistent_stack: ps.PersistentStack) -> None:
         application_table = persistent_stack.application_table
@@ -93,6 +100,7 @@ class ApplicationWorkflow(Construct):
                 'APPLICATION_STATUS_GSI_NAME': application_table.status_gsi_name,
                 'APPLICATION_ACTOR_GSI_NAME': application_table.actor_gsi_name,
                 'APPLICATION_APPLICANT_GSI_NAME': application_table.applicant_gsi_name,
+                'APPLICATION_SCHEDULE_GROUP_NAME': self.schedule_group_name,
                 **stack.common_env_vars,
             },
             alarm_topic=persistent_stack.alarm_topic,
@@ -312,6 +320,181 @@ class ApplicationWorkflow(Construct):
                 comparison_operator=ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
                 treat_missing_data=TreatMissingData.NOT_BREACHING,
             ).add_alarm_action(alarm_action)
+
+    def _add_expiry_function(self, stack: Stack, persistent_stack: ps.PersistentStack) -> None:
+        application_table = persistent_stack.application_table
+        self.expiry_function = PythonFunction(
+            self,
+            'ExpiryDeactivation',
+            description='Deactivates an application when its one-time expiry schedule fires',
+            lambda_dir='applicants-lambdas',
+            index='expiry_deactivation.py',
+            handler='expiry_deactivation',
+            timeout=_TASK_TIMEOUT,
+            environment={
+                **self._application_environment(stack, application_table),
+                'APPLICATION_STATE_MACHINE_ARN': self.state_machine.state_machine_arn,
+            },
+            alarm_topic=persistent_stack.alarm_topic,
+        )
+        application_table.grant_read_write_data(self.expiry_function)
+        persistent_stack.shared_encryption_key.grant_encrypt_decrypt(self.expiry_function)
+        self.expiry_function.add_to_role_policy(
+            PolicyStatement(
+                effect=Effect.ALLOW,
+                actions=['states:SendTaskSuccess'],
+                resources=['*'],
+            )
+        )
+        self.expiry_function.add_to_role_policy(
+            PolicyStatement(
+                effect=Effect.ALLOW,
+                actions=['states:DescribeExecution'],
+                resources=[self._execution_arn(stack)],
+            )
+        )
+        self._suppress_role_wildcard(
+            stack,
+            self.expiry_function.role,
+            """
+            This policy contains wild-carded actions and resources but they are scoped to the
+            application table, its encryption key, and this workflow's executions.
+            SendTaskSuccess does not support a resource-level permission.
+            """,
+        )
+
+    def _add_reconciler_function(self, stack: Stack, persistent_stack: ps.PersistentStack) -> None:
+        application_table = persistent_stack.application_table
+        self.reconciler_function = PythonFunction(
+            self,
+            'ExecutionStatusReconciler',
+            description='Records an application execution that failed, timed out, or was aborted',
+            lambda_dir='applicants-lambdas',
+            index='execution_status_reconciler.py',
+            handler='execution_status_reconciler',
+            timeout=_TASK_TIMEOUT,
+            environment={
+                **self._application_environment(stack, application_table),
+                'APPLICATION_STATE_MACHINE_ARN': self.state_machine.state_machine_arn,
+            },
+            alarm_topic=persistent_stack.alarm_topic,
+        )
+        application_table.grant_read_write_data(self.reconciler_function)
+        persistent_stack.shared_encryption_key.grant_encrypt_decrypt(self.reconciler_function)
+        self.reconciler_function.add_to_role_policy(
+            PolicyStatement(
+                effect=Effect.ALLOW,
+                actions=['scheduler:DeleteSchedule'],
+                resources=[self._schedule_arn(stack)],
+            )
+        )
+        self._suppress_role_wildcard(
+            stack,
+            self.reconciler_function.role,
+            """
+            This policy contains wild-carded actions and resources but they are scoped to the
+            application table, its encryption key, and this workflow's schedule group.
+            """,
+        )
+
+    def _add_scheduler_role(self, stack: Stack) -> None:
+        self.scheduler_role = Role(
+            self,
+            'ExpirySchedulerRole',
+            assumed_by=ServicePrincipal('scheduler.amazonaws.com'),
+            description='Allows the application expiry schedule to invoke its deactivation function',
+        )
+        self.expiry_function.grant_invoke(self.scheduler_role)
+        self.scheduler_role_arn = self.scheduler_role.role_arn
+        self._suppress_role_wildcard(
+            stack,
+            self.scheduler_role,
+            """
+            This role can invoke only the application expiry function. The invoke grant includes
+            the function's log and qualifier resources.
+            """,
+        )
+
+    def _add_execution_status_rule(self) -> None:
+        Rule(
+            self,
+            'ExecutionStatusRule',
+            description='Reconcile an application when its workflow execution stops unexpectedly',
+            event_pattern=EventPattern(
+                source=['aws.states'],
+                detail_type=['Step Functions Execution Status Change'],
+                detail={
+                    'status': ['FAILED', 'TIMED_OUT', 'ABORTED'],
+                    'stateMachineArn': [self.state_machine.state_machine_arn],
+                },
+            ),
+            targets=[LambdaFunction(self.reconciler_function)],
+        )
+
+    def _add_workflow_metric_alarms(self, persistent_stack: ps.PersistentStack) -> None:
+        alarm_action = SnsAction(persistent_stack.alarm_topic)
+        for metric_name, log_group in (
+            ('ApplicationExpiryDeactivationFailed', self.expiry_function.log_group),
+            ('ApplicationCallbackDeliveryExhausted', self.expiry_function.log_group),
+            ('ApplicationExecutionBroken', self.reconciler_function.log_group),
+            ('ApplicationReopenForcedStop', self.reconciler_function.log_group),
+        ):
+            metric_filter = MetricFilter(
+                self,
+                f'{metric_name}Filter',
+                log_group=log_group,
+                metric_namespace='compact-connect',
+                metric_name=metric_name,
+                filter_pattern=FilterPattern.literal(f'{{ $.{metric_name} = 1 }}'),
+                metric_value='1',
+            )
+            Alarm(
+                self,
+                f'{metric_name}Alarm',
+                metric=metric_filter.metric(statistic='Sum', period=Duration.minutes(5)),
+                evaluation_periods=1,
+                threshold=1,
+                actions_enabled=True,
+                alarm_description=metric_name,
+                comparison_operator=ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+                treat_missing_data=TreatMissingData.NOT_BREACHING,
+            ).add_alarm_action(alarm_action)
+        Alarm(
+            self,
+            'ReconcilerErrorsAlarm',
+            metric=self.reconciler_function.metric_errors(period=Duration.minutes(5)),
+            evaluation_periods=1,
+            threshold=1,
+            actions_enabled=True,
+            alarm_description='Application reconciler errors',
+            comparison_operator=ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+            treat_missing_data=TreatMissingData.NOT_BREACHING,
+        ).add_alarm_action(alarm_action)
+
+    def _application_environment(self, stack: Stack, application_table) -> dict:
+        return {
+            'APPLICATION_TABLE_NAME': application_table.table_name,
+            'APPLICATION_STATUS_GSI_NAME': application_table.status_gsi_name,
+            'APPLICATION_ACTOR_GSI_NAME': application_table.actor_gsi_name,
+            'APPLICATION_APPLICANT_GSI_NAME': application_table.applicant_gsi_name,
+            'APPLICATION_SCHEDULE_GROUP_NAME': self.schedule_group_name,
+            **stack.common_env_vars,
+        }
+
+    def _execution_arn(self, stack: Stack) -> str:
+        return stack.format_arn(
+            service='states',
+            resource='execution',
+            resource_name=f'{self.state_machine.state_machine_name}:*',
+            arn_format=ArnFormat.COLON_RESOURCE_NAME,
+        )
+
+    def _suppress_role_wildcard(self, stack: Stack, role, reason: str) -> None:
+        NagSuppressions.add_resource_suppressions_by_path(
+            stack,
+            f'{role.node.path}/DefaultPolicy/Resource',
+            suppressions=[{'id': 'AwsSolutions-IAM5', 'reason': reason}],
+        )
 
     def _schedule_arn(self, stack: Stack) -> str:
         return stack.format_arn(

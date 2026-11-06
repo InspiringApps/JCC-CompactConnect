@@ -29,4 +29,7 @@ class ApplicationWorkflowStack(AppStack):
         )
         self.state_machine = workflow.state_machine
         self.enter_state_function = workflow.enter_state_function
+        self.expiry_function = workflow.expiry_function
+        self.reconciler_function = workflow.reconciler_function
         self.schedule_group_name = workflow.schedule_group_name
+        self.scheduler_role_arn = workflow.scheduler_role_arn

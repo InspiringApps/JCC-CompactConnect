@@ -38,6 +38,28 @@ from stacks.persistent_stack.transaction_reports_bucket import TransactionReport
 from stacks.persistent_stack.user_email_notifications import UserEmailNotifications
 
 
+def alarm_email_addresses(notifications: dict | None) -> list[str]:
+    """Return alarm recipients from the compact email list and the operations support address.
+
+    The support address is appended when it is not already in the compact list. Missing
+    keys and empty values contribute no recipients, and the original order is kept.
+    """
+    notifications = notifications or {}
+    ordered = []
+    seen = set()
+    for key in ('email', 'ses_operations_support_email'):
+        value = notifications.get(key)
+        if value is None:
+            continue
+        addresses = [value] if isinstance(value, str) else value
+        for address in addresses:
+            if not address or address in seen:
+                continue
+            seen.add(address)
+            ordered.append(address)
+    return ordered
+
+
 # cdk leverages instance attributes to make resource exports accessible to other stacks
 class PersistentStack(AppStack):
     """
@@ -83,7 +105,7 @@ class PersistentStack(AppStack):
             self,
             'AlarmTopic',
             master_key=self.shared_encryption_key,
-            email_subscriptions=notifications.get('email', []),
+            email_subscriptions=alarm_email_addresses(notifications),
             slack_subscriptions=notifications.get('slack', []),
         )
 

@@ -6,6 +6,7 @@ The task token is stored by the data client and is never written to the log.
 
 import contextvars
 import logging
+import os
 from collections.abc import Mapping
 
 from aws_lambda_powertools.utilities.typing import LambdaContext
@@ -96,7 +97,11 @@ def _delete_expiry_schedule(application: Mapping, application_id: str) -> None:
         logger.error('Application %s has no expiry schedule to delete', application_id, application_id=application_id)
         return
     try:
-        ApplicationScheduleClient().delete_schedule(str(schedule_name), application_id=application_id)
+        delete_kwargs = {'application_id': application_id}
+        group_name = os.environ.get('APPLICATION_SCHEDULE_GROUP_NAME')
+        if group_name:
+            delete_kwargs['group_name'] = group_name
+        ApplicationScheduleClient().delete_schedule(str(schedule_name), **delete_kwargs)
     except Exception as error:  # noqa: BLE001 schedule cleanup must not undo a completed entry
         logger.error(
             'Failed to delete application expiry schedule for %s',

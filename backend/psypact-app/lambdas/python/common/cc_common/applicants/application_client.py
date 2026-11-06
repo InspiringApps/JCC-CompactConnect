@@ -129,6 +129,21 @@ def _condition_failed(error: ClientError) -> bool:
     return not codes or 'ConditionalCheckFailed' in codes
 
 
+def _reconciler_targets(application: Mapping | None, execution_arn: str, generation: int) -> bool:
+    if not application:
+        return False
+    return int(application.get('generation') or 0) == generation and application.get('executionArn') == execution_arn
+
+
+def _already_reconciled(application: Mapping | None, reason: str) -> bool:
+    if not application:
+        return False
+    return (
+        application.get('status') == ApplicationStatus.DEACTIVATED.value
+        and application.get('deactivationReason') == reason
+    )
+
+
 def _is_conflict(error: ClientError) -> bool:
     if error.response['Error']['Code'] == 'ConditionalCheckFailedException':
         return True
@@ -500,6 +515,135 @@ class ApplicationClient:
         if stored is None:
             raise CCNotFoundException('Application not found')
         return stored
+
+    def mark_deactivated_by_reconciler(
+        self,
+        compact: str,
+        application_id: str,
+        *,
+        execution_arn: str,
+        generation: int,
+        reason: str,
+        last_execution_error: str | None,
+    ) -> str:
+        """Deactivate the current generation when its execution has stopped outside the graph.
+
+        Returns ``applied`` when this call wrote the deactivation, ``already`` when that
+        reason is already recorded, and ``stale`` when a newer generation or a finished
+        application must be left alone.
+        """
+        current = self.get_application(compact, application_id)
+        if not _reconciler_targets(current, execution_arn, generation):
+            return 'stale'
+        if _already_reconciled(current, reason):
+            return 'already'
+
+        updated = self._timestamp()
+        state = StateName.DEACTIVATED
+        entry_key = f'{execution_arn}#{updated}#{state.value}'
+        try:
+            self.config.dynamodb_client.transact_write_items(
+                TransactItems=[
+                    self._reconciler_update(
+                        compact=compact,
+                        application_id=application_id,
+                        execution_arn=execution_arn,
+                        generation=generation,
+                        reason=reason,
+                        last_execution_error=last_execution_error,
+                        entry_key=entry_key,
+                        updated=updated,
+                    ),
+                    {
+                        'Put': {
+                            'TableName': self.config.application_table_name,
+                            'Item': _serialize_item(
+                                self._transition_item(
+                                    compact=compact,
+                                    application_id=application_id,
+                                    state=state,
+                                    entered_time=updated,
+                                    execution_arn=execution_arn,
+                                    from_state=current.get('stateName'),
+                                    updated=updated,
+                                )
+                            ),
+                            'ConditionExpression': 'attribute_not_exists(pk)',
+                        }
+                    },
+                ]
+            )
+        except ClientError as error:
+            if not _condition_failed(error):
+                raise
+            latest = self.get_application(compact, application_id)
+            if _already_reconciled(latest, reason) and _reconciler_targets(latest, execution_arn, generation):
+                return 'already'
+            return 'stale'
+        return 'applied'
+
+    def _reconciler_update(
+        self,
+        *,
+        compact: str,
+        application_id: str,
+        execution_arn: str,
+        generation: int,
+        reason: str,
+        last_execution_error: str | None,
+        entry_key: str,
+        updated: str,
+    ) -> dict:
+        status = ApplicationStatus.DEACTIVATED.value
+        set_parts = [
+            '#status = :status',
+            'stateName = :stateName',
+            'lastEnteredKey = :key',
+            'statusGSIPK = :statusGSIPK',
+            'statusGSISK = :statusGSISK',
+            'completed = :completed',
+            'deactivationReason = :reason',
+            'dateOfUpdate = :updated',
+        ]
+        values = {
+            ':status': status,
+            ':stateName': StateName.DEACTIVATED.value,
+            ':key': entry_key,
+            ':arn': execution_arn,
+            ':generation': generation,
+            ':approved': ApplicationStatus.APPROVED.value,
+            ':rejected': ApplicationStatus.REJECTED.value,
+            ':deactivated': ApplicationStatus.DEACTIVATED.value,
+            ':statusGSIPK': f'{compact}#STATUS#{status}',
+            ':statusGSISK': f'{updated}#{application_id}',
+            ':completed': updated,
+            ':reason': reason,
+            ':updated': updated,
+            ':one': 1,
+        }
+        if last_execution_error:
+            set_parts.append('lastExecutionError = :lastExecutionError')
+            values[':lastExecutionError'] = last_execution_error
+        expression = (
+            f'SET {", ".join(set_parts)} '
+            'REMOVE pendingAction, taskToken, taskTokenHash, actorGSIPK, actorGSISK '
+            'ADD version :one'
+        )
+        return {
+            'Update': {
+                'TableName': self.config.application_table_name,
+                'Key': _serialize_item({'pk': self.pk(compact, application_id), 'sk': APPLICATION_SK}),
+                'UpdateExpression': expression,
+                'ConditionExpression': (
+                    'executionArn = :arn AND generation = :generation AND ('
+                    'attribute_not_exists(#status) OR '
+                    'NOT (#status IN (:approved, :rejected, :deactivated)) OR '
+                    'reopenLock.oldExecutionArn = :arn)'
+                ),
+                'ExpressionAttributeNames': {'#status': 'status'},
+                'ExpressionAttributeValues': _attribute_values(values),
+            }
+        }
 
     def _enter_state_update(
         self,

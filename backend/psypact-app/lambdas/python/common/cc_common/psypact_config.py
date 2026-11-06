@@ -80,6 +80,18 @@ class PsypactConfig(_Config):
     def application_state_machine_arn(self):
         return os.environ['APPLICATION_STATE_MACHINE_ARN']
 
+    @property
+    def application_schedule_group_name(self):
+        return os.environ['APPLICATION_SCHEDULE_GROUP_NAME']
+
+    @property
+    def application_expiry_function_arn(self):
+        return os.environ['APPLICATION_EXPIRY_FUNCTION_ARN']
+
+    @property
+    def application_scheduler_role_arn(self):
+        return os.environ['APPLICATION_SCHEDULER_ROLE_ARN']
+
     @cached_property
     def stepfunctions_client(self):
         return boto3.client('stepfunctions')

@@ -83,6 +83,53 @@ class TestApplicationWorkflowStack(TstAppABC, TestCase):
 
         self._check_no_stack_annotations(stack)
 
+    def test_expiry_schedule_reconciler_and_alarms(self):
+        stack = self.app.prod_backend_pipeline_stack.prod_stage.application_workflow_stack
+        template = Template.from_stack(stack)
+
+        template.has_resource_properties('AWS::Scheduler::ScheduleGroup', {'Name': 'application-workflow'})
+        scheduler_roles = [
+            role
+            for role in template.find_resources('AWS::IAM::Role').values()
+            if _principal_service(role) == 'scheduler.amazonaws.com'
+        ]
+        self.assertEqual(1, len(scheduler_roles))
+
+        rule = next(iter(template.find_resources('AWS::Events::Rule').values()))
+        pattern = rule['Properties']['EventPattern']
+        self.assertEqual(['aws.states'], pattern['source'])
+        self.assertEqual(['Step Functions Execution Status Change'], pattern['detail-type'])
+        self.assertEqual(['FAILED', 'TIMED_OUT', 'ABORTED'], pattern['detail']['status'])
+        self.assertEqual(1, len(pattern['detail']['stateMachineArn']))
+        self.assertEqual(1, len(rule['Properties']['Targets']))
+
+        actions = _policy_actions(template)
+        self.assertIn('states:SendTaskSuccess', actions)
+        self.assertIn('states:DescribeExecution', actions)
+        self.assertIn('scheduler:DeleteSchedule', actions)
+        self.assertIn('lambda:InvokeFunction', actions)
+
+        alarms = list(template.find_resources('AWS::CloudWatch::Alarm').values())
+        alarmed_metrics = {alarm['Properties'].get('MetricName') for alarm in alarms}
+        for metric_name in (
+            'ApplicationExecutionBroken',
+            'ApplicationReopenForcedStop',
+            'ApplicationExpiryDeactivationFailed',
+            'ApplicationCallbackDeliveryExhausted',
+            'Errors',
+        ):
+            self.assertIn(metric_name, alarmed_metrics)
+        for alarm in alarms:
+            if alarm['Properties'].get('MetricName') in {
+                'ApplicationExecutionBroken',
+                'ApplicationReopenForcedStop',
+                'ApplicationExpiryDeactivationFailed',
+                'ApplicationCallbackDeliveryExhausted',
+            }:
+                self.assertEqual(1, len(alarm['Properties']['AlarmActions']))
+        self.assertGreaterEqual(len(template.find_resources('AWS::Logs::MetricFilter')), 4)
+        self._check_no_stack_annotations(stack)
+
     def _assert_admin_router(self, router: dict):
         branches = {(choice['StringEquals'], choice['Next']) for choice in router['Choices']}
         expected = {(state.value, state.value) for state in ADMIN_OVERRIDE_TARGETS}
@@ -157,6 +204,28 @@ class TestApplicationWorkflowStack(TstAppABC, TestCase):
         for name in ('DeactivateOnTimeout', 'DeactivateOnError'):
             self.assertEqual('$.error.reason', states[name]['ResultPath'])
             self.assertEqual('Deactivated', states[name]['Next'])
+
+
+def _principal_service(role: dict) -> str | None:
+    statements = role['Properties'].get('AssumeRolePolicyDocument', {}).get('Statement', [])
+    if not statements:
+        return None
+    service = statements[0].get('Principal', {}).get('Service')
+    if isinstance(service, list):
+        return service[0]
+    return service
+
+
+def _policy_actions(template: Template) -> set[str]:
+    actions = set()
+    for policy in template.find_resources('AWS::IAM::Policy').values():
+        for statement in policy['Properties']['PolicyDocument']['Statement']:
+            action = statement.get('Action', [])
+            if isinstance(action, str):
+                actions.add(action)
+            else:
+                actions.update(action)
+    return actions
 
 
 def _table_edges() -> set[tuple[str, str, str]]:
