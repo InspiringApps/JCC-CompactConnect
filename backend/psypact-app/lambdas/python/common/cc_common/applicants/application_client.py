@@ -4,8 +4,9 @@ Transactions use the low-level DynamoDB client and ``TypeSerializer`` / ``TypeDe
 The resource ``Table`` API cannot express ``TransactGetItems`` or ``TransactWriteItems``.
 """
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from datetime import timedelta
 from hashlib import sha256
 from uuid import uuid4
 
@@ -515,6 +516,200 @@ class ApplicationClient:
         if stored is None:
             raise CCNotFoundException('Application not found')
         return stored
+
+    def _write_application(
+        self,
+        compact: str,
+        application_id: str,
+        *,
+        update_expression: str,
+        condition: str,
+        values: Mapping,
+        conflict_message: str,
+        accept: Callable[[Mapping], bool] | None = None,
+    ) -> dict:
+        """Apply one conditional update to the APPLICATION item and return the stored item.
+
+        The caller supplies the expression, condition, and values. On a condition failure,
+        a re-read is returned when ``accept`` says this write already landed.
+        """
+        try:
+            self.config.dynamodb_client.update_item(
+                TableName=self.config.application_table_name,
+                Key=_serialize_item({'pk': self.pk(compact, application_id), 'sk': APPLICATION_SK}),
+                UpdateExpression=update_expression,
+                ConditionExpression=condition,
+                ExpressionAttributeValues=_attribute_values(values),
+            )
+        except ClientError as error:
+            if not _is_conflict(error):
+                raise
+            if accept is not None:
+                latest = self.get_application(compact, application_id)
+                if latest is not None and accept(latest):
+                    return latest
+            raise CCConflictException(conflict_message) from error
+        stored = self.get_application(compact, application_id)
+        if stored is None:
+            raise CCNotFoundException('Application not found')
+        return stored
+
+    def acquire_reopen_lock(self, compact: str, application_id: str, request_id: str) -> dict:
+        """Hold the application for one reopen request.
+
+        The same request id is a no-op. A different request id conflicts. The lock keeps the
+        expiry chosen for the new generation so a retry starts the same execution.
+        """
+        current = self.get_application(compact, application_id)
+        if current is None:
+            raise CCNotFoundException('Application not found')
+        existing = current.get('reopenLock') or {}
+        if existing.get('requestId') == request_id:
+            return current
+        if existing:
+            raise CCConflictException('Application reopen is locked')
+
+        lock = {
+            'requestId': request_id,
+            'oldGeneration': int(current.get('generation') or 1),
+            'workflowExpiresAt': (self.config.current_standard_datetime + timedelta(days=365)).isoformat(),
+        }
+        if current.get('executionArn'):
+            lock['oldExecutionArn'] = current['executionArn']
+        return self._write_application(
+            compact,
+            application_id,
+            update_expression='SET reopenLock = :lock, dateOfUpdate = :now ADD version :one',
+            condition='attribute_not_exists(reopenLock) OR reopenLock.requestId = :requestId',
+            values={':lock': lock, ':requestId': request_id, ':now': self._timestamp(), ':one': 1},
+            conflict_message='Application reopen is locked',
+            accept=lambda item: (item.get('reopenLock') or {}).get('requestId') == request_id,
+        )
+
+    def claim_reopen_deactivation(self, compact: str, application_id: str, request_id: str, actor_sub: str) -> dict:
+        """Store the deactivation callback while this reopen request holds the lock."""
+        current = self.get_application(compact, application_id)
+        if current is None:
+            raise CCNotFoundException('Application not found')
+        if (current.get('reopenLock') or {}).get('requestId') != request_id:
+            raise CCConflictException('Application reopen is locked')
+        pending = current.get('pendingAction') or {}
+        if pending.get('requestId') == request_id:
+            return current
+        if pending:
+            raise CCConflictException('A transition is already pending')
+        if not current.get('stateName'):
+            raise CCInvalidRequestException('Application has no state')
+
+        pending_action = {
+            'requestId': request_id,
+            'action': WorkflowAction.ADMIN_DEACTIVATE.value,
+            'actorSub': actor_sub,
+            'expectedStateName': current['stateName'],
+            'expectedVersion': int(current.get('version') or 0),
+            'createdAt': self._timestamp(),
+            'attempts': 0,
+        }
+        if current.get('lastEnteredKey'):
+            pending_action['expectedLastEnteredKey'] = current['lastEnteredKey']
+        return self._write_application(
+            compact,
+            application_id,
+            update_expression='SET pendingAction = :pendingAction, dateOfUpdate = :now ADD version :one',
+            condition='reopenLock.requestId = :requestId AND attribute_not_exists(pendingAction)',
+            values={
+                ':pendingAction': pending_action,
+                ':requestId': request_id,
+                ':now': self._timestamp(),
+                ':one': 1,
+            },
+            conflict_message='Application reopen is locked',
+            accept=lambda item: (item.get('pendingAction') or {}).get('requestId') == request_id,
+        )
+
+    def commit_reopen_generation(
+        self,
+        compact: str,
+        application_id: str,
+        request_id: str,
+        new_execution_arn: str,
+        schedule_name: str,
+        workflow_expires_at: str,
+    ) -> int:
+        """Point the application at the next generation without changing its status or reviews.
+
+        Reviewer assignments, embedded reviews, and SECTION items stay as they are. ``EnterState``
+        writes the new staff-review status and clears the matching lock.
+        """
+        current = self.get_application(compact, application_id)
+        if current is None:
+            raise CCNotFoundException('Application not found')
+        if (current.get('reopenLock') or {}).get('requestId') != request_id:
+            raise CCConflictException('Application reopen is locked')
+        if current.get('executionArn') == new_execution_arn:
+            return int(current.get('generation') or 1)
+
+        values = {
+            ':arn': new_execution_arn,
+            ':schedule': schedule_name,
+            ':expires': workflow_expires_at,
+            ':requestId': request_id,
+            ':now': self._timestamp(),
+            ':one': 1,
+        }
+        old_arn = (current.get('reopenLock') or {}).get('oldExecutionArn')
+        if old_arn:
+            condition = 'reopenLock.requestId = :requestId AND executionArn = :oldArn'
+            values[':oldArn'] = old_arn
+        else:
+            condition = 'reopenLock.requestId = :requestId AND attribute_not_exists(executionArn)'
+        stored = self._write_application(
+            compact,
+            application_id,
+            update_expression=(
+                'SET executionArn = :arn, scheduleName = :schedule, workflowExpiresAt = :expires, '
+                'dateOfUpdate = :now '
+                'REMOVE taskToken, taskTokenHash, pendingAction, completed, deactivationReason, '
+                'lastExecutionError, lastEnteredKey '
+                'ADD generation :one, version :one'
+            ),
+            condition=condition,
+            values=values,
+            conflict_message='Application generation changed during reopen',
+            accept=lambda item: item.get('executionArn') == new_execution_arn,
+        )
+        return int(stored.get('generation') or 1)
+
+    def release_reopen_lock_on_failure(self, compact: str, application_id: str, request_id: str) -> bool:
+        """Drop the lock when this request still holds it and the new generation was not committed."""
+        current = self.get_application(compact, application_id)
+        if current is None:
+            return False
+        lock = current.get('reopenLock') or {}
+        if lock.get('requestId') != request_id:
+            return False
+        old_arn = lock.get('oldExecutionArn')
+        if old_arn and current.get('executionArn') != old_arn:
+            return False
+        values = {':requestId': request_id}
+        if old_arn:
+            condition = 'reopenLock.requestId = :requestId AND executionArn = :oldArn'
+            values[':oldArn'] = old_arn
+        else:
+            condition = 'reopenLock.requestId = :requestId AND attribute_not_exists(executionArn)'
+        try:
+            self.config.dynamodb_client.update_item(
+                TableName=self.config.application_table_name,
+                Key=_serialize_item({'pk': self.pk(compact, application_id), 'sk': APPLICATION_SK}),
+                UpdateExpression='REMOVE reopenLock SET dateOfUpdate = :now ADD version :one',
+                ConditionExpression=condition,
+                ExpressionAttributeValues=_attribute_values({**values, ':now': self._timestamp(), ':one': 1}),
+            )
+        except ClientError as error:
+            if _is_conflict(error):
+                return False
+            raise
+        return True
 
     def mark_deactivated_by_reconciler(
         self,
@@ -1104,25 +1299,17 @@ class ApplicationClient:
             set_parts.append(f'{field_name} = {placeholder}')
             values[placeholder] = field_value
 
-        try:
-            self.config.dynamodb_client.update_item(
-                TableName=self.config.application_table_name,
-                Key=_serialize_item({'pk': self.pk(compact, application_id), 'sk': APPLICATION_SK}),
-                UpdateExpression=f'SET {", ".join(set_parts)} ADD version :one',
-                ConditionExpression=(
-                    'version = :version AND stateName = :stateName '
-                    'AND attribute_not_exists(pendingAction) AND attribute_not_exists(reopenLock)'
-                ),
-                ExpressionAttributeValues=_attribute_values(values),
-            )
-        except ClientError as error:
-            if _is_conflict(error):
-                raise CCConflictException('Transition was rejected') from error
-            raise
-        stored = self.get_application(compact, application_id)
-        if stored is None:
-            raise CCNotFoundException('Application not found')
-        return stored
+        return self._write_application(
+            compact,
+            application_id,
+            update_expression=f'SET {", ".join(set_parts)} ADD version :one',
+            condition=(
+                'version = :version AND stateName = :stateName '
+                'AND attribute_not_exists(pendingAction) AND attribute_not_exists(reopenLock)'
+            ),
+            values=values,
+            conflict_message='Transition was rejected',
+        )
 
     def clear_pending_action(self, compact: str, application_id: str, request_id: str) -> bool:
         """Remove ``pendingAction`` only when its request id still matches."""
@@ -1144,27 +1331,17 @@ class ApplicationClient:
 
     def record_delivery_attempt(self, compact: str, application_id: str, request_id: str) -> dict:
         """Increment ``pendingAction.attempts`` for the matching request."""
-        try:
-            self.config.dynamodb_client.update_item(
-                TableName=self.config.application_table_name,
-                Key=_serialize_item({'pk': self.pk(compact, application_id), 'sk': APPLICATION_SK}),
-                UpdateExpression=(
-                    'SET pendingAction.attempts = if_not_exists(pendingAction.attempts, :zero) + :one, '
-                    'dateOfUpdate = :now ADD version :one'
-                ),
-                ConditionExpression='pendingAction.requestId = :requestId',
-                ExpressionAttributeValues=_attribute_values(
-                    {':requestId': request_id, ':zero': 0, ':one': 1, ':now': self._timestamp()}
-                ),
-            )
-        except ClientError as error:
-            if _is_conflict(error):
-                raise CCConflictException('Pending action does not match this request') from error
-            raise
-        stored = self.get_application(compact, application_id)
-        if stored is None:
-            raise CCNotFoundException('Application not found')
-        return stored
+        return self._write_application(
+            compact,
+            application_id,
+            update_expression=(
+                'SET pendingAction.attempts = if_not_exists(pendingAction.attempts, :zero) + :one, '
+                'dateOfUpdate = :now ADD version :one'
+            ),
+            condition='pendingAction.requestId = :requestId',
+            values={':requestId': request_id, ':zero': 0, ':one': 1, ':now': self._timestamp()},
+            conflict_message='Pending action does not match this request',
+        )
 
     def put_request_record(
         self,
