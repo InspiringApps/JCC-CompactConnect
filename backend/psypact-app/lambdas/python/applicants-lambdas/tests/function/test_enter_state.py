@@ -156,6 +156,7 @@ class TestEnterState(TstLambdas):
         schedule_client.return_value.delete_schedule.assert_called_once_with(
             SCHEDULE_NAME,
             application_id=APPLICATION_ID,
+            group_name=os.environ['APPLICATION_SCHEDULE_GROUP_NAME'],
         )
         self.assertNotIn(CALLBACK_VALUE, json.dumps(result))
 

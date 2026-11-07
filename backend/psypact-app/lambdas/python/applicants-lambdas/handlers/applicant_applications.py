@@ -1,7 +1,6 @@
 """Practitioner application routes."""
 
 import json
-from datetime import timedelta
 from uuid import uuid4
 
 from cc_common.applicants.application_state import Caller, SectionName, WorkflowAction
@@ -11,6 +10,7 @@ from cc_common.applicants.schema.api import (
     assemble_application_response,
     section_patch_schema,
 )
+from cc_common.applicants.workflow_lifetime import workflow_lifetime
 from cc_common.psypact_api_handler import api_handler_psypact
 from cc_common.utils import get_provider_user_attributes_from_authorizer_claims
 from common_lambdas import config as config_module
@@ -22,7 +22,6 @@ _APPLICATION = _APPLICATIONS + '/{applicationId}'
 _SECTION = _APPLICATION + '/sections/{section}'
 _SUBMIT = _APPLICATION + '/submit'
 _RESUBMIT = _APPLICATION + '/resubmit'
-_WORKFLOW_LIFETIME = timedelta(days=365)
 
 
 def _config():
@@ -112,7 +111,7 @@ def _create(event, compact: str, provider_id: str) -> dict:
         types=list(loaded['types']),
         is_renewal=bool(loaded['isRenewal']),
         created=created.isoformat(),
-        workflow_expires_at=(created + _WORKFLOW_LIFETIME).isoformat(),
+        workflow_expires_at=(created + workflow_lifetime()).isoformat(),
     )
     return _outcome(compact, application_id, result)
 

@@ -212,6 +212,785 @@
         ]
       }
     },
+    "/v1/compacts/{compact}/applications": {
+      "get": {
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "compact",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "mine",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lastKey",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "200 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffApplicationListResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "TestBackendPipelineStackTestAPIStackLicenseApiStaffUsersPoolAuthorizer084A18F1": [
+              "psypact/admin"
+            ]
+          }
+        ]
+      },
+      "post": {
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "compact",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "200 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationResponse"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "202 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationAcceptedResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "TestBackendPipelineStackTestAPIStackLicenseApiProviderUsersPoolAuthorizer246E3F74": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostApplicationRequest"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/v1/compacts/{compact}/applications/{applicationId}": {
+      "get": {
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "compact",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "200 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "TestBackendPipelineStackTestAPIStackLicenseApiProviderUsersPoolAuthorizer246E3F74": []
+          }
+        ]
+      }
+    },
+    "/v1/compacts/{compact}/applications/{applicationId}/admin/status": {
+      "post": {
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "compact",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "200 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffApplicationResponse"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "202 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationAcceptedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "409 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationMessageResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "TestBackendPipelineStackTestAPIStackLicenseApiStaffUsersPoolAuthorizer084A18F1": [
+              "psypact/admin"
+            ]
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostApplicationStatusRequest"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/v1/compacts/{compact}/applications/{applicationId}/reopen": {
+      "post": {
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "compact",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "200 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffApplicationResponse"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "202 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationAcceptedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "409 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationMessageResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "TestBackendPipelineStackTestAPIStackLicenseApiStaffUsersPoolAuthorizer084A18F1": [
+              "psypact/admin"
+            ]
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostApplicationReopenRequest"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/v1/compacts/{compact}/applications/{applicationId}/resubmit": {
+      "post": {
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "compact",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "200 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationResponse"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "202 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationAcceptedResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "TestBackendPipelineStackTestAPIStackLicenseApiProviderUsersPoolAuthorizer246E3F74": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostApplicationSubmissionRequest"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/v1/compacts/{compact}/applications/{applicationId}/reviewers": {
+      "put": {
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "compact",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "200 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffApplicationResponse"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "202 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationAcceptedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "409 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationMessageResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "TestBackendPipelineStackTestAPIStackLicenseApiStaffUsersPoolAuthorizer084A18F1": [
+              "psypact/admin"
+            ]
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PutApplicationReviewersRequest"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/v1/compacts/{compact}/applications/{applicationId}/sections/{section}": {
+      "patch": {
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "compact",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "section",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "200 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationSectionResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "409 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationMessageResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "TestBackendPipelineStackTestAPIStackLicenseApiProviderUsersPoolAuthorizer246E3F74": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchApplicationSectionRequest"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/v1/compacts/{compact}/applications/{applicationId}/sections/{section}/review": {
+      "put": {
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "compact",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "section",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "200 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationSectionResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "409 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationMessageResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "TestBackendPipelineStackTestAPIStackLicenseApiStaffUsersPoolAuthorizer084A18F1": [
+              "psypact/admin"
+            ]
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PutApplicationSectionReviewRequest"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/v1/compacts/{compact}/applications/{applicationId}/submit": {
+      "post": {
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "compact",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "200 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationResponse"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "202 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationAcceptedResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "TestBackendPipelineStackTestAPIStackLicenseApiProviderUsersPoolAuthorizer246E3F74": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostApplicationSubmissionRequest"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
+    "/v1/compacts/{compact}/applications/{applicationId}/transition": {
+      "post": {
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "compact",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "applicationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "200 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffApplicationResponse"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "202 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationAcceptedResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "409 response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationMessageResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "TestBackendPipelineStackTestAPIStackLicenseApiStaffUsersPoolAuthorizer084A18F1": [
+              "psypact/admin"
+            ]
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PostApplicationTransitionRequest"
+              }
+            }
+          },
+          "required": true
+        }
+      }
+    },
     "/v1/compacts/{compact}/attestations/{attestationId}": {
       "get": {
         "parameters": [
@@ -4677,6 +5456,368 @@
   },
   "components": {
     "schemas": {
+      "PostApplicationRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "types",
+          "isRenewal"
+        ],
+        "properties": {
+          "types": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "apit",
+                "tap"
+              ]
+            }
+          },
+          "isRenewal": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PostApplicationSubmissionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "requestId": {
+            "type": "string"
+          }
+        }
+      },
+      "PatchApplicationSectionRequest": {
+        "type": "object"
+      },
+      "PutApplicationReviewersRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "firstReviewerSub": {
+            "type": "string"
+          },
+          "secondReviewerSub": {
+            "type": "string"
+          },
+          "finalReviewerSub": {
+            "type": "string"
+          }
+        }
+      },
+      "PutApplicationSectionReviewRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sectionStatus"
+        ],
+        "properties": {
+          "sectionStatus": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "approved",
+              "rejected"
+            ]
+          },
+          "notesForApplicant": {
+            "type": "string"
+          },
+          "notesForReviewers": {
+            "type": "string"
+          }
+        }
+      },
+      "PostApplicationTransitionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "action",
+          "requestId"
+        ],
+        "properties": {
+          "action": {
+            "type": "string"
+          },
+          "notesForApplicant": {
+            "type": "string"
+          },
+          "notesForReviewers": {
+            "type": "string"
+          },
+          "requestId": {
+            "type": "string"
+          }
+        }
+      },
+      "PostApplicationStatusRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "targetState",
+          "requestId"
+        ],
+        "properties": {
+          "targetState": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "requestId": {
+            "type": "string"
+          }
+        }
+      },
+      "PostApplicationReopenRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "requestId": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      },
+      "ApplicationMessageResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "ApplicationAcceptedResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "expectedStatus"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "expectedStatus": {
+            "type": "string",
+            "enum": [
+              "started",
+              "staff-review",
+              "first-review",
+              "second-review",
+              "final-review",
+              "committee-review",
+              "awaiting-applicant",
+              "approved",
+              "rejected",
+              "deactivated"
+            ]
+          },
+          "pending": {
+            "type": "boolean"
+          },
+          "requestId": {
+            "type": "string"
+          }
+        }
+      },
+      "ApplicationSectionResponse": {
+        "type": "object",
+        "properties": {
+          "calculatedSectionStatusForApplicant": {
+            "type": "string"
+          },
+          "calculatedSectionStatusForReviewComparison": {
+            "type": "string"
+          }
+        }
+      },
+      "ApplicationResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "created": {
+            "type": "string"
+          },
+          "submitted": {
+            "type": "string"
+          },
+          "completed": {
+            "type": "string"
+          },
+          "types": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "apit",
+                "tap"
+              ]
+            }
+          },
+          "isRenewal": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "started",
+              "staff-review",
+              "first-review",
+              "second-review",
+              "final-review",
+              "committee-review",
+              "awaiting-applicant",
+              "approved",
+              "rejected",
+              "deactivated"
+            ]
+          },
+          "reviews": {
+            "type": "array"
+          },
+          "personalInformation": {
+            "$ref": "#/components/schemas/ApplicationSectionResponse"
+          },
+          "licenseHistory": {
+            "$ref": "#/components/schemas/ApplicationSectionResponse"
+          },
+          "education": {
+            "$ref": "#/components/schemas/ApplicationSectionResponse"
+          },
+          "conductHistory": {
+            "$ref": "#/components/schemas/ApplicationSectionResponse"
+          },
+          "homeState": {
+            "$ref": "#/components/schemas/ApplicationSectionResponse"
+          },
+          "acknowledgements": {
+            "$ref": "#/components/schemas/ApplicationSectionResponse"
+          }
+        }
+      },
+      "StaffApplicationResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "started",
+              "staff-review",
+              "first-review",
+              "second-review",
+              "final-review",
+              "committee-review",
+              "awaiting-applicant",
+              "approved",
+              "rejected",
+              "deactivated"
+            ]
+          },
+          "stateName": {
+            "type": "string"
+          },
+          "providerId": {
+            "type": "string"
+          },
+          "firstReviewerSub": {
+            "type": "string"
+          },
+          "secondReviewerSub": {
+            "type": "string"
+          },
+          "finalReviewerSub": {
+            "type": "string"
+          },
+          "reviews": {
+            "type": "array"
+          }
+        }
+      },
+      "StaffApplicationListResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "pagination"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "started",
+                    "staff-review",
+                    "first-review",
+                    "second-review",
+                    "final-review",
+                    "committee-review",
+                    "awaiting-applicant",
+                    "approved",
+                    "rejected",
+                    "deactivated"
+                  ]
+                },
+                "stateName": {
+                  "type": "string"
+                },
+                "providerId": {
+                  "type": "string"
+                },
+                "types": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "submitted": {
+                  "type": "string"
+                },
+                "actorSub": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "pagination": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "pageSize": {
+                "type": "number"
+              },
+              "prevLastKey": {
+                "type": "string"
+              },
+              "lastKey": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
       "TestALicenFQqmK0F4LBsK": {
         "type": "object",
         "properties": {}

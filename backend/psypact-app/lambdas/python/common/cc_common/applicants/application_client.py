@@ -8,7 +8,6 @@ import json
 from base64 import b64decode, b64encode
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from datetime import timedelta
 from hashlib import sha256
 from uuid import uuid4
 
@@ -30,6 +29,7 @@ from cc_common.applicants.application_state import (
     reviewer_edit_states,
     validate_reviewer_assignment,
 )
+from cc_common.applicants.workflow_lifetime import workflow_lifetime
 
 APPLICATION_SK = 'APPLICATION'
 APPLICATION_RECORD_TYPE = 'application'
@@ -646,7 +646,7 @@ class ApplicationClient:
         lock = {
             'requestId': request_id,
             'oldGeneration': int(current.get('generation') or 1),
-            'workflowExpiresAt': (self.config.current_standard_datetime + timedelta(days=365)).isoformat(),
+            'workflowExpiresAt': (self.config.current_standard_datetime + workflow_lifetime()).isoformat(),
         }
         if current.get('executionArn'):
             lock['oldExecutionArn'] = current['executionArn']

@@ -164,6 +164,20 @@ class ApplicationsLambdas:
         api_lambda_stack.log_groups.append(self.staff_applications_handler.log_group)
 
 
+def _sandbox_lifetime(stack: Stack) -> dict:
+    """Pass a short expiry only when a sandbox context asks for one.
+
+    Test, beta, and prod stacks do not set the sandbox context, so they never
+    receive this variable. The runtime also ignores it for those environment names.
+    """
+    if not stack.node.try_get_context('sandbox'):
+        return {}
+    lifetime = stack.node.try_get_context('application_workflow_lifetime_seconds')
+    if not lifetime:
+        return {}
+    return {'APPLICATION_WORKFLOW_LIFETIME_SECONDS': str(lifetime)}
+
+
 def _application_environment(stack: Stack, application_table, workflow: ApplicationWorkflowStack) -> dict:
     return {
         'APPLICATION_TABLE_NAME': application_table.table_name,
@@ -175,6 +189,7 @@ def _application_environment(stack: Stack, application_table, workflow: Applicat
         'APPLICATION_EXPIRY_FUNCTION_ARN': workflow.expiry_function.function_arn,
         'APPLICATION_SCHEDULER_ROLE_ARN': workflow.scheduler_role_arn,
         **stack.common_env_vars,
+        **_sandbox_lifetime(stack),
     }
 
 

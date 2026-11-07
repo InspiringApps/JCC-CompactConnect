@@ -13,6 +13,7 @@ This is an [AWS-CDK](https://aws.amazon.com/cdk/) based project for the backend 
 - **[Installing Dependencies](#installing-dependencies)**
 - **[Local Development](#local-development)**
 - **[Tests](#tests)**
+- **[Applications](#applications)**
 - **[Deployment](#deployment)**
 - **[Google reCAPTCHA Setup](#google-recaptcha-setup)**
 - **[Decommissioning](#decommissioning)**
@@ -164,6 +165,25 @@ the documentation current:
    `servers[0].url` entry back to the correct base URL for the CSG Test environment.
 4) Use `bin/update_postman_collection.py --internal` or `bin/update_postman_collection.py --search` to update the
    matching Postman collection, based on your new api spec, as appropriate.
+
+## Applications
+[Back to top](#compact-connect---backend-developer-documentation)
+
+Practitioner applications run as one Standard Step Functions execution per generation. The state machine is deployed
+by `stacks/application_workflow_stack`. `EnterState` writes `status` and the task token together. Staff list
+applications by status or by the current actor. The route list and the state diagram are in
+[the application workflow design](./docs/design/application-workflow.md).
+
+The execution lifetime is one year. A one-time EventBridge schedule fires shortly before that limit and asks the
+running execution to deactivate. A sandbox may shorten that lifetime by setting `application_workflow_lifetime_seconds`
+in `cdk.context.json` while `sandbox` is true. Test, beta, and production do not receive that variable, and the
+runtime ignores it when `ENVIRONMENT_NAME` is `test`, `beta`, or `prod`.
+
+Alarms on the workflow publish to the environment alarm topic. That topic notifies the compact notification list and
+the operations support address configured for the environment. The alarms cover failed, timed-out, and aborted
+executions, plus the expiry, callback-delivery, reconciler, and forced-reopen-stop metrics
+(`ApplicationExpiryDeactivationFailed`, `ApplicationCallbackDeliveryExhausted`, `ApplicationExecutionBroken`, and
+`ApplicationReopenForcedStop`).
 
 ## Deployment
 [Back to top](#compact-connect---backend-developer-documentation)

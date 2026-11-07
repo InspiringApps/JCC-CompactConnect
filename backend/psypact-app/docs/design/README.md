@@ -13,6 +13,7 @@ Look here for continued documentation of the back-end design, as it progresses.
 - **[Advanced Data Search](#advanced-data-search)**
 - **[CI/CD Pipelines](#cicd-pipelines)**
 - **[Audit Logging](#audit-logging)**
+- **[Practitioner applications](./application-workflow.md)**
 
 ## Compacts and Jurisdictions
 

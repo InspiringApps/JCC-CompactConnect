@@ -87,6 +87,8 @@ Install the required Python packages. The smoke tests use the same dependencies 
    - `CC_TEST_RATE_LIMITING_DYNAMO_TABLE_NAME`: DynamoDB table name for rate limiting
    - `CC_TEST_SSN_DYNAMO_TABLE_NAME`: DynamoDB table name for SSN data
    - `CC_TEST_GET_PROVIDER_SSN_LAMBDA_NAME`: Lambda function name for SSN retrieval
+   - `CC_TEST_APPLICATION_TABLE_NAME`: DynamoDB table name for practitioner applications. Required by the expiry scenario.
+   - `CC_TEST_APPLICATION_EXPIRY_WAIT_SECONDS`: When set, `application_workflow_smoke_tests.py` runs only the expiry and reopen scenario. Leave it empty to run the caller-driven scenarios instead. The sandbox for the expiry run needs `"sandbox": true` and `application_workflow_lifetime_seconds` shorter than this wait. Do not set that lifetime while running the caller-driven scenarios.
 
 3. **Important:** Never commit `smoke_tests_env.json` to version control. It contains sensitive credentials and should be in `.gitignore`.
 
@@ -106,6 +108,7 @@ python3 tests/smoke/investigation_smoke_tests.py
 python3 tests/smoke/public_search_smoke_tests.py
 python3 tests/smoke/home_jurisdiction_change_smoke_tests.py
 python3 tests/smoke/query_provider_smoke_tests.py
+python3 tests/smoke/application_workflow_smoke_tests.py
 ```
 
 ## Special Test Requirements
