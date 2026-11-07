@@ -1,10 +1,15 @@
 # ruff: noqa: N801, N815  invalid-name
-"""Request and response schemas for the application API."""
+"""HTTP request and response schemas.
+
+Stored fields live in the Dynamo schemas. This module describes what a caller
+sends and what the UI receives. A response may add a calculated field or replace
+a stored ``s3Key`` with a presigned ``downloadUri``.
+"""
 
 from common_lambdas.data_model.schema.base_record import ForgivingSchema
 from common_lambdas.data_model.schema.common import CCRequestSchema
 from marshmallow import RAISE
-from marshmallow.fields import Boolean, List, Nested, String
+from marshmallow.fields import Boolean, Integer, List, Nested, String
 from marshmallow.validate import Length, OneOf
 
 from cc_common.applicants.application_state import (
@@ -26,13 +31,13 @@ from cc_common.applicants.schema.reviews import (
 )
 from cc_common.applicants.schema.sections import (
     AcknowledgementsSchema,
+    ApplicationValueSchema,
     ConductHistorySchema,
     EducationSchema,
     HomeStateApplicationTypeSchema,
     HomeStateSchema,
     LicenseHistorySchema,
     PersonalInformationSchema,
-    ResponseDocumentSchema,
     _str,
     section_data_schema,
 )
@@ -91,6 +96,14 @@ class AssignReviewersRequestSchema(StrictRequestSchema):
 class ReopenApplicationRequestSchema(StrictRequestSchema):
     requestId = _str()
     reason = _note()
+
+
+class ResponseDocumentSchema(ApplicationValueSchema):
+    """File metadata returned to the UI. ``downloadUri`` is generated at read time."""
+
+    filename = _str()
+    sizeBytes = Integer(required=False, allow_none=True)
+    downloadUri = _str()
 
 
 class EducationResponseSchema(EducationSchema):
@@ -161,7 +174,7 @@ class ApplicationResponseSchema(ForgivingSchema):
 
 
 def section_patch_schema(section_name: str):
-    """Schema for a section PATCH body. The body is that section's fields."""
+    """Validate a section PATCH body as the stored section document."""
     return section_data_schema(section_name)
 
 

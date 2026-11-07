@@ -51,12 +51,14 @@ class PendingActionSchema(ApplicationValueSchema):
     expectedVersion = _int()
     attempts = _int()
     createdAt = _str()
+    expectedLastEnteredKey = _str()
 
 
 class ReopenLockSchema(ApplicationValueSchema):
     requestId = _str()
     oldGeneration = _int()
     oldExecutionArn = _str()
+    workflowExpiresAt = _str()
 
 
 class ApplicationTableRecordSchema(BaseRecordSchema):
@@ -236,6 +238,7 @@ class ApplicationRequestRecordSchema(ApplicationTableRecordSchema):
 
     requestId = _str()
     action = _enum(WorkflowAction)
+    actorSub = _str()
     result = Raw(required=False, allow_none=True)
     createdAt = _str()
     ttl = _int()

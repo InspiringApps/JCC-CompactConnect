@@ -1,10 +1,9 @@
 # ruff: noqa: N801, N815  invalid-name
-"""Section field schemas.
+"""Stored section documents as they are written on a SECTION item.
 
-Stored documents keep ``s3Key``. ``downloadUri`` is a presigned URL added on the
-response and is not part of the stored section payload. The TypeScript names
-``mainingZip`` and ``militarydocuments`` are ``mailingZip`` and ``militaryDocuments``.
-``licenses`` is a list.
+These schemas describe the DynamoDB ``data`` map. A presigned download URL is not
+stored. The TypeScript names ``mainingZip`` and ``militarydocuments`` are
+``mailingZip`` and ``militaryDocuments``. ``licenses`` is a list.
 """
 
 from common_lambdas.data_model.schema.base_record import ForgivingSchema
@@ -43,14 +42,6 @@ class StoredDocumentSchema(ApplicationValueSchema):
     filename = _str()
     sizeBytes = Integer(required=False, allow_none=True)
     s3Key = _str()
-
-
-class ResponseDocumentSchema(ApplicationValueSchema):
-    """File metadata returned to the UI. ``downloadUri`` is generated at read time."""
-
-    filename = _str()
-    sizeBytes = Integer(required=False, allow_none=True)
-    downloadUri = _str()
 
 
 class PersonalInformationSchema(ApplicationValueSchema):

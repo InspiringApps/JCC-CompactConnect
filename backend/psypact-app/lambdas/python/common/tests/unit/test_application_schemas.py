@@ -8,6 +8,7 @@ os.environ.setdefault('JURISDICTIONS', '["oh"]')
 from cc_common.applicants.schema.api import (  # noqa: E402
     ApplicationResponseSchema,
     AssignReviewersRequestSchema,
+    ResponseDocumentSchema,
     SetApplicationStatusRequestSchema,
     TransitionRequestSchema,
     assemble_application_response,
@@ -32,7 +33,6 @@ from cc_common.applicants.schema.sections import (  # noqa: E402
     HomeStateApplicationTypeSchema,
     LicenseHistorySchema,
     PersonalInformationSchema,
-    ResponseDocumentSchema,
     StoredDocumentSchema,
 )
 from common_lambdas.data_model.schema.base_record import BaseRecordSchema  # noqa: E402
@@ -64,9 +64,15 @@ FULL_APPLICATION = {
         'expectedVersion': 2,
         'attempts': 1,
         'createdAt': '2026-01-01T00:00:00+00:00',
+        'expectedLastEnteredKey': 'arn#time#Started',
     },
     'lastEnteredKey': 'arn#time#StaffReview',
-    'reopenLock': {'requestId': 'reopen-1', 'oldGeneration': 1, 'oldExecutionArn': 'arn:old'},
+    'reopenLock': {
+        'requestId': 'reopen-1',
+        'oldGeneration': 1,
+        'oldExecutionArn': 'arn:old',
+        'workflowExpiresAt': '2027-11-06T00:00:00+00:00',
+    },
     'lastExecutionError': None,
     'deactivationReason': None,
     'created': '2026-01-01T00:00:00+00:00',
@@ -222,6 +228,7 @@ class TestRecordSchemas(TestCase):
         self.assertEqual('token', loaded['taskToken'])
         self.assertEqual(FULL_APPLICATION['reviews'], loaded['reviews'])
         self.assertEqual(FULL_APPLICATION['pendingAction'], loaded['pendingAction'])
+        self.assertEqual(FULL_APPLICATION['reopenLock'], loaded['reopenLock'])
 
         record = ApplicationData.create_new({'compact': COMPACT, 'applicationId': APPLICATION_ID, 'status': 'started'})
         self.assertEqual(APPLICATION_ID, record.applicationId)
@@ -335,6 +342,7 @@ class TestRecordSchemas(TestCase):
             'applicationId': APPLICATION_ID,
             'requestId': 'req-1',
             'action': 'ADMIN_OVERRIDE',
+            'actorSub': 'admin-sub',
             'result': {'status': 'deactivated'},
             'createdAt': '2026-01-02T00:00:00+00:00',
             'ttl': 1700000000,
@@ -342,6 +350,7 @@ class TestRecordSchemas(TestCase):
         dumped, loaded, _again = _round_trip(request_schema, request)
         self.assertEqual('REQUEST#req-1', dumped['sk'])
         self.assertEqual({'status': 'deactivated'}, loaded['result'])
+        self.assertEqual('admin-sub', loaded['actorSub'])
         self.assertEqual(1700000000, loaded['ttl'])
 
     def test_corrected_field_names(self):

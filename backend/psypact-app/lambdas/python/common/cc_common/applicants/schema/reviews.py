@@ -1,5 +1,5 @@
 # ruff: noqa: N801, N815  invalid-name
-"""Application-level and section-level review objects stored on their parent items."""
+"""Review objects stored on the APPLICATION item and on each SECTION item."""
 
 from marshmallow.fields import Nested, String
 from marshmallow.validate import Length, OneOf
