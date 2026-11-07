@@ -596,6 +596,8 @@ Resources:
               - dynamodb:*
               # Amazon EventBridge
               - events:*
+              # Amazon EventBridge Scheduler
+              - scheduler:*
               # AWS IAM (limited)
               - iam:*
               # AWS Key Management Service
