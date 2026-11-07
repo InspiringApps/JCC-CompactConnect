@@ -4,12 +4,15 @@ Transactions use the low-level DynamoDB client and ``TypeSerializer`` / ``TypeDe
 The resource ``Table`` API cannot express ``TransactGetItems`` or ``TransactWriteItems``.
 """
 
+import json
+from base64 import b64decode, b64encode
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import timedelta
 from hashlib import sha256
 from uuid import uuid4
 
+from boto3.dynamodb.conditions import Key
 from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
 from botocore.exceptions import ClientError
 from common_lambdas.exceptions import CCConflictException, CCInvalidRequestException, CCNotFoundException
@@ -74,6 +77,8 @@ _ASSIGNABLE_STATUSES = (
 
 _serializer = TypeSerializer()
 _deserializer = TypeDeserializer()
+_DEFAULT_PAGE_SIZE = 100
+_MAX_PAGE_SIZE = 100
 
 
 def task_token_hash(task_token: str) -> str:
@@ -99,6 +104,22 @@ def _state(state_name: StateName | str) -> StateName:
 
 def _string_value(value) -> str:
     return value.value if hasattr(value, 'value') else str(value)
+
+
+def _query_page_size(raw_page_size) -> int:
+    """Return a DynamoDB Limit. Absent or empty input keeps the default of 100."""
+    if raw_page_size is None or raw_page_size == '':
+        return _DEFAULT_PAGE_SIZE
+    # bool is an int subclass, and a float would be truncated by int().
+    if isinstance(raw_page_size, bool) or not isinstance(raw_page_size, (int, str)):
+        raise CCInvalidRequestException('pageSize must be an integer')
+    try:
+        page_size = int(raw_page_size)
+    except ValueError as error:
+        raise CCInvalidRequestException('pageSize must be an integer') from error
+    if page_size < 1 or page_size > _MAX_PAGE_SIZE:
+        raise CCInvalidRequestException(f'pageSize must be between 1 and {_MAX_PAGE_SIZE}')
+    return page_size
 
 
 def actor_sub_for_state(application_item: Mapping, state_name: StateName | str) -> str | None:
@@ -352,6 +373,59 @@ class ApplicationClient:
             if not last_key:
                 return items
             query['ExclusiveStartKey'] = last_key
+
+    def query_by_status(self, compact: str, status: str, pagination: dict | None = None) -> dict:
+        """Query statusGSI.
+
+        The index is eventually consistent. Do not use its result to authorize an action.
+        """
+        return self._query_index(
+            self.config.application_status_gsi_name,
+            'statusGSIPK',
+            f'{compact}#STATUS#{status}',
+            pagination,
+        )
+
+    def query_by_actor(self, compact: str, actor_sub: str, pagination: dict | None = None) -> dict:
+        """Query actorGSI.
+
+        The index is eventually consistent. Do not use its result to authorize an action.
+        """
+        return self._query_index(
+            self.config.application_actor_gsi_name,
+            'actorGSIPK',
+            f'{compact}#ACTOR#{actor_sub}',
+            pagination,
+        )
+
+    def _query_index(self, index_name: str, key_name: str, key_value: str, pagination: dict | None) -> dict:
+        pagination = pagination or {}
+        page_size = _query_page_size(pagination.get('pageSize'))
+        query = {
+            'IndexName': index_name,
+            'KeyConditionExpression': Key(key_name).eq(key_value),
+            'Limit': page_size,
+        }
+        last_key = pagination.get('lastKey')
+        if last_key:
+            try:
+                decoded = json.loads(b64decode(last_key).decode('utf-8'))
+            except (ValueError, TypeError) as error:
+                raise CCInvalidRequestException('Invalid lastKey') from error
+            if not isinstance(decoded, dict):
+                raise CCInvalidRequestException('Invalid lastKey')
+            query['ExclusiveStartKey'] = decoded
+        response = self.config.application_table.query(**query)
+        evaluated = response.get('LastEvaluatedKey')
+        encoded = None if evaluated is None else b64encode(json.dumps(evaluated).encode('utf-8')).decode('utf-8')
+        return {
+            'items': response.get('Items', []),
+            'pagination': {
+                'pageSize': page_size,
+                'prevLastKey': pagination.get('lastKey'),
+                'lastKey': encoded,
+            },
+        }
 
     def create_application(
         self,

@@ -5,6 +5,31 @@ import boto3
 from common_lambdas.config import _Config
 
 
+class _StaffUserClient:
+    """Staff user reads. Assignment checks use a consistent read."""
+
+    def __init__(self, config):
+        from common_lambdas.data_model.user_client import UserClient
+
+        self._client = UserClient(config)
+
+    def __getattr__(self, name):
+        return getattr(self._client, name)
+
+    def get_user_in_compact(self, *, compact: str, user_id: str, consistent_read: bool = False):
+        if not consistent_read:
+            return self._client.get_user_in_compact(compact=compact, user_id=user_id)
+        from common_lambdas.exceptions import CCNotFoundException
+
+        user = self._client.config.users_table.get_item(
+            Key={'pk': f'USER#{user_id}', 'sk': f'COMPACT#{compact}'},
+            ConsistentRead=True,
+        ).get('Item')
+        if user is None:
+            raise CCNotFoundException('User not found')
+        return self._client.schema.load(user)
+
+
 class PsypactConfig(_Config):
     """PSYPACT runtime config: Cosmetology licensing DataClient plus JCC account/Authorize.Net wiring."""
 
@@ -113,3 +138,13 @@ class PsypactConfig(_Config):
         from cc_common.applicants.application_client import ApplicationClient
 
         return ApplicationClient(self)
+
+    @cached_property
+    def user_client(self):
+        return _StaffUserClient(self)
+
+    @cached_property
+    def application_reopen_service(self):
+        from cc_common.applicants.application_reopen_service import ApplicationReopenService
+
+        return ApplicationReopenService(self)

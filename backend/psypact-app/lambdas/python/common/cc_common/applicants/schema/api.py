@@ -186,6 +186,22 @@ class ApplicationResponseSchema(ForgivingSchema):
     acknowledgements = Nested(AcknowledgementsResponseSchema, required=False, allow_none=True)
 
 
+class StaffApplicationResponseSchema(ApplicationResponseSchema):
+    """Staff read of one application, including the current state and assigned reviewers."""
+
+    stateName = _enum(StateName)
+    providerId = _str()
+    firstReviewerSub = _str()
+    secondReviewerSub = _str()
+    finalReviewerSub = _str()
+    firstReviewerFirstName = _str()
+    firstReviewerLastName = _str()
+    secondReviewerFirstName = _str()
+    secondReviewerLastName = _str()
+    finalReviewerFirstName = _str()
+    finalReviewerLastName = _str()
+
+
 def section_patch_schema(section_name: str):
     """Validate a section PATCH body as the stored section document."""
     return section_data_schema(section_name)
@@ -213,7 +229,22 @@ def _review_for(reviews: list, reviewer_type: str) -> dict | None:
     return None
 
 
-def assemble_application_response(application_item: dict, section_items: list[dict]) -> dict:
+_STAFF_RESPONSE_FIELDS = (
+    'stateName',
+    'providerId',
+    'firstReviewerSub',
+    'secondReviewerSub',
+    'finalReviewerSub',
+    'firstReviewerFirstName',
+    'firstReviewerLastName',
+    'secondReviewerFirstName',
+    'secondReviewerLastName',
+    'finalReviewerFirstName',
+    'finalReviewerLastName',
+)
+
+
+def assemble_application_response(application_item: dict, section_items: list[dict], *, response_schema=None) -> dict:
     """Build the UI application from stored items. This does not call AWS."""
     stored_sections = {}
     for item in section_items or []:
@@ -238,6 +269,9 @@ def assemble_application_response(application_item: dict, section_items: list[di
     ):
         if application_item.get(field_name) is not None:
             response[field_name] = application_item[field_name]
+    for field_name in _STAFF_RESPONSE_FIELDS:
+        if application_item.get(field_name) is not None:
+            response[field_name] = application_item[field_name]
 
     for section_name in SectionName:
         item = stored_sections.get(section_name.value, {})
@@ -257,4 +291,5 @@ def assemble_application_response(application_item: dict, section_items: list[di
         )
         response[section_name.value] = data
 
-    return ApplicationResponseSchema().dump(response)
+    schema = ApplicationResponseSchema if response_schema is None else response_schema
+    return schema().dump(response)

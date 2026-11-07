@@ -135,6 +135,7 @@ class V1Api:
             resource=self.applications_resource,
             api_model=self.api_model,
             api_lambda_stack=api_lambda_stack,
+            compact_admin_scopes=[f'{compact}/admin' for compact in _active_compacts],
         )
 
         # /v1/compacts/{compact}/attestations
