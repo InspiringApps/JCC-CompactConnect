@@ -2465,3 +2465,151 @@ class ApiModel:
                 ),
             )
         return self.api._v1_patch_license_investigation_request_model
+
+    @property
+    def post_application_request_model(self) -> Model:
+        """POST /applications create request."""
+        if not hasattr(self.api, '_v1_post_application_request_model'):
+            self.api._v1_post_application_request_model = self.api.add_model(
+                'V1PostApplicationRequestModel',
+                description='Create a practitioner application',
+                schema=JsonSchema(
+                    type=JsonSchemaType.OBJECT,
+                    additional_properties=False,
+                    required=['types', 'isRenewal'],
+                    properties={
+                        'types': JsonSchema(
+                            type=JsonSchemaType.ARRAY,
+                            min_items=1,
+                            items=JsonSchema(type=JsonSchemaType.STRING, enum=['apit', 'tap']),
+                        ),
+                        'isRenewal': JsonSchema(type=JsonSchemaType.BOOLEAN),
+                    },
+                ),
+            )
+        return self.api._v1_post_application_request_model
+
+    @property
+    def patch_application_section_request_model(self) -> Model:
+        """PATCH one application section. The handler validates the section fields."""
+        if not hasattr(self.api, '_v1_patch_application_section_request_model'):
+            self.api._v1_patch_application_section_request_model = self.api.add_model(
+                'V1PatchApplicationSectionRequestModel',
+                description='Merge fields into one application section',
+                schema=JsonSchema(type=JsonSchemaType.OBJECT),
+            )
+        return self.api._v1_patch_application_section_request_model
+
+    @property
+    def post_application_submission_request_model(self) -> Model:
+        """POST submit or resubmit. requestId is optional."""
+        if not hasattr(self.api, '_v1_post_application_submission_request_model'):
+            self.api._v1_post_application_submission_request_model = self.api.add_model(
+                'V1PostApplicationSubmissionRequestModel',
+                description='Submit or resubmit an application',
+                schema=JsonSchema(
+                    type=JsonSchemaType.OBJECT,
+                    additional_properties=False,
+                    properties={'requestId': JsonSchema(type=JsonSchemaType.STRING)},
+                ),
+            )
+        return self.api._v1_post_application_submission_request_model
+
+    @property
+    def application_response_model(self) -> Model:
+        """Practitioner application. Workflow internals are not part of this model."""
+        if not hasattr(self.api, '_v1_application_response_model'):
+            section = self._application_section_schema()
+            self.api._v1_application_response_model = self.api.add_model(
+                'V1ApplicationResponseModel',
+                description='Practitioner application',
+                schema=JsonSchema(
+                    type=JsonSchemaType.OBJECT,
+                    additional_properties=False,
+                    required=['id'],
+                    properties={
+                        'id': JsonSchema(type=JsonSchemaType.STRING),
+                        'created': JsonSchema(type=JsonSchemaType.STRING),
+                        'submitted': JsonSchema(type=JsonSchemaType.STRING),
+                        'completed': JsonSchema(type=JsonSchemaType.STRING),
+                        'types': JsonSchema(
+                            type=JsonSchemaType.ARRAY,
+                            items=JsonSchema(type=JsonSchemaType.STRING, enum=['apit', 'tap']),
+                        ),
+                        'isRenewal': JsonSchema(type=JsonSchemaType.BOOLEAN),
+                        'status': JsonSchema(
+                            type=JsonSchemaType.STRING,
+                            enum=[
+                                'started',
+                                'staff-review',
+                                'first-review',
+                                'second-review',
+                                'final-review',
+                                'committee-review',
+                                'awaiting-applicant',
+                                'approved',
+                                'rejected',
+                                'deactivated',
+                            ],
+                        ),
+                        'reviews': JsonSchema(type=JsonSchemaType.ARRAY),
+                        'attestations': JsonSchema(
+                            type=JsonSchemaType.ARRAY,
+                            items=JsonSchema(type=JsonSchemaType.STRING),
+                        ),
+                        'paymentCompensated': JsonSchema(
+                            type=JsonSchemaType.ARRAY,
+                            items=JsonSchema(type=JsonSchemaType.STRING, enum=['apit', 'tap']),
+                        ),
+                        'personalInformation': section,
+                        'licenseHistory': section,
+                        'education': section,
+                        'conductHistory': section,
+                        'homeState': section,
+                        'acknowledgements': section,
+                    },
+                ),
+            )
+        return self.api._v1_application_response_model
+
+    @property
+    def application_section_response_model(self) -> Model:
+        """One application section, including its calculated statuses."""
+        if not hasattr(self.api, '_v1_application_section_response_model'):
+            self.api._v1_application_section_response_model = self.api.add_model(
+                'V1ApplicationSectionResponseModel',
+                description='One application section',
+                schema=self._application_section_schema(),
+            )
+        return self.api._v1_application_section_response_model
+
+    @property
+    def application_accepted_response_model(self) -> Model:
+        """202 body for a create, submit, or resubmit that has not settled yet."""
+        if not hasattr(self.api, '_v1_application_accepted_response_model'):
+            self.api._v1_application_accepted_response_model = self.api.add_model(
+                'V1ApplicationAcceptedResponseModel',
+                description='Accepted application request that has not settled yet',
+                schema=JsonSchema(
+                    type=JsonSchemaType.OBJECT,
+                    additional_properties=False,
+                    required=['id', 'expectedStatus'],
+                    properties={
+                        'id': JsonSchema(type=JsonSchemaType.STRING),
+                        'expectedStatus': JsonSchema(type=JsonSchemaType.STRING),
+                        'pending': JsonSchema(type=JsonSchemaType.BOOLEAN),
+                        'requestId': JsonSchema(type=JsonSchemaType.STRING),
+                    },
+                ),
+            )
+        return self.api._v1_application_accepted_response_model
+
+    @staticmethod
+    def _application_section_schema() -> JsonSchema:
+        return JsonSchema(
+            type=JsonSchemaType.OBJECT,
+            properties={
+                'calculatedSectionStatusForApplicant': JsonSchema(type=JsonSchemaType.STRING),
+                'calculatedSectionStatusForReviewComparison': JsonSchema(type=JsonSchemaType.STRING),
+            },
+        )

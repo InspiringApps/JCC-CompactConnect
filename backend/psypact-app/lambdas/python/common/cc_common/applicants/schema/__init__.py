@@ -1,8 +1,10 @@
 """Marshmallow schemas for the PSYPACT practitioner application."""
 
 from cc_common.applicants.schema.api import (
+    ApplicantSubmissionRequestSchema,
     ApplicationResponseSchema,
     AssignReviewersRequestSchema,
+    CreateApplicationRequestSchema,
     ReopenApplicationRequestSchema,
     SectionReviewRequestSchema,
     SetApplicationStatusRequestSchema,
@@ -39,6 +41,7 @@ __all__ = [
     'APPLICATION_REQUEST_RECORD_TYPE',
     'APPLICATION_SECTION_RECORD_TYPE',
     'APPLICATION_TRANSITION_RECORD_TYPE',
+    'ApplicantSubmissionRequestSchema',
     'ApplicationData',
     'ApplicationRecordSchema',
     'ApplicationRequestData',
@@ -51,6 +54,7 @@ __all__ = [
     'ApplicationTransitionData',
     'ApplicationTransitionRecordSchema',
     'AssignReviewersRequestSchema',
+    'CreateApplicationRequestSchema',
     'ReopenApplicationRequestSchema',
     'SECTION_DATA_SCHEMAS',
     'SectionReviewRequestSchema',

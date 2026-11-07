@@ -115,6 +115,7 @@ class BackendStage(Stage):
             environment_name=environment_name,
             persistent_stack=self.persistent_stack,
             provider_users_stack=self.provider_users_stack,
+            application_workflow_stack=self.application_workflow_stack,
         )
 
         # Search Persistent Stack - OpenSearch Domain (created before ApiStack for public search wiring)

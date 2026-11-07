@@ -98,6 +98,19 @@ class ReopenApplicationRequestSchema(StrictRequestSchema):
     reason = _note()
 
 
+class CreateApplicationRequestSchema(StrictRequestSchema):
+    """Practitioner create body. ``types`` is one or both of ``apit`` and ``tap``."""
+
+    types = List(_enum(ApplicationType), required=True, allow_none=False, validate=Length(min=1))
+    isRenewal = Boolean(required=True, allow_none=False)
+
+
+class ApplicantSubmissionRequestSchema(StrictRequestSchema):
+    """Submit or resubmit. The handler generates ``requestId`` when the caller omits it."""
+
+    requestId = _str()
+
+
 class ResponseDocumentSchema(ApplicationValueSchema):
     """File metadata returned to the UI. ``downloadUri`` is generated at read time."""
 

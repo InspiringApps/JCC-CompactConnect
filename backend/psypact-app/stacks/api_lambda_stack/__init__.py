@@ -9,8 +9,10 @@ from common_constructs.stack import AppStack
 from constructs import Construct
 
 from stacks import persistent_stack as ps
+from stacks.application_workflow_stack import ApplicationWorkflowStack
 from stacks.provider_users import ProviderUsersStack
 
+from .applications import ApplicationsLambdas
 from .attestations import AttestationsLambdas
 from .compact_configuration_api import CompactConfigurationApiLambdas
 from .credentials import CredentialsLambdas
@@ -31,6 +33,7 @@ class ApiLambdaStack(AppStack):
         environment_context: dict,
         persistent_stack: ps.PersistentStack,
         provider_users_stack: ProviderUsersStack,
+        application_workflow_stack: ApplicationWorkflowStack,
         **kwargs,
     ) -> None:
         super().__init__(
@@ -118,6 +121,13 @@ class ApiLambdaStack(AppStack):
         self.staff_users_lambdas = StaffUsersLambdas(
             scope=self,
             persistent_stack=persistent_stack,
+            api_lambda_stack=self,
+        )
+
+        self.applications_lambdas = ApplicationsLambdas(
+            scope=self,
+            persistent_stack=persistent_stack,
+            application_workflow_stack=application_workflow_stack,
             api_lambda_stack=self,
         )
 
