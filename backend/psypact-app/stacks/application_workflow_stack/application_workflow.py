@@ -130,6 +130,11 @@ class ApplicationWorkflow(Construct):
 
     def _add_state_machine(self, stack: Stack, persistent_stack: ps.PersistentStack) -> None:
         entry_router = self._build_definition()
+        # The key lives in the persistent stack. Grant CloudWatch there so that stack
+        # updates the key policy before this stack creates the encrypted log group.
+        persistent_stack.shared_encryption_key.grant_encrypt_decrypt(
+            ServicePrincipal(f'logs.{stack.region}.amazonaws.com')
+        )
         log_group = LogGroup(
             self,
             'ApplicationWorkflowLogs',

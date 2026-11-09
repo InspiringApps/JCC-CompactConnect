@@ -73,6 +73,11 @@ class TestApplicationWorkflowStack(TstAppABC, TestCase):
         log_group = template.find_resources(CfnLogGroup.CFN_RESOURCE_TYPE_NAME)[logical_id]
         self.assertIn('KmsKeyId', log_group['Properties'])
         self.assertEqual(30, log_group['Properties']['RetentionInDays'])
+        persistent = self.app.prod_backend_pipeline_stack.prod_stage.persistent_stack
+        key_id = persistent.get_logical_id(persistent.shared_encryption_key.node.default_child)
+        key_policy = json.dumps(Template.from_stack(persistent).find_resources('AWS::KMS::Key')[key_id])
+        self.assertIn('logs.', key_policy)
+        self.assertIn('.amazonaws.com', key_policy)
 
         metric_names = {
             alarm['Properties']['MetricName']: alarm['Properties']['AlarmActions']
