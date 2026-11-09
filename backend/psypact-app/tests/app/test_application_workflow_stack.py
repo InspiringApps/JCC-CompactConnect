@@ -47,11 +47,12 @@ class TestApplicationWorkflowStack(TstAppABC, TestCase):
         self.assertEqual('EntryRouter', definition['StartAt'])
         self.assertEqual(_YEAR_TIMEOUT_SECONDS, definition['TimeoutSeconds'])
         self.assertEqual(_table_edges(), _choice_edges(states))
-        self._assert_admin_router(states['AdminRouter'])
+        self._assert_admin_router(states['AdminRouter'], states)
         self._assert_entry_router(states['EntryRouter'])
         self._assert_every_choice_has_a_default(states)
         self._assert_tasks(states)
         self._assert_deactivation_passes(states)
+        self._assert_terminal_entries(states)
         self.assertEqual('Succeed', states['Approved']['Next'])
         self.assertEqual('Succeed', states['Rejected']['Next'])
         self.assertEqual('Succeed', states['Deactivated']['Next'])
@@ -135,8 +136,8 @@ class TestApplicationWorkflowStack(TstAppABC, TestCase):
         self.assertGreaterEqual(len(template.find_resources('AWS::Logs::MetricFilter')), 4)
         self._check_no_stack_annotations(stack)
 
-    def _assert_admin_router(self, router: dict):
-        branches = {(choice['StringEquals'], choice['Next']) for choice in router['Choices']}
+    def _assert_admin_router(self, router: dict, states: dict):
+        branches = {(choice['StringEquals'], _edge_target(states, choice['Next'])) for choice in router['Choices']}
         expected = {(state.value, state.value) for state in ADMIN_OVERRIDE_TARGETS}
         self.assertEqual(expected, branches)
         self.assertEqual('DeactivateOnError', router['Default'])
@@ -210,6 +211,14 @@ class TestApplicationWorkflowStack(TstAppABC, TestCase):
             self.assertEqual('$.error.reason', states[name]['ResultPath'])
             self.assertEqual('Deactivated', states[name]['Next'])
 
+    def _assert_terminal_entries(self, states: dict):
+        for state_name in (StateName.APPROVED, StateName.REJECTED, StateName.DEACTIVATED):
+            entry = states[f'{state_name.value}EnsureError']
+            self.assertEqual('Pass', entry['Type'])
+            self.assertEqual({}, entry['Result'])
+            self.assertEqual('$.error', entry['ResultPath'])
+            self.assertEqual(state_name.value, entry['Next'])
+
 
 def _principal_service(role: dict) -> str | None:
     statements = role['Properties'].get('AssumeRolePolicyDocument', {}).get('Statement', [])
@@ -245,6 +254,14 @@ def _table_edges() -> set[tuple[str, str, str]]:
     return edges
 
 
+def _edge_target(states: dict, name: str) -> str:
+    """Follow the empty-error pass in front of a terminal state."""
+    state = states[name]
+    if state['Type'] == 'Pass' and state.get('ResultPath') == '$.error' and state.get('Result') == {}:
+        return state['Next']
+    return name
+
+
 def _choice_edges(states: dict) -> set[tuple[str, str, str]]:
     edges = set()
     for name, state in states.items():
@@ -252,7 +269,7 @@ def _choice_edges(states: dict) -> set[tuple[str, str, str]]:
             continue
         choice = states[state['Next']]
         for branch in choice['Choices']:
-            edges.add((name, branch['StringEquals'], branch['Next']))
+            edges.add((name, branch['StringEquals'], _edge_target(states, branch['Next'])))
     return edges
 
 

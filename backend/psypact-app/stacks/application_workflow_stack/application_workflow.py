@@ -179,6 +179,9 @@ class ApplicationWorkflow(Construct):
         }
         for node in nodes.values():
             node.next(succeed)
+        # A normal approval has no caught error. Give that path an empty object so the
+        # terminal task can read $.error. Timeout and workflow-error keep their own reason.
+        terminal_entries = {state_name: self._ensure_error(state_name, node) for state_name, node in nodes.items()}
 
         deactivate_on_timeout = self._reason_pass('DeactivateOnTimeout', 'TIMEOUT')
         deactivate_on_error = self._reason_pass('DeactivateOnError', 'WORKFLOW_ERROR')
@@ -190,7 +193,7 @@ class ApplicationWorkflow(Construct):
                 continue
             nodes[state_name] = self._wait_node(state_name, deactivate_on_timeout, deactivate_on_error)
 
-        admin_router = self._admin_router(nodes, deactivate_on_error)
+        admin_router = self._admin_router(nodes, terminal_entries, deactivate_on_error)
         for state_name, definition in STATE_DEFINITIONS.items():
             if definition.terminal:
                 continue
@@ -198,6 +201,7 @@ class ApplicationWorkflow(Construct):
                 self._action_choice(
                     state_name,
                     nodes=nodes,
+                    terminal_entries=terminal_entries,
                     admin_router=admin_router,
                     deactivate_on_error=deactivate_on_error,
                 )
@@ -241,34 +245,68 @@ class ApplicationWorkflow(Construct):
         self._add_lambda_retry(task)
         return task
 
+    def _ensure_error(self, state_name: StateName, terminal: LambdaInvoke) -> Pass:
+        """Put an empty error on paths that did not catch one, then enter the terminal state."""
+        ensure = Pass(
+            self,
+            f'{state_name.value}EnsureError',
+            state_name=f'{state_name.value}EnsureError',
+            result=Result.from_object({}),
+            result_path='$.error',
+        )
+        ensure.next(terminal)
+        return ensure
+
     def _action_choice(
         self,
         state_name: StateName,
         *,
         nodes: dict[StateName, LambdaInvoke],
+        terminal_entries: dict[StateName, Pass],
         admin_router: Choice,
         deactivate_on_error: Pass,
     ) -> Choice:
         choice = Choice(self, f'{state_name.value}Choice', state_name=f'{state_name.value}Choice')
         for action, target in STATE_DEFINITIONS[state_name].transitions.items():
-            choice.when(Condition.string_equals('$.transition.action', action.value), nodes[target])
+            choice.when(
+                Condition.string_equals('$.transition.action', action.value),
+                self._destination(target, nodes, terminal_entries),
+            )
         choice.when(
             Condition.string_equals('$.transition.action', WorkflowAction.ADMIN_OVERRIDE.value),
             admin_router,
         )
         choice.when(
             Condition.string_equals('$.transition.action', WorkflowAction.ADMIN_DEACTIVATE.value),
-            nodes[StateName.DEACTIVATED],
+            terminal_entries[StateName.DEACTIVATED],
         )
         choice.otherwise(deactivate_on_error)
         return choice
 
-    def _admin_router(self, nodes: dict[StateName, LambdaInvoke], deactivate_on_error: Pass) -> Choice:
+    def _admin_router(
+        self,
+        nodes: dict[StateName, LambdaInvoke],
+        terminal_entries: dict[StateName, Pass],
+        deactivate_on_error: Pass,
+    ) -> Choice:
         router = Choice(self, 'AdminRouter', state_name='AdminRouter')
         for target in sorted(ADMIN_OVERRIDE_TARGETS, key=lambda state: state.value):
-            router.when(Condition.string_equals('$.transition.targetState', target.value), nodes[target])
+            router.when(
+                Condition.string_equals('$.transition.targetState', target.value),
+                self._destination(target, nodes, terminal_entries),
+            )
         router.otherwise(deactivate_on_error)
         return router
+
+    @staticmethod
+    def _destination(
+        target: StateName,
+        nodes: dict[StateName, LambdaInvoke],
+        terminal_entries: dict[StateName, Pass],
+    ) -> Pass | LambdaInvoke:
+        if STATE_DEFINITIONS[target].terminal:
+            return terminal_entries[target]
+        return nodes[target]
 
     def _reason_pass(self, name: str, reason: str) -> Pass:
         return Pass(
@@ -292,8 +330,8 @@ class ApplicationWorkflow(Construct):
         if include_token:
             payload['taskToken'] = JsonPath.task_token
         else:
-            # The caught error carries TIMEOUT or WORKFLOW_ERROR. Admin deactivation is the
-            # transition action, because that edge does not go through a reason Pass.
+            # Success paths set an empty error. Timeout and workflow-error set a reason.
+            # Admin deactivation is read from the transition action.
             payload['error'] = JsonPath.string_at('$.error')
             payload['transition'] = JsonPath.string_at('$.transition')
         return TaskInput.from_object(payload)
