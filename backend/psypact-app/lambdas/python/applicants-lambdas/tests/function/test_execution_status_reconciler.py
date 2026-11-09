@@ -42,7 +42,7 @@ class TestExecutionStatusReconciler(TstLambdas):
         self.client = self.psypact_config.application_client
         metrics.metric_set.clear()
 
-    def test_each_failing_status_deactivates_the_current_generation(self):
+    def test_each_failing_status_records_internal_error(self):
         for status, reason in _REASONS.items():
             with self.subTest(status=status):
                 self._reset_items()
@@ -55,15 +55,15 @@ class TestExecutionStatusReconciler(TstLambdas):
 
                 self.assertEqual('applied', result['outcome'])
                 stored = self.client.get_application(COMPACT, APPLICATION_ID)
-                self.assertEqual('deactivated', stored['status'])
-                self.assertEqual(StateName.DEACTIVATED.value, stored['stateName'])
+                self.assertEqual('internal-error', stored['status'])
+                self.assertEqual(StateName.INTERNAL_ERROR.value, stored['stateName'])
                 self.assertEqual(reason, stored['deactivationReason'])
                 self.assertEqual('States.Runtime boom', stored['lastExecutionError'])
                 self.assertIn('completed', stored)
                 self.assertNotIn('taskToken', stored)
                 self.assertNotIn('pendingAction', stored)
                 self.assertNotIn('actorGSIPK', stored)
-                self.assertEqual(1, self._deactivated_audits())
+                self.assertEqual(1, self._internal_error_audits())
                 self.assertIn('ApplicationExecutionBroken', metrics.metric_set)
                 self.assertNotIn('ApplicationReopenForcedStop', metrics.metric_set)
                 self.assertIn(APPLICATION_ID, '\n'.join(captured.output))
@@ -115,7 +115,7 @@ class TestExecutionStatusReconciler(TstLambdas):
         self.assertNotIn('ApplicationExecutionBroken', metrics.metric_set)
         schedule.return_value.delete_schedule.assert_not_called()
 
-    def test_replay_of_a_deactivated_execution_does_not_write_again(self):
+    def test_replay_of_an_internal_error_does_not_write_again(self):
         self._enter_started()
         with patch('handlers.execution_status_reconciler.ApplicationScheduleClient'):
             execution_status_reconciler(self._event('FAILED'), self.mock_context)
@@ -128,7 +128,7 @@ class TestExecutionStatusReconciler(TstLambdas):
         self.assertEqual('already', result['outcome'])
         self.assertEqual(stored['version'], replayed['version'])
         self.assertEqual(stored['dateOfUpdate'], replayed['dateOfUpdate'])
-        self.assertEqual(1, self._deactivated_audits())
+        self.assertEqual(1, self._internal_error_audits())
         self.assertNotIn('ApplicationExecutionBroken', metrics.metric_set)
         schedule.return_value.delete_schedule.assert_not_called()
 
@@ -161,7 +161,6 @@ class TestExecutionStatusReconciler(TstLambdas):
         )
         enter_state(
             {
-                'mode': 'ENTER',
                 'compact': COMPACT,
                 'applicationId': APPLICATION_ID,
                 'generation': 1,
@@ -180,12 +179,12 @@ class TestExecutionStatusReconciler(TstLambdas):
             ExpressionAttributeValues={':pending': {'requestId': 'pending-1'}},
         )
 
-    def _deactivated_audits(self) -> int:
+    def _internal_error_audits(self) -> int:
         response = self._application_table.query(
             KeyConditionExpression=Key('pk').eq(f'{COMPACT}#APPLICATION#{APPLICATION_ID}')
             & Key('sk').begins_with('TRANSITION#'),
         )
-        return sum(1 for item in response['Items'] if item.get('toState') == StateName.DEACTIVATED.value)
+        return sum(1 for item in response['Items'] if item.get('toState') == StateName.INTERNAL_ERROR.value)
 
     def _reset_items(self):
         response = self._application_table.query(

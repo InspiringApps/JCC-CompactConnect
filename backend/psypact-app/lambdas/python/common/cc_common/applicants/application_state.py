@@ -30,6 +30,7 @@ class ApplicationStatus(StrEnum):
     APPROVED = 'approved'
     REJECTED = 'rejected'
     DEACTIVATED = 'deactivated'
+    INTERNAL_ERROR = 'internal-error'
 
 
 class ApplicantSectionStatus(StrEnum):
@@ -107,6 +108,7 @@ class StateName(StrEnum):
     APPROVED = 'Approved'
     REJECTED = 'Rejected'
     DEACTIVATED = 'Deactivated'
+    INTERNAL_ERROR = 'InternalError'
 
 
 REVIEWER_ROLES = frozenset(
@@ -247,12 +249,15 @@ STATE_DEFINITIONS: Mapping[StateName, StateDefinition] = MappingProxyType(
         StateName.APPROVED: _state(StateName.APPROVED, ApplicationStatus.APPROVED, None, terminal=True),
         StateName.REJECTED: _state(StateName.REJECTED, ApplicationStatus.REJECTED, None, terminal=True),
         StateName.DEACTIVATED: _state(StateName.DEACTIVATED, ApplicationStatus.DEACTIVATED, None, terminal=True),
+        StateName.INTERNAL_ERROR: _state(
+            StateName.INTERNAL_ERROR, ApplicationStatus.INTERNAL_ERROR, None, terminal=True
+        ),
     }
 )
 
 
 WAIT_STATES = frozenset(state for state, definition in STATE_DEFINITIONS.items() if not definition.terminal)
-ADMIN_OVERRIDE_TARGETS = frozenset(StateName)
+ADMIN_OVERRIDE_TARGETS = frozenset(state for state in StateName if state is not StateName.INTERNAL_ERROR)
 ACTIONS_REQUIRING_COMPLETE_REVIEWS = frozenset({WorkflowAction.ADVANCE, WorkflowAction.APPROVE, WorkflowAction.REJECT})
 APPLICANT_EDITABLE_STATES = frozenset(
     {
@@ -370,8 +375,10 @@ def override_target_allowed(ctx: ApplicationAuthContext, target: StateName) -> b
     """Return whether an admin override may move the application to ``target``.
 
     A reviewer node requires that role to be assigned. First and second reviewers
-    must still be different people whenever both are set.
+    must still be different people whenever both are set. Internal error is not a target.
     """
+    if target not in ADMIN_OVERRIDE_TARGETS:
+        return False
     if ctx.first_reviewer_sub and ctx.second_reviewer_sub and ctx.first_reviewer_sub == ctx.second_reviewer_sub:
         return False
 

@@ -70,6 +70,7 @@ EXPECTED_TRANSITIONS = {
     StateName.APPROVED: {},
     StateName.REJECTED: {},
     StateName.DEACTIVATED: {},
+    StateName.INTERNAL_ERROR: {},
 }
 
 EXPECTED_ACTORS = {
@@ -87,6 +88,7 @@ EXPECTED_ACTORS = {
     StateName.APPROVED: None,
     StateName.REJECTED: None,
     StateName.DEACTIVATED: None,
+    StateName.INTERNAL_ERROR: None,
 }
 
 EXPECTED_STATUS = {
@@ -104,6 +106,7 @@ EXPECTED_STATUS = {
     StateName.APPROVED: ApplicationStatus.APPROVED,
     StateName.REJECTED: ApplicationStatus.REJECTED,
     StateName.DEACTIVATED: ApplicationStatus.DEACTIVATED,
+    StateName.INTERNAL_ERROR: ApplicationStatus.INTERNAL_ERROR,
 }
 
 
@@ -149,15 +152,16 @@ class TestStateDefinitions(TestCase):
         self.assertEqual(reachable - {StateName.APPROVED, StateName.REJECTED}, WAIT_STATES)
         self.assertTrue({StateName.APPROVED, StateName.REJECTED} <= reachable)
         self.assertNotIn(StateName.DEACTIVATED, reachable)
+        self.assertNotIn(StateName.INTERNAL_ERROR, reachable)
 
     def test_terminal_states_have_no_transitions(self):
-        for state in (StateName.APPROVED, StateName.REJECTED, StateName.DEACTIVATED):
+        for state in (StateName.APPROVED, StateName.REJECTED, StateName.DEACTIVATED, StateName.INTERNAL_ERROR):
             self.assertEqual(dict(STATE_DEFINITIONS[state].transitions), {})
             self.assertTrue(is_terminal(state))
             self.assertNotIn(state, WAIT_STATES)
 
     def test_constants(self):
-        self.assertEqual(ADMIN_OVERRIDE_TARGETS, frozenset(StateName))
+        self.assertEqual(ADMIN_OVERRIDE_TARGETS, frozenset(StateName) - {StateName.INTERNAL_ERROR})
         self.assertEqual(
             ACTIONS_REQUIRING_COMPLETE_REVIEWS,
             frozenset({WorkflowAction.ADVANCE, WorkflowAction.APPROVE, WorkflowAction.REJECT}),
@@ -259,7 +263,7 @@ class TestAuthorizeAction(TestCase):
                 authorize_action(admin, _context(state), WorkflowAction.ADMIN_OVERRIDE, COMPACT)
                 authorize_action(admin, _context(state), WorkflowAction.ADMIN_DEACTIVATE, COMPACT)
 
-        for state in (StateName.APPROVED, StateName.REJECTED, StateName.DEACTIVATED):
+        for state in (StateName.APPROVED, StateName.REJECTED, StateName.DEACTIVATED, StateName.INTERNAL_ERROR):
             with self.subTest(state=state), self.assertRaises(CCAccessDeniedException):
                 authorize_action(admin, _context(state), WorkflowAction.ADMIN_OVERRIDE, COMPACT)
 
@@ -324,6 +328,7 @@ class TestReviewerAssignment(TestCase):
         ready = _context(StateName.STAFF_REVIEW)
         self.assertTrue(override_target_allowed(ready, StateName.SECOND_REVIEW))
         self.assertTrue(override_target_allowed(ready, StateName.APPROVED))
+        self.assertFalse(override_target_allowed(ready, StateName.INTERNAL_ERROR))
 
         missing_second = _context(StateName.FIRST_REVIEW, second_reviewer_sub=None)
         self.assertFalse(override_target_allowed(missing_second, StateName.SECOND_REVIEW))

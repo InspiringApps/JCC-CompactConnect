@@ -2,7 +2,7 @@
 
 A Standard Step Functions execution is the normal writer of an application's `status`. `EnterState` writes that status in the same DynamoDB transaction that stores the task token. The UI reads the projection. Staff queues use `statusGSI` and `actorGSI`, which are eventually consistent and are not used to authorize an action.
 
-`ExecutionFailureReconciler` is the exception. After an execution is `FAILED`, `TIMED_OUT`, or `ABORTED`, no state node can run, so the reconciler projects `deactivated` when the execution ARN and generation are still current.
+`ExecutionFailureReconciler` is the exception. After an execution is `FAILED`, `TIMED_OUT`, or `ABORTED`, no state node can run, so the reconciler projects `internal-error` when the execution ARN and generation are still current.
 
 ## State diagram
 
@@ -44,6 +44,7 @@ stateDiagram-v2
     Approved --> [*]
     Rejected --> [*]
     Deactivated --> [*]
+    InternalError --> [*]
 ```
 
 Admin override and expiry, drawn once. Every wait node has these edges.
@@ -57,9 +58,10 @@ stateDiagram-v2
     AdminRouter --> Approved: targetState = Approved
     AdminRouter --> Rejected: targetState = Rejected
     AdminRouter --> Deactivated: targetState = Deactivated
-    AnyWaitNode --> Deactivated: catchable invalid-state failure
+    AnyWaitNode --> Deactivated: wait timeout
+    AnyWaitNode --> InternalError: caught lambda error or invalid action
     ExpiryDispatcher --> Deactivated: ADMIN_DEACTIVATE before the one-year limit
-    ExecutionFailureReconciler --> Deactivated: execution FAILED, TIMED_OUT, or ABORTED
+    ExecutionFailureReconciler --> InternalError: execution FAILED, TIMED_OUT, or ABORTED
 ```
 
 ## Node, status, and actor
@@ -69,7 +71,7 @@ stateDiagram-v2
 - `FirstReview`, `SecondReview`, and `FinalReview` project `first-review`, `second-review`, and `final-review`. The matching assigned reviewer acts.
 - `CommitteeFromFirst`, `CommitteeFromSecond`, and `CommitteeFromFinal` project `committee-review`. The reviewer who sent the application there keeps the actor role and can still edit that role's section reviews.
 - `AwaitingApplicantFromFirst`, `AwaitingApplicantFromSecond`, and `AwaitingApplicantFromFinal` project `awaiting-applicant`. The applicant acts. Resubmit returns to that tier's review node, not back to committee.
-- `Approved`, `Rejected`, and `Deactivated` are terminal. `EnterState` writes `completed` and stores no task token.
+- `Approved`, `Rejected`, `Deactivated`, and `InternalError` are terminal. `EnterState` writes `completed` and stores no task token. `InternalError` projects `internal-error`. Reopen accepts it along with the other terminal statuses.
 
 `ADVANCE`, `APPROVE`, and `REJECT` require every current section review for the acting role to be approved or rejected. `REQUEST_CHANGES` and `RETURN_TO_REVIEW` do not. A compact admin may override to any allowed target or deactivate. A jurisdiction admin scope grants neither.
 
@@ -77,7 +79,7 @@ stateDiagram-v2
 
 Create stores `workflowExpiresAt` one year out and a one-time EventBridge schedule named `{applicationId}-g{generation}` before the execution starts. The schedule calls the expiry function, which sends `ADMIN_DEACTIVATE` through the current task token when the generation, execution, and schedule name still match and the status is not terminal. The schedule uses `ActionAfterCompletion=DELETE`.
 
-The state machine timeout remains one year. Callback waits are 364 days and 23 hours so the schedule can reach `Deactivated` before that timeout. A catchable invalid state routes to `Deactivated`. An execution that stops without entering that node is handled by `ExecutionFailureReconciler`.
+The state machine timeout remains one year. Callback waits are 364 days and 23 hours so the schedule can reach `Deactivated` before that timeout. A wait timeout writes `deactivated` and the execution succeeds. A caught lambda error or invalid action writes `internal-error` and then fails the execution, so the failed-execution alarm fires. An execution that stops before that node is handled by `ExecutionFailureReconciler`, which also writes `internal-error`. Admin deactivation and the one-year expiry write `deactivated` and do not alarm.
 
 Reopen is compact-admin only. It stops the current execution when that execution is still running, then starts a new generation at `StaffReview`. Reviewer assignment and section reviews stay on the items. The new generation accepts a normal `REVIEWERS_ASSIGNED` edge.
 

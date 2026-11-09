@@ -43,6 +43,7 @@ class _LogCapture(logging.Handler):
 class TestEnterState(TstLambdas):
     def setUp(self):  # noqa: N801 invalid-name
         super().setUp()
+        os.environ['APPLICATION_SCHEDULE_GROUP_NAME'] = 'application-workflow'
         self._application_table = boto3.resource('dynamodb').create_table(
             TableName=os.environ['APPLICATION_TABLE_NAME'],
             BillingMode='PAY_PER_REQUEST',
@@ -188,6 +189,26 @@ class TestEnterState(TstLambdas):
         self.assertEqual(StateName.DEACTIVATED.value, result['stateName'])
         self.assertNotIn('taskToken', result)
 
+    def test_internal_error_records_the_caught_error(self):
+        self._create()
+        enter_state(self._event(), self.mock_context)
+
+        with patch('handlers.enter_state.ApplicationScheduleClient'):
+            enter_state(
+                self._terminal_event(
+                    state_name=StateName.INTERNAL_ERROR,
+                    error={'Error': 'Lambda.Unknown', 'Cause': 'boom'},
+                ),
+                self.mock_context,
+            )
+
+        stored = self.client.get_application(COMPACT, APPLICATION_ID)
+        self.assertEqual('internal-error', stored['status'])
+        self.assertEqual(StateName.INTERNAL_ERROR.value, stored['stateName'])
+        self.assertEqual('Lambda.Unknown', stored['deactivationReason'])
+        self.assertIn('completed', stored)
+        self.assertNotIn('taskToken', stored)
+
     def test_delete_schedule_swallows_errors_and_logs_the_application_id(self):
         missing = ClientError(
             {'Error': {'Code': 'ResourceNotFoundException', 'Message': 'missing'}},
@@ -228,7 +249,6 @@ class TestEnterState(TstLambdas):
 
     def _event(self) -> dict:
         return {
-            'mode': 'ENTER',
             'compact': COMPACT,
             'applicationId': APPLICATION_ID,
             'generation': 1,
@@ -243,12 +263,12 @@ class TestEnterState(TstLambdas):
         event = self._event()
         event.update(
             {
-                'mode': 'TERMINAL',
                 'stateName': state_name.value,
                 'enteredTime': TERMINAL_TIME,
                 'error': error,
             }
         )
+        event.pop('taskToken', None)
         return event
 
     def _set_pending(self, request_id: str):

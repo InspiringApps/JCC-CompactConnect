@@ -183,7 +183,9 @@ Alarms on the workflow publish to the environment alarm topic. That topic notifi
 the operations support address configured for the environment. The alarms cover failed, timed-out, and aborted
 executions, plus the expiry, callback-delivery, reconciler, and forced-reopen-stop metrics
 (`ApplicationExpiryDeactivationFailed`, `ApplicationCallbackDeliveryExhausted`, `ApplicationExecutionBroken`, and
-`ApplicationReopenForcedStop`).
+`ApplicationReopenForcedStop`). A caught workflow error stores `internal-error` and then fails the execution, so the
+failed-execution alarm fires. Admin deactivation and the one-year expiry store `deactivated` and succeed, so they do
+not alarm. Reopen accepts both statuses.
 
 ## Deployment
 [Back to top](#compact-connect---backend-developer-documentation)

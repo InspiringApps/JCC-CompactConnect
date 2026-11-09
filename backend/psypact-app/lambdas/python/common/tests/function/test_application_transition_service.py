@@ -11,6 +11,7 @@ from cc_common.applicants.application_state import (
     SectionName,
     StateName,
     WorkflowAction,
+    is_terminal,
 )
 from cc_common.applicants.application_transition_service import ApplicationTransitionService
 from cc_common.applicants.application_workflow_client import (
@@ -561,7 +562,7 @@ class TestApplicationTransitionService(TstLambdas):
 
     def _accept_and_enter(self, state_name: StateName) -> None:
         def send(**_kwargs):
-            terminal = state_name in {StateName.APPROVED, StateName.REJECTED, StateName.DEACTIVATED}
+            terminal = is_terminal(state_name)
             self._enter(state_name, terminal=terminal)
             return {}
 

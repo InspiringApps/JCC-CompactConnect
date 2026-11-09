@@ -11,12 +11,10 @@ from collections.abc import Mapping
 
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from cc_common.applicants.application_schedule_client import ApplicationScheduleClient
-from cc_common.applicants.application_state import StateName, WorkflowAction
+from cc_common.applicants.application_state import STATE_DEFINITIONS, StateName, WorkflowAction
 from cc_common.config import logger, metrics
 from common_lambdas.exceptions import CCConflictException, CCInvalidRequestException, CCNotFoundException
 
-_ENTER = 'ENTER'
-_TERMINAL = 'TERMINAL'
 _task_token: contextvars.ContextVar[str | None] = contextvars.ContextVar('application_task_token', default=None)
 
 
@@ -114,14 +112,11 @@ def _delete_expiry_schedule(application: Mapping, application_id: str) -> None:
 @metrics.log_metrics
 @logger.inject_lambda_context
 def enter_state(event: dict, context: LambdaContext):  # noqa: ARG001 the decorator supplies the context
-    """Write one state entry. ``TERMINAL`` also deletes that generation's expiry schedule."""
-    mode = event.get('mode')
-    if mode not in {_ENTER, _TERMINAL}:
-        raise CCInvalidRequestException('Unknown enter state mode')
-
+    """Write one state entry. A terminal state also deletes that generation's expiry schedule."""
     compact = event['compact']
     application_id = event['applicationId']
     state_name = _state_name(event.get('stateName'))
+    terminal = STATE_DEFINITIONS[state_name].terminal
     token = event.get('taskToken')
     token_reset = _task_token.set(token if isinstance(token, str) and token else None)
     try:
@@ -134,7 +129,7 @@ def enter_state(event: dict, context: LambdaContext):  # noqa: ARG001 the decora
 
         logger.info(
             'Entering application state',
-            mode=mode,
+            terminal=terminal,
             compact=compact,
             application_id=application_id,
             generation=int(event['generation']),
@@ -146,11 +141,11 @@ def enter_state(event: dict, context: LambdaContext):  # noqa: ARG001 the decora
             execution_arn=event['executionArn'],
             state_name=state_name,
             entered_time=event['enteredTime'],
-            task_token=None if mode == _TERMINAL else token,
-            terminal=mode == _TERMINAL,
-            reason=(_terminal_reason(event.get('error'), event.get('transition')) if mode == _TERMINAL else None),
+            task_token=None if terminal else token,
+            terminal=terminal,
+            reason=(_terminal_reason(event.get('error'), event.get('transition')) if terminal else None),
         )
-        if mode == _TERMINAL:
+        if terminal:
             _delete_expiry_schedule(stored, application_id)
     finally:
         _task_token.reset(token_reset)

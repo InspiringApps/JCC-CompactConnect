@@ -27,7 +27,12 @@ SCHEDULE_NAME = 'app-1-g1'
 ENTERED_TIME = '2026-11-05T00:00:01+00:00'
 TERMINAL_TIME = '2026-11-05T00:00:02+00:00'
 CALLBACK_VALUE = 'callback-secret-value'
-_TERMINAL_STATUSES = (StateName.APPROVED, StateName.REJECTED, StateName.DEACTIVATED)
+_TERMINAL_STATUSES = (
+    StateName.APPROVED,
+    StateName.REJECTED,
+    StateName.DEACTIVATED,
+    StateName.INTERNAL_ERROR,
+)
 
 
 @mock_aws
@@ -242,7 +247,6 @@ class TestExpiryDeactivation(TstLambdas):
 
     def _started_event(self) -> dict:
         return {
-            'mode': 'ENTER',
             'compact': COMPACT,
             'applicationId': APPLICATION_ID,
             'generation': 1,
@@ -254,7 +258,8 @@ class TestExpiryDeactivation(TstLambdas):
 
     def _terminal_event(self, state_name: StateName) -> dict:
         event = self._started_event()
-        event.update({'mode': 'TERMINAL', 'stateName': state_name.value, 'enteredTime': TERMINAL_TIME})
+        event.update({'stateName': state_name.value, 'enteredTime': TERMINAL_TIME})
+        event.pop('taskToken', None)
         return event
 
     def _create_table(self):

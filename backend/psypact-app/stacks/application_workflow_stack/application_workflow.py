@@ -15,12 +15,11 @@ from aws_cdk.aws_stepfunctions import (
     Choice,
     Condition,
     DefinitionBody,
+    Fail,
     IntegrationPattern,
     JsonPath,
     LogLevel,
     LogOptions,
-    Pass,
-    Result,
     StateMachine,
     Succeed,
     TaskInput,
@@ -172,28 +171,46 @@ class ApplicationWorkflow(Construct):
 
     def _build_definition(self) -> Choice:
         succeed = Succeed(self, 'WorkflowSucceeded', state_name='Succeed')
+        failed = Fail(
+            self,
+            'WorkflowFailed',
+            state_name='WorkflowFailed',
+            error='WorkflowError',
+            cause='Application was marked internal-error after a workflow error',
+        )
         nodes = {
-            state_name: self._terminal_node(state_name)
+            state_name: self._terminal_node(state_name, include_transition=True)
             for state_name, definition in STATE_DEFINITIONS.items()
-            if definition.terminal
+            if definition.terminal and state_name is not StateName.INTERNAL_ERROR
         }
         for node in nodes.values():
             node.next(succeed)
-        # A normal approval has no caught error. Give that path an empty object so the
-        # terminal task can read $.error. Timeout and workflow-error keep their own reason.
-        terminal_entries = {state_name: self._ensure_error(state_name, node) for state_name, node in nodes.items()}
 
-        deactivate_on_timeout = self._reason_pass('DeactivateOnTimeout', 'TIMEOUT')
-        deactivate_on_error = self._reason_pass('DeactivateOnError', 'WORKFLOW_ERROR')
-        deactivate_on_timeout.next(nodes[StateName.DEACTIVATED])
-        deactivate_on_error.next(nodes[StateName.DEACTIVATED])
+        timeout_node = self._terminal_node(
+            StateName.DEACTIVATED,
+            construct_id='DeactivatedOnTimeout',
+            error={'reason': 'TIMEOUT'},
+        )
+        caught_error = self._terminal_node(
+            StateName.INTERNAL_ERROR,
+            construct_id='InternalError',
+            error=JsonPath.string_at('$.error'),
+        )
+        invalid_action = self._terminal_node(
+            StateName.INTERNAL_ERROR,
+            construct_id='InternalErrorOnInvalidAction',
+            error={'reason': 'WORKFLOW_ERROR'},
+        )
+        timeout_node.next(succeed)
+        caught_error.next(failed)
+        invalid_action.next(failed)
 
         for state_name, definition in STATE_DEFINITIONS.items():
             if definition.terminal:
                 continue
-            nodes[state_name] = self._wait_node(state_name, deactivate_on_timeout, deactivate_on_error)
+            nodes[state_name] = self._wait_node(state_name, timeout_node, caught_error)
 
-        admin_router = self._admin_router(nodes, terminal_entries, deactivate_on_error)
+        admin_router = self._admin_router(nodes, invalid_action)
         for state_name, definition in STATE_DEFINITIONS.items():
             if definition.terminal:
                 continue
@@ -201,9 +218,8 @@ class ApplicationWorkflow(Construct):
                 self._action_choice(
                     state_name,
                     nodes=nodes,
-                    terminal_entries=terminal_entries,
                     admin_router=admin_router,
-                    deactivate_on_error=deactivate_on_error,
+                    invalid_action=invalid_action,
                 )
             )
 
@@ -215,62 +231,67 @@ class ApplicationWorkflow(Construct):
         entry_router.otherwise(nodes[StateName.STARTED])
         return entry_router
 
-    def _wait_node(self, state_name: StateName, deactivate_on_timeout: Pass, deactivate_on_error: Pass) -> LambdaInvoke:
+    def _wait_node(
+        self,
+        state_name: StateName,
+        on_timeout: LambdaInvoke,
+        on_error: LambdaInvoke,
+    ) -> LambdaInvoke:
         task = LambdaInvoke(
             self,
             state_name.value,
             state_name=state_name.value,
             lambda_function=self.enter_state_function,
             integration_pattern=IntegrationPattern.WAIT_FOR_TASK_TOKEN,
-            payload=self._enter_payload(state_name, mode='ENTER', include_token=True),
+            payload=self._enter_payload(state_name, include_token=True),
             result_path='$.transition',
             task_timeout=Timeout.duration(_WAIT_TIMEOUT),
             retry_on_service_exceptions=False,
         )
         self._add_lambda_retry(task)
-        task.add_catch(deactivate_on_timeout, errors=['States.Timeout'], result_path='$.error')
-        task.add_catch(deactivate_on_error, errors=['States.ALL'], result_path='$.error')
+        task.add_catch(on_timeout, errors=['States.Timeout'], result_path='$.error')
+        task.add_catch(on_error, errors=['States.ALL'], result_path='$.error')
         return task
 
-    def _terminal_node(self, state_name: StateName) -> LambdaInvoke:
+    def _terminal_node(
+        self,
+        state_name: StateName,
+        *,
+        construct_id: str | None = None,
+        error=None,
+        include_transition: bool = False,
+    ) -> LambdaInvoke:
+        state_id = construct_id or state_name.value
         task = LambdaInvoke(
             self,
-            state_name.value,
-            state_name=state_name.value,
+            state_id,
+            state_name=state_id,
             lambda_function=self.enter_state_function,
-            payload=self._enter_payload(state_name, mode='TERMINAL', include_token=False),
+            payload=self._enter_payload(
+                state_name,
+                include_token=False,
+                error=error,
+                include_transition=include_transition,
+            ),
             task_timeout=Timeout.duration(_TASK_TIMEOUT),
             retry_on_service_exceptions=False,
         )
         self._add_lambda_retry(task)
         return task
 
-    def _ensure_error(self, state_name: StateName, terminal: LambdaInvoke) -> Pass:
-        """Put an empty error on paths that did not catch one, then enter the terminal state."""
-        ensure = Pass(
-            self,
-            f'{state_name.value}EnsureError',
-            state_name=f'{state_name.value}EnsureError',
-            result=Result.from_object({}),
-            result_path='$.error',
-        )
-        ensure.next(terminal)
-        return ensure
-
     def _action_choice(
         self,
         state_name: StateName,
         *,
         nodes: dict[StateName, LambdaInvoke],
-        terminal_entries: dict[StateName, Pass],
         admin_router: Choice,
-        deactivate_on_error: Pass,
+        invalid_action: LambdaInvoke,
     ) -> Choice:
         choice = Choice(self, f'{state_name.value}Choice', state_name=f'{state_name.value}Choice')
         for action, target in STATE_DEFINITIONS[state_name].transitions.items():
             choice.when(
                 Condition.string_equals('$.transition.action', action.value),
-                self._destination(target, nodes, terminal_entries),
+                nodes[target],
             )
         choice.when(
             Condition.string_equals('$.transition.action', WorkflowAction.ADMIN_OVERRIDE.value),
@@ -278,61 +299,42 @@ class ApplicationWorkflow(Construct):
         )
         choice.when(
             Condition.string_equals('$.transition.action', WorkflowAction.ADMIN_DEACTIVATE.value),
-            terminal_entries[StateName.DEACTIVATED],
+            nodes[StateName.DEACTIVATED],
         )
-        choice.otherwise(deactivate_on_error)
+        choice.otherwise(invalid_action)
         return choice
 
-    def _admin_router(
-        self,
-        nodes: dict[StateName, LambdaInvoke],
-        terminal_entries: dict[StateName, Pass],
-        deactivate_on_error: Pass,
-    ) -> Choice:
+    def _admin_router(self, nodes: dict[StateName, LambdaInvoke], invalid_action: LambdaInvoke) -> Choice:
         router = Choice(self, 'AdminRouter', state_name='AdminRouter')
         for target in sorted(ADMIN_OVERRIDE_TARGETS, key=lambda state: state.value):
             router.when(
                 Condition.string_equals('$.transition.targetState', target.value),
-                self._destination(target, nodes, terminal_entries),
+                nodes[target],
             )
-        router.otherwise(deactivate_on_error)
+        router.otherwise(invalid_action)
         return router
 
-    @staticmethod
-    def _destination(
-        target: StateName,
-        nodes: dict[StateName, LambdaInvoke],
-        terminal_entries: dict[StateName, Pass],
-    ) -> Pass | LambdaInvoke:
-        if STATE_DEFINITIONS[target].terminal:
-            return terminal_entries[target]
-        return nodes[target]
-
-    def _reason_pass(self, name: str, reason: str) -> Pass:
-        return Pass(
-            self,
-            name,
-            state_name=name,
-            result=Result.from_string(reason),
-            result_path='$.error.reason',
-        )
-
-    def _enter_payload(self, state_name: StateName, *, mode: str, include_token: bool) -> TaskInput:
+    def _enter_payload(
+        self,
+        state_name: StateName,
+        *,
+        include_token: bool,
+        error=None,
+        include_transition: bool = False,
+    ) -> TaskInput:
         payload = {
             'compact': JsonPath.string_at('$.compact'),
             'applicationId': JsonPath.string_at('$.applicationId'),
             'generation': JsonPath.string_at('$.generation'),
-            'mode': mode,
             'stateName': state_name.value,
             'executionArn': JsonPath.string_at('$$.Execution.Id'),
             'enteredTime': JsonPath.string_at('$$.State.EnteredTime'),
         }
         if include_token:
             payload['taskToken'] = JsonPath.task_token
-        else:
-            # Success paths set an empty error. Timeout and workflow-error set a reason.
-            # Admin deactivation is read from the transition action.
-            payload['error'] = JsonPath.string_at('$.error')
+        if error is not None:
+            payload['error'] = error
+        if include_transition:
             payload['transition'] = JsonPath.string_at('$.transition')
         return TaskInput.from_object(payload)
 

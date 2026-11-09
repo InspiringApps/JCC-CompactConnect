@@ -1,7 +1,8 @@
 """Record a stopped execution that can no longer enter another workflow node.
 
-Step Functions reports FAILED, TIMED_OUT, and ABORTED here. A newer generation is
-left unchanged. An abort that belongs to a reopen is counted separately.
+Step Functions reports FAILED, TIMED_OUT, and ABORTED here. The application is
+marked internal-error so it can be reopened. A newer generation is left unchanged.
+An abort that belongs to a reopen is counted separately.
 """
 
 import json
@@ -27,7 +28,7 @@ _ERROR_LIMIT = 1000
 
 
 def execution_status_reconciler(event: dict, context: LambdaContext):  # noqa: ARG001 Lambda entry supplies context
-    """Deactivate the execution's application when that execution is still current."""
+    """Mark the execution's application internal-error when that execution is still current."""
     return _reconcile(event)
 
 
@@ -62,7 +63,7 @@ def _reconcile(event: dict) -> dict:
     application = client.get_application(compact, application_id)
     reason = _REASONS[status]
     reopen = _reopen_abort(application, execution_arn)
-    if _already_deactivated(application, execution_arn, generation, reason):
+    if _already_internal_error(application, execution_arn, generation, reason):
         outcome = 'already'
     elif _targets_current(application, execution_arn, generation):
         outcome = client.mark_deactivated_by_reconciler(
@@ -99,7 +100,7 @@ def _targets_current(application: Mapping | None, execution_arn: str, generation
     return not is_terminal(StateName(state_name))
 
 
-def _already_deactivated(
+def _already_internal_error(
     application: Mapping | None,
     execution_arn: str,
     generation: int,
@@ -110,7 +111,7 @@ def _already_deactivated(
     return (
         int(application.get('generation') or 0) == generation
         and application.get('executionArn') == execution_arn
-        and application.get('status') == ApplicationStatus.DEACTIVATED.value
+        and application.get('status') == ApplicationStatus.INTERNAL_ERROR.value
         and application.get('deactivationReason') == reason
     )
 

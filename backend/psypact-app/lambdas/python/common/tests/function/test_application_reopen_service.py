@@ -130,7 +130,12 @@ class TestApplicationReopenService(TstLambdas):
         self.addCleanup(patch.stopall)
 
     def test_reopen_from_each_terminal_status_starts_staff_review(self):
-        for state_name in (StateName.APPROVED, StateName.REJECTED, StateName.DEACTIVATED):
+        for state_name in (
+            StateName.APPROVED,
+            StateName.REJECTED,
+            StateName.DEACTIVATED,
+            StateName.INTERNAL_ERROR,
+        ):
             with self.subTest(state_name=state_name.value):
                 self._reset()
                 self._create()

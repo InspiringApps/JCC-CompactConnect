@@ -161,7 +161,7 @@ def _already_reconciled(application: Mapping | None, reason: str) -> bool:
     if not application:
         return False
     return (
-        application.get('status') == ApplicationStatus.DEACTIVATED.value
+        application.get('status') == ApplicationStatus.INTERNAL_ERROR.value
         and application.get('deactivationReason') == reason
     )
 
@@ -795,11 +795,11 @@ class ApplicationClient:
         reason: str,
         last_execution_error: str | None,
     ) -> str:
-        """Deactivate the current generation when its execution has stopped outside the graph.
+        """Record internal-error when this generation's execution stopped outside the graph.
 
-        Returns ``applied`` when this call wrote the deactivation, ``already`` when that
-        reason is already recorded, and ``stale`` when a newer generation or a finished
-        application must be left alone.
+        Returns ``applied`` when this call wrote the status, ``already`` when that reason
+        is already recorded, and ``stale`` when a newer generation or a finished application
+        must be left alone.
         """
         current = self.get_application(compact, application_id)
         if not _reconciler_targets(current, execution_arn, generation):
@@ -808,7 +808,7 @@ class ApplicationClient:
             return 'already'
 
         updated = self._timestamp()
-        state = StateName.DEACTIVATED
+        state = StateName.INTERNAL_ERROR
         entry_key = f'{execution_arn}#{updated}#{state.value}'
         try:
             self.config.dynamodb_client.transact_write_items(
@@ -863,7 +863,7 @@ class ApplicationClient:
         entry_key: str,
         updated: str,
     ) -> dict:
-        status = ApplicationStatus.DEACTIVATED.value
+        status = ApplicationStatus.INTERNAL_ERROR.value
         set_parts = [
             '#status = :status',
             'stateName = :stateName',
@@ -876,13 +876,14 @@ class ApplicationClient:
         ]
         values = {
             ':status': status,
-            ':stateName': StateName.DEACTIVATED.value,
+            ':stateName': StateName.INTERNAL_ERROR.value,
             ':key': entry_key,
             ':arn': execution_arn,
             ':generation': generation,
             ':approved': ApplicationStatus.APPROVED.value,
             ':rejected': ApplicationStatus.REJECTED.value,
             ':deactivated': ApplicationStatus.DEACTIVATED.value,
+            ':internalError': ApplicationStatus.INTERNAL_ERROR.value,
             ':statusGSIPK': f'{compact}#STATUS#{status}',
             ':statusGSISK': f'{updated}#{application_id}',
             ':completed': updated,
@@ -906,7 +907,7 @@ class ApplicationClient:
                 'ConditionExpression': (
                     'executionArn = :arn AND generation = :generation AND ('
                     'attribute_not_exists(#status) OR '
-                    'NOT (#status IN (:approved, :rejected, :deactivated)) OR '
+                    'NOT (#status IN (:approved, :rejected, :deactivated, :internalError)) OR '
                     'reopenLock.oldExecutionArn = :arn)'
                 ),
                 'ExpressionAttributeNames': {'#status': 'status'},

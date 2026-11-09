@@ -47,16 +47,22 @@ class TestApplicationWorkflowStack(TstAppABC, TestCase):
         self.assertEqual('EntryRouter', definition['StartAt'])
         self.assertEqual(_YEAR_TIMEOUT_SECONDS, definition['TimeoutSeconds'])
         self.assertEqual(_table_edges(), _choice_edges(states))
-        self._assert_admin_router(states['AdminRouter'], states)
+        self._assert_admin_router(states['AdminRouter'])
         self._assert_entry_router(states['EntryRouter'])
         self._assert_every_choice_has_a_default(states)
         self._assert_tasks(states)
-        self._assert_deactivation_passes(states)
-        self._assert_terminal_entries(states)
+        self._assert_terminal_tasks(states)
         self.assertEqual('Succeed', states['Approved']['Next'])
         self.assertEqual('Succeed', states['Rejected']['Next'])
         self.assertEqual('Succeed', states['Deactivated']['Next'])
+        self.assertEqual('Succeed', states['DeactivatedOnTimeout']['Next'])
+        self.assertEqual('WorkflowFailed', states['InternalError']['Next'])
+        self.assertEqual('WorkflowFailed', states['InternalErrorOnInvalidAction']['Next'])
         self.assertEqual('Succeed', states['Succeed']['Type'])
+        self.assertEqual('Fail', states['WorkflowFailed']['Type'])
+        self.assertNotIn('ApprovedEnsureError', states)
+        self.assertNotIn('RejectedEnsureError', states)
+        self.assertNotIn('DeactivatedEnsureError', states)
 
     def test_machine_logging_tracing_and_alarms(self):
         stack = self.app.prod_backend_pipeline_stack.prod_stage.application_workflow_stack
@@ -136,11 +142,11 @@ class TestApplicationWorkflowStack(TstAppABC, TestCase):
         self.assertGreaterEqual(len(template.find_resources('AWS::Logs::MetricFilter')), 4)
         self._check_no_stack_annotations(stack)
 
-    def _assert_admin_router(self, router: dict, states: dict):
-        branches = {(choice['StringEquals'], _edge_target(states, choice['Next'])) for choice in router['Choices']}
+    def _assert_admin_router(self, router: dict):
+        branches = {(choice['StringEquals'], choice['Next']) for choice in router['Choices']}
         expected = {(state.value, state.value) for state in ADMIN_OVERRIDE_TARGETS}
         self.assertEqual(expected, branches)
-        self.assertEqual('DeactivateOnError', router['Default'])
+        self.assertEqual('InternalErrorOnInvalidAction', router['Default'])
         self.assertTrue(all(choice['Variable'] == '$.transition.targetState' for choice in router['Choices']))
 
     def _assert_entry_router(self, router: dict):
@@ -174,17 +180,16 @@ class TestApplicationWorkflowStack(TstAppABC, TestCase):
                 self.assertEqual(_WAIT_TIMEOUT_SECONDS, state['TimeoutSeconds'])
                 self.assertEqual('States.Timeout', state['Catch'][0]['ErrorEquals'][0])
                 self.assertEqual('$.error', state['Catch'][0]['ResultPath'])
-                self.assertEqual('DeactivateOnTimeout', state['Catch'][0]['Next'])
+                self.assertEqual('DeactivatedOnTimeout', state['Catch'][0]['Next'])
                 self.assertEqual('States.ALL', state['Catch'][1]['ErrorEquals'][0])
                 self.assertEqual('$.error', state['Catch'][1]['ResultPath'])
-                self.assertEqual('DeactivateOnError', state['Catch'][1]['Next'])
+                self.assertEqual('InternalError', state['Catch'][1]['Next'])
                 payload = state['Parameters']['Payload']
                 self.assertEqual(
                     {
                         'compact.$',
                         'applicationId.$',
                         'generation.$',
-                        'mode',
                         'stateName',
                         'executionArn.$',
                         'enteredTime.$',
@@ -192,7 +197,7 @@ class TestApplicationWorkflowStack(TstAppABC, TestCase):
                     },
                     set(payload),
                 )
-                self.assertEqual('ENTER', payload['mode'])
+                self.assertNotIn('mode', payload)
                 self.assertEqual(name, payload['stateName'])
                 self.assertEqual('$$.Task.Token', payload['taskToken.$'])
             else:
@@ -200,24 +205,29 @@ class TestApplicationWorkflowStack(TstAppABC, TestCase):
                 self.assertEqual(30, state['TimeoutSeconds'])
                 payload = state['Parameters']['Payload']
                 self.assertNotIn('taskToken.$', payload)
-                self.assertEqual('TERMINAL', payload['mode'])
-                self.assertEqual('$.error', payload['error.$'])
-                self.assertEqual('$.transition', payload['transition.$'])
+                self.assertNotIn('mode', payload)
 
-    def _assert_deactivation_passes(self, states: dict):
-        self.assertEqual('TIMEOUT', states['DeactivateOnTimeout']['Result'])
-        self.assertEqual('WORKFLOW_ERROR', states['DeactivateOnError']['Result'])
-        for name in ('DeactivateOnTimeout', 'DeactivateOnError'):
-            self.assertEqual('$.error.reason', states[name]['ResultPath'])
-            self.assertEqual('Deactivated', states[name]['Next'])
-
-    def _assert_terminal_entries(self, states: dict):
+    def _assert_terminal_tasks(self, states: dict):
         for state_name in (StateName.APPROVED, StateName.REJECTED, StateName.DEACTIVATED):
-            entry = states[f'{state_name.value}EnsureError']
-            self.assertEqual('Pass', entry['Type'])
-            self.assertEqual({}, entry['Result'])
-            self.assertEqual('$.error', entry['ResultPath'])
-            self.assertEqual(state_name.value, entry['Next'])
+            payload = states[state_name.value]['Parameters']['Payload']
+            self.assertNotIn('error.$', payload)
+            self.assertNotIn('error', payload)
+            self.assertEqual('$.transition', payload['transition.$'])
+            self.assertEqual(state_name.value, payload['stateName'])
+        timeout = states['DeactivatedOnTimeout']['Parameters']['Payload']
+        self.assertEqual({'reason': 'TIMEOUT'}, timeout['error'])
+        self.assertNotIn('error.$', timeout)
+        self.assertNotIn('transition.$', timeout)
+        self.assertEqual(StateName.DEACTIVATED.value, timeout['stateName'])
+        caught = states['InternalError']['Parameters']['Payload']
+        self.assertEqual('$.error', caught['error.$'])
+        self.assertNotIn('transition.$', caught)
+        self.assertEqual(StateName.INTERNAL_ERROR.value, caught['stateName'])
+        invalid = states['InternalErrorOnInvalidAction']['Parameters']['Payload']
+        self.assertEqual({'reason': 'WORKFLOW_ERROR'}, invalid['error'])
+        self.assertNotIn('error.$', invalid)
+        self.assertNotIn('transition.$', invalid)
+        self.assertEqual(StateName.INTERNAL_ERROR.value, invalid['stateName'])
 
 
 def _principal_service(role: dict) -> str | None:
@@ -254,14 +264,6 @@ def _table_edges() -> set[tuple[str, str, str]]:
     return edges
 
 
-def _edge_target(states: dict, name: str) -> str:
-    """Follow the empty-error pass in front of a terminal state."""
-    state = states[name]
-    if state['Type'] == 'Pass' and state.get('ResultPath') == '$.error' and state.get('Result') == {}:
-        return state['Next']
-    return name
-
-
 def _choice_edges(states: dict) -> set[tuple[str, str, str]]:
     edges = set()
     for name, state in states.items():
@@ -269,7 +271,7 @@ def _choice_edges(states: dict) -> set[tuple[str, str, str]]:
             continue
         choice = states[state['Next']]
         for branch in choice['Choices']:
-            edges.add((name, branch['StringEquals'], _edge_target(states, branch['Next'])))
+            edges.add((name, branch['StringEquals'], branch['Next']))
     return edges
 
 
