@@ -1178,7 +1178,22 @@
         "authorizationStatusOptions": {
             "active": "Activo",
             "inactive": "Inactivo"
-        }
+        },
+        "apply": "Solicitar",
+        "applyForAuthorization": "Solicitar autorización {type}",
+        "applicationTitle": "Su solicitud de {type}",
+        "feeWaived": "Tarifa exenta",
+        "sectionsComplete": "{complete} de {total} secciones completadas",
+        "submittedInReview": "Su solicitud fue enviada el {date}. Ahora está en revisión y se le notificará la decisión final.",
+        "approvedSummary": "Su solicitud fue aprobada.",
+        "rejectedSummary": "Su solicitud fue rechazada.",
+        "deactivatedSummary": "Su solicitud fue desactivada.",
+        "issueWithApplication": "Problema con su solicitud",
+        "reviewerNotes": "Notas del revisor",
+        "continueApplication": "Continuar solicitud",
+        "updateApplication": "Actualizar solicitud",
+        "decision": "Decisión",
+        "stepOfTotal": "Paso {step} de {total}"
     },
     "military": {
         "militaryStatusTitle": "Estado militar",

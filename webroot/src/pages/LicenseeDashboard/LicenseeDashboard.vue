@@ -64,6 +64,26 @@
                 />
             </div>
         </div>
+        <div v-if="$isAppModePsyPact" class="authorization-section">
+            <div
+                v-for="authorizationSlot in authorizationSlots"
+                :key="authorizationSlot.type"
+                class="no-touch-item authorization-chunk"
+            >
+                <AuthorizationCard
+                    :authorizationType="authorizationSlot.type"
+                    :authorization="authorizationSlot.authorization"
+                />
+            </div>
+        </div>
+        <div v-if="$isAppModePsyPact && licenseeApplications.length" class="application-section">
+            <ApplicationStatusCard
+                v-for="application in licenseeApplications"
+                :key="application.id"
+                :application="application"
+                class="application-chunk"
+            />
+        </div>
         <div class="privilege-section">
             <div class="privilege-section-title-row">
                 <div class="title-info">

@@ -10,13 +10,14 @@
     align-items: center;
     justify-content: center;
     margin-top: 4rem;
+    padding-bottom: 4rem;
 
     @media @tabletWidth {
-        padding: 0 6rem;
+        padding: 0 6rem 8rem 6rem;
     }
 
     @media @desktopWidth {
-        padding: 0 12rem;
+        padding: 0 12rem 8rem 12rem;
     }
 
     .purchase-unavailable-modal {
@@ -194,7 +195,8 @@
         }
     }
 
-    .license-section {
+    .license-section,
+    .authorization-section {
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -208,9 +210,19 @@
             width: 100%;
         }
 
-        .license-chunk {
+        .license-chunk,
+        .authorization-chunk {
             display: flex;
             align-items: stretch;
+        }
+    }
+
+    .application-section {
+        width: 100%;
+        padding: 0 1rem;
+
+        .application-chunk {
+            margin: 1rem 0;
         }
     }
 

@@ -1194,7 +1194,22 @@
         "authorizationStatusOptions": {
             "active": "Active",
             "inactive": "Inactive"
-        }
+        },
+        "apply": "Apply",
+        "applyForAuthorization": "Apply for {type} authorization",
+        "applicationTitle": "Your {type} application",
+        "feeWaived": "Fee waived",
+        "sectionsComplete": "{complete} of {total} sections complete",
+        "submittedInReview": "Your application was submitted on {date}. It is now in review and you will be notified of a final decision.",
+        "approvedSummary": "Your application was approved.",
+        "rejectedSummary": "Your application was rejected.",
+        "deactivatedSummary": "Your application was deactivated.",
+        "issueWithApplication": "Issue with your application",
+        "reviewerNotes": "Reviewer notes",
+        "continueApplication": "Continue application",
+        "updateApplication": "Update application",
+        "decision": "Decision",
+        "stepOfTotal": "Step {step} of {total}"
     },
     "military": {
         "militaryStatusTitle": "Military status",

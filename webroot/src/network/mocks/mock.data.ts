@@ -3046,7 +3046,7 @@ export const applicantApplications = [
         status: 'started',
         reviews: [],
         attestations: [],
-        paymentCompensated: [],
+        paymentCompensated: ['apit', 'tap'],
         personalInformation: {
             applicantStatus: 'complete',
             reviewStatus: 'awaiting-applicant',
@@ -3793,7 +3793,7 @@ export const applicantAuthorizations = [
     // This authorization is to allow the renewal workflow.
     {
         id: '1',
-        type: 'apit',
+        type: 'tap',
         status: 'active',
         issueDate: moment().subtract(11, 'months').format(serverDatetimeFormat),
         renewalDate: null,
