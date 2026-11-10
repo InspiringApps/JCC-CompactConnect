@@ -141,6 +141,7 @@ class ApplicationWalk:
         self.compact = compact
         self.staff = staff
         self.base = f'{get_api_base_url()}/v1/compacts/{compact}/applications'
+        self.staff_base = f'{get_api_base_url()}/v1/compacts/{compact}/staff-users/applications'
         self.application_id = None
 
     def create(self) -> str:
@@ -223,6 +224,9 @@ class ApplicationWalk:
     def fetch(self) -> dict:
         return self._call('GET', f'/{self.application_id}', 'applicant')
 
+    def fetch_staff(self) -> dict:
+        return self._call('GET', f'/{self.application_id}', 'admin')
+
     def save_section_review(self, role: str, section: str, status: str, note: str | None = None):
         body = {'sectionStatus': status}
         if note is not None:
@@ -261,9 +265,10 @@ class ApplicationWalk:
                 time.sleep(2)
 
     def _request(self, method: str, suffix: str, role: str, body: dict | None, params: dict | None):
+        base = self.base if role == 'applicant' else self.staff_base
         return requests.request(
             method,
-            self.base + suffix,
+            base + suffix,
             headers={**self._headers(role), 'Content-Type': 'application/json'},
             json=body,
             params=params,
@@ -444,12 +449,12 @@ def _reopen_without_reviews(compact: str, staff: dict[str, dict], stop: str):
     """Assignment after reopen creates the only reviews, and later edits update them."""
     walk = _new_walk(compact, staff)
     walk.submit()
-    _assert_no_reviews(walk.fetch())
+    _assert_no_reviews(walk.fetch_staff())
     _stop_for_reopen(walk, stop)
     walk.reopen()
-    _assert_no_reviews(walk.fetch())
+    _assert_no_reviews(walk.fetch_staff())
     walk.assign(('first', 'second', 'final'), 'first-review')
-    _edit_existing_reviews(walk, staff, walk.fetch())
+    _edit_existing_reviews(walk, staff, walk.fetch_staff())
     walk.deactivate()
     logger.info('Reopen without reviews passed after %s for %s', stop, walk.application_id)
 
@@ -462,10 +467,10 @@ def _reopen_with_reviews(compact: str, staff: dict[str, dict], stop: str):
     walk.approve_sections('first')
     walk.transition('ADVANCE', 'first', 'second-review')
     walk.approve_sections('second')
-    before = walk.fetch()
+    before = walk.fetch_staff()
     _stop_for_reopen(walk, stop)
     walk.reopen()
-    _assert_same_review_identities(before, walk.fetch())
+    _assert_same_review_identities(before, walk.fetch_staff())
     walk.assign(('first', 'second', 'final'), 'first-review')
     _edit_existing_reviews(walk, staff, before)
     walk.deactivate()
@@ -495,7 +500,7 @@ def _edit_existing_reviews(walk: ApplicationWalk, staff: dict[str, dict], before
         complete_reviews=False,
     )
     walk.save_section_review('second', 'personalInformation', 'approved', 'reopened-second')
-    after = walk.fetch()
+    after = walk.fetch_staff()
     _assert_same_review_identities(before, after)
     _assert_section_review(
         after,

@@ -10,6 +10,7 @@ from cc_common.applicants.schema.api import (  # noqa: E402
     AssignReviewersRequestSchema,
     ResponseDocumentSchema,
     SetApplicationStatusRequestSchema,
+    StaffApplicationResponseSchema,
     TransitionRequestSchema,
     assemble_application_response,
     section_patch_schema,
@@ -447,9 +448,69 @@ class TestResponseAndCalculatedStatus(TestCase):
         self.assertNotIn('s3Key', transcript)
         self.assertIn('licenseHistory', response)
         self.assertEqual('incomplete', response['licenseHistory']['calculatedSectionStatusForApplicant'])
+        self.assertEqual([], response['reviews'])
+        self.assertEqual([], response['personalInformation']['reviews'])
+        self.assertNotIn('firstReviewerSub', response)
+        self.assertNotIn('providerId', response)
         loaded = ApplicationResponseSchema().load({**response, 'taskToken': 'secret', 'executionArn': 'arn'})
         self.assertNotIn('taskToken', loaded)
         self.assertNotIn('executionArn', loaded)
+
+    def test_provider_response_omits_reviewer_identity_and_incomplete_reviews(self):
+        completed = {
+            'assignmentId': 'assign-1',
+            'reviewerType': 'first-reviewer',
+            'reviewer': {'id': 'first-sub', 'firstName': 'Ada', 'lastName': 'Lovelace'},
+            'assignedDate': '2026-01-03T00:00:00+00:00',
+            'reviewCompletionDate': '2026-01-04T00:00:00+00:00',
+            'notesForApplicant': 'please update',
+            'notesForReviewers': 'internal',
+            'reviewerSelectedApplicationStatus': 'awaiting-applicant',
+        }
+        incomplete = {
+            'assignmentId': 'assign-2',
+            'reviewerType': 'second-reviewer',
+            'reviewer': {'id': 'second-sub', 'firstName': 'Grace', 'lastName': 'Hopper'},
+            'notesForApplicant': 'not yet',
+            'reviewCompletionDate': None,
+        }
+        application = {
+            **FULL_APPLICATION,
+            'reviews': [completed, incomplete],
+        }
+        sections = [
+            {
+                'sectionName': 'personalInformation',
+                'data': {'firstName': 'Ada'},
+                'reviews': [
+                    {
+                        **completed,
+                        'reviewerSelectedApplicationSectionStatus': 'rejected',
+                    },
+                    incomplete,
+                ],
+            }
+        ]
+        provider = assemble_application_response(application, sections)
+        staff = assemble_application_response(
+            application,
+            sections,
+            response_schema=StaffApplicationResponseSchema,
+        )
+
+        self.assertEqual(
+            [{'notesForApplicant': 'please update', 'reviewCompletionDate': '2026-01-04T00:00:00+00:00'}],
+            provider['reviews'],
+        )
+        self.assertEqual(
+            [{'notesForApplicant': 'please update', 'reviewCompletionDate': '2026-01-04T00:00:00+00:00'}],
+            provider['personalInformation']['reviews'],
+        )
+        self.assertNotIn('firstReviewerSub', provider)
+        self.assertEqual('first-sub', staff['firstReviewerSub'])
+        self.assertEqual('internal', staff['reviews'][0]['notesForReviewers'])
+        self.assertEqual('second-sub', staff['reviews'][1]['reviewer']['id'])
+        self.assertEqual(2, len(staff['personalInformation']['reviews']))
 
     def test_calculated_statuses(self):
         rejected = {'reviewerSelectedApplicationSectionStatus': 'rejected'}

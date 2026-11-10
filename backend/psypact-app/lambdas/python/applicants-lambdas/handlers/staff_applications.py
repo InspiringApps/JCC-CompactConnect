@@ -36,9 +36,8 @@ from common_lambdas.exceptions import (
 from common_lambdas.utils import authorize_compact_level_only_action
 from marshmallow import ValidationError
 
-_APPLICATIONS = '/v1/compacts/{compact}/applications'
+_APPLICATIONS = '/v1/compacts/{compact}/staff-users/applications'
 _APPLICATION = _APPLICATIONS + '/{applicationId}'
-_DETAIL = _APPLICATION + '/detail'
 _REVIEWERS = _APPLICATION + '/reviewers'
 _SECTION_REVIEW = _APPLICATION + '/sections/{section}/review'
 _TRANSITION = _APPLICATION + '/transition'
@@ -307,7 +306,7 @@ def staff_applications(event, context):
     resource = event.get('resource') or event['requestContext']['resourcePath']
     if method == 'GET' and resource == _APPLICATIONS:
         return _list(event, compact, caller)
-    if method == 'GET' and resource == _DETAIL:
+    if method == 'GET' and resource == _APPLICATION:
         return _read(compact, _path(event, 'applicationId'))
     if method == 'PUT' and resource == _REVIEWERS:
         return _assign_reviewers(event, compact, caller)

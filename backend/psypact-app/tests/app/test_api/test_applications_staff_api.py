@@ -51,8 +51,8 @@ class TestApplicationsStaffApi(TestApi):
             self.assertIn(action, policies)
 
         routes = [
-            (applications.resource, 'GET', None, None),
-            (applications.detail_resource, 'GET', None, None),
+            (applications.staff_resource, 'GET', None, None),
+            (applications.staff_application_resource, 'GET', None, None),
             (applications.reviewers_resource, 'PUT', 'V1PutApplicationReviewersRequestModel', None),
             (
                 applications.section_review_resource,

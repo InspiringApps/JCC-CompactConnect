@@ -8,7 +8,7 @@ a stored ``s3Key`` with a presigned ``downloadUri``.
 
 from common_lambdas.data_model.schema.base_record import ForgivingSchema
 from common_lambdas.data_model.schema.common import CCRequestSchema
-from marshmallow import RAISE
+from marshmallow import EXCLUDE, RAISE, pre_dump
 from marshmallow.fields import Boolean, Integer, List, Nested, String
 from marshmallow.validate import Length, OneOf
 
@@ -165,8 +165,72 @@ class AcknowledgementsResponseSchema(AcknowledgementsSchema, _CalculatedSectionF
     pass
 
 
-class ApplicationResponseSchema(ForgivingSchema):
-    """UI application. Workflow internals are not fields, so they are never emitted."""
+_OMITTED_PROVIDER_REVIEW_FIELDS = (
+    'assignmentId',
+    'reviewerType',
+    'reviewer',
+    'assignedDate',
+    'notesForReviewers',
+)
+
+_STAFF_RESPONSE_FIELDS = (
+    'stateName',
+    'providerId',
+    'firstReviewerSub',
+    'secondReviewerSub',
+    'finalReviewerSub',
+    'firstReviewerFirstName',
+    'firstReviewerLastName',
+    'secondReviewerFirstName',
+    'secondReviewerLastName',
+    'finalReviewerFirstName',
+    'finalReviewerLastName',
+)
+
+
+class ProviderApplicationReviewSchema(ApplicationReviewSchema):
+    """Provider application review. Reviewer identity is omitted."""
+
+    class Meta:
+        unknown = EXCLUDE
+        exclude = (*_OMITTED_PROVIDER_REVIEW_FIELDS, 'reviewerSelectedApplicationStatus')
+
+
+class ProviderApplicationSectionReviewSchema(ApplicationSectionReviewSchema):
+    """Provider section review. Reviewer identity is omitted."""
+
+    class Meta:
+        unknown = EXCLUDE
+        exclude = (*_OMITTED_PROVIDER_REVIEW_FIELDS, 'reviewerSelectedApplicationSectionStatus')
+
+
+def _provider_section(schema_cls):
+    """Section response whose reviews use the provider review schema."""
+
+    class ProviderSectionSchema(schema_cls):
+        reviews = List(Nested(ProviderApplicationSectionReviewSchema), required=False, allow_none=True)
+
+    ProviderSectionSchema.__name__ = f'Provider{schema_cls.__name__}'
+    return ProviderSectionSchema
+
+
+ProviderPersonalInformationResponseSchema = _provider_section(PersonalInformationResponseSchema)
+ProviderLicenseHistoryResponseSchema = _provider_section(LicenseHistoryResponseSchema)
+ProviderEducationSectionResponseSchema = _provider_section(EducationSectionResponseSchema)
+ProviderConductHistorySectionResponseSchema = _provider_section(ConductHistorySectionResponseSchema)
+ProviderHomeStateSectionResponseSchema = _provider_section(HomeStateSectionResponseSchema)
+ProviderAcknowledgementsResponseSchema = _provider_section(AcknowledgementsResponseSchema)
+
+
+def _completed_reviews(reviews):
+    """Keep reviews that have been completed. An assignment shell has no completion date."""
+    if not reviews:
+        return reviews
+    return [review for review in reviews if review.get('reviewCompletionDate')]
+
+
+class StaffApplicationResponseSchema(ForgivingSchema):
+    """Full application returned to compact admins, including reviewer identity."""
 
     id = _str()
     created = _str()
@@ -184,11 +248,6 @@ class ApplicationResponseSchema(ForgivingSchema):
     conductHistory = Nested(ConductHistorySectionResponseSchema, required=False, allow_none=True)
     homeState = Nested(HomeStateSectionResponseSchema, required=False, allow_none=True)
     acknowledgements = Nested(AcknowledgementsResponseSchema, required=False, allow_none=True)
-
-
-class StaffApplicationResponseSchema(ApplicationResponseSchema):
-    """Staff read of one application, including the current state and assigned reviewers."""
-
     stateName = _enum(StateName)
     providerId = _str()
     firstReviewerSub = _str()
@@ -200,6 +259,38 @@ class StaffApplicationResponseSchema(ApplicationResponseSchema):
     secondReviewerLastName = _str()
     finalReviewerFirstName = _str()
     finalReviewerLastName = _str()
+
+
+class ApplicationResponseSchema(StaffApplicationResponseSchema):
+    """Provider application. Staff-only fields and incomplete reviews are omitted."""
+
+    class Meta:
+        unknown = EXCLUDE
+        exclude = _STAFF_RESPONSE_FIELDS
+
+    reviews = List(Nested(ProviderApplicationReviewSchema), required=False, allow_none=True)
+    personalInformation = Nested(ProviderPersonalInformationResponseSchema, required=False, allow_none=True)
+    licenseHistory = Nested(ProviderLicenseHistoryResponseSchema, required=False, allow_none=True)
+    education = Nested(ProviderEducationSectionResponseSchema, required=False, allow_none=True)
+    conductHistory = Nested(ProviderConductHistorySectionResponseSchema, required=False, allow_none=True)
+    homeState = Nested(ProviderHomeStateSectionResponseSchema, required=False, allow_none=True)
+    acknowledgements = Nested(ProviderAcknowledgementsResponseSchema, required=False, allow_none=True)
+
+    @pre_dump
+    def omit_incomplete_reviews(self, data, **kwargs):
+        del kwargs
+        if not isinstance(data, dict):
+            return data
+        data = dict(data)
+        if 'reviews' in data:
+            data['reviews'] = _completed_reviews(data.get('reviews'))
+        for section_name in SectionName:
+            section = data.get(section_name.value)
+            if isinstance(section, dict) and 'reviews' in section:
+                section = dict(section)
+                section['reviews'] = _completed_reviews(section.get('reviews'))
+                data[section_name.value] = section
+        return data
 
 
 def section_patch_schema(section_name: str):
@@ -227,21 +318,6 @@ def _review_for(reviews: list, reviewer_type: str) -> dict | None:
         if _enum_value(review.get('reviewerType')) == reviewer_type:
             return review
     return None
-
-
-_STAFF_RESPONSE_FIELDS = (
-    'stateName',
-    'providerId',
-    'firstReviewerSub',
-    'secondReviewerSub',
-    'finalReviewerSub',
-    'firstReviewerFirstName',
-    'firstReviewerLastName',
-    'secondReviewerFirstName',
-    'secondReviewerLastName',
-    'finalReviewerFirstName',
-    'finalReviewerLastName',
-)
 
 
 def assemble_application_response(application_item: dict, section_items: list[dict], *, response_schema=None) -> dict:

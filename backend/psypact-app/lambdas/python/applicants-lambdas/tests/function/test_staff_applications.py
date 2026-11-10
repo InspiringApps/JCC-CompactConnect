@@ -23,9 +23,8 @@ SECOND = '22222222-2222-2222-2222-222222222222'
 JURISDICTION_ONLY = '33333333-3333-3333-3333-333333333333'
 STATE_MACHINE_ARN = 'arn:aws:states:us-east-1:000000000000:stateMachine:ApplicationWorkflow'
 USERS_TABLE = 'users-table'
-_APPLICATIONS = '/v1/compacts/{compact}/applications'
+_APPLICATIONS = '/v1/compacts/{compact}/staff-users/applications'
 _APPLICATION = _APPLICATIONS + '/{applicationId}'
-_DETAIL = _APPLICATION + '/detail'
 _REVIEWERS = _APPLICATION + '/reviewers'
 _SECTION_REVIEW = _APPLICATION + '/sections/{section}/review'
 _TRANSITION = _APPLICATION + '/transition'
@@ -126,7 +125,7 @@ class TestStaffApplications(TstLambdas):
         path = {'compact': COMPACT, 'applicationId': application_id}
         calls = [
             ('GET', _APPLICATIONS, {'compact': COMPACT}, None, {'status': 'started'}),
-            ('GET', _DETAIL, path, None, None),
+            ('GET', _APPLICATION, path, None, None),
             ('PUT', _REVIEWERS, path, {'firstReviewerSub': FIRST}, None),
             (
                 'PUT',
@@ -166,7 +165,7 @@ class TestStaffApplications(TstLambdas):
         )
         self.assertEqual(200, assigned['statusCode'], msg=assigned['body'])
 
-        response = self._call('GET', _DETAIL, {'compact': COMPACT, 'applicationId': application_id})
+        response = self._call('GET', _APPLICATION, {'compact': COMPACT, 'applicationId': application_id})
 
         self.assertEqual(200, response['statusCode'])
         body = json.loads(response['body'])
@@ -176,7 +175,7 @@ class TestStaffApplications(TstLambdas):
         self.assertEqual('First', body['firstReviewerFirstName'])
         self.assertIn('reviews', body)
         self._assert_staff(body)
-        missing = self._call('GET', _DETAIL, {'compact': COMPACT, 'applicationId': 'missing-application'})
+        missing = self._call('GET', _APPLICATION, {'compact': COMPACT, 'applicationId': 'missing-application'})
         self.assertEqual(404, missing['statusCode'])
 
     def test_list_uses_the_status_index_unless_mine_is_set(self):

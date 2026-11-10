@@ -104,7 +104,7 @@ API responses do not include `taskToken`, `executionArn`, `pendingAction`, or `r
 
 ## API routes
 
-Under `/v1/compacts/{compact}/applications`. The practitioner routes use the provider-user authorizer. The staff routes use the staff-user authorizer and the `{compact}/admin` scope only.
+Practitioner routes are under `/v1/compacts/{compact}/applications` and use the provider-user authorizer. Staff routes are under `/v1/compacts/{compact}/staff-users/applications`. They use the staff-user authorizer and the `{compact}/admin` scope only. A jurisdiction `{jurisdiction}/{compact}.admin` scope does not authorize these methods.
 
 Practitioner:
 
@@ -116,11 +116,12 @@ Practitioner:
 
 Staff:
 
-- `GET /applications` lists summaries. `status` queries `statusGSI`. `mine=true` queries `actorGSI` for the caller. `pageSize` and `lastKey` paginate.
-- `PUT /applications/{applicationId}/reviewers` assigns compact-admin reviewers. When the application is in `StaffReview` and all three reviewers are set, the handler signals `REVIEWERS_ASSIGNED` once.
-- `PUT /applications/{applicationId}/sections/{section}/review` saves the section review for the role implied by the current `stateName`.
-- `POST /applications/{applicationId}/transition` takes one workflow action, including `ADMIN_DEACTIVATE`.
-- `POST /applications/{applicationId}/admin/status` overrides `stateName`.
-- `POST /applications/{applicationId}/reopen` starts a new staff-review generation.
+- `GET /staff-users/applications` lists summaries. `status` queries `statusGSI`. `mine=true` queries `actorGSI` for the caller. `pageSize` and `lastKey` paginate.
+- `GET /staff-users/applications/{applicationId}` reads one application, including reviewer identity.
+- `PUT /staff-users/applications/{applicationId}/reviewers` assigns compact-admin reviewers. When the application is in `StaffReview` and all three reviewers are set, the handler signals `REVIEWERS_ASSIGNED` once.
+- `PUT /staff-users/applications/{applicationId}/sections/{section}/review` saves the section review for the role implied by the current `stateName`.
+- `POST /staff-users/applications/{applicationId}/transition` takes one workflow action, including `ADMIN_DEACTIVATE`.
+- `POST /staff-users/applications/{applicationId}/admin/status` overrides `stateName`.
+- `POST /staff-users/applications/{applicationId}/reopen` starts a new staff-review generation.
 
-`GET /applications/{applicationId}` stays on the practitioner authorizer. A method can have one authorizer, so staff full reads are not a second method on that path. A settled transition returns the application. A transition that has not settled returns HTTP 202 with `pending` and `expectedStatus`. A version or state conflict returns HTTP 409.
+A settled transition returns the application. A transition that has not settled returns HTTP 202 with `pending` and `expectedStatus`. A version or state conflict returns HTTP 409. The practitioner application omits reviewer identity. A review with no `reviewCompletionDate` is left out of that response. The staff application includes those fields.
