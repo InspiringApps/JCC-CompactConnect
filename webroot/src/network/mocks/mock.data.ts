@@ -3793,7 +3793,7 @@ export const applicantAuthorizations = [
     // This authorization is to allow the renewal workflow.
     {
         id: '1',
-        type: 'tap',
+        type: 'apit',
         status: 'active',
         issueDate: moment().subtract(11, 'months').format(serverDatetimeFormat),
         renewalDate: null,
