@@ -347,6 +347,40 @@ class TestPsyproMigration(unittest.TestCase):
         self.assertEqual(1, result['skippedProviders'])
         self.assertEqual(1, result['skippedLicenses'])
 
+    def test_provider_id_override_uses_the_same_record_shape(self):
+        provider_id = '66c3a6b9-bc23-4629-9bc0-f955dc4116ae'
+        result = migrate.plan_migration(
+            approval_rows=[
+                {
+                    'UserId': 7,
+                    'authorizationType': 'APIT',
+                    'ApprovalDate': '2026-10-11',
+                    'dateOfExpiration': '2027-10-11',
+                    'renewalStatus': 0,
+                },
+            ],
+            home_rows=[{'UserId': 7, 'Abbreviation': 'CO'}],
+            demographics={7: _demographic()},
+            emails={7: 'ada@example.com'},
+            licenses=[_license_row()],
+            home_declarations=[
+                {
+                    'userId': 7,
+                    'StateAbbreviation': 'CO',
+                    'validated': True,
+                    'UpdatedAt': '2026-01-01T00:00:00+00:00',
+                }
+            ],
+            provider_ids={7: provider_id},
+        )
+        self.assertEqual({'provider', 'license', 'authorization'}, {item['type'] for item in result['items']})
+        for item in result['items']:
+            self.assertEqual(provider_id, item['providerId'])
+            self.assertEqual(f'psypact#PROVIDER#{provider_id}', item['pk'])
+        provider = next(item for item in result['items'] if item['type'] == 'provider')
+        self.assertEqual('co', provider['currentHomeJurisdiction'])
+        self.assertEqual('psypact#PROVIDER', provider['sk'])
+
     def test_psychologist_license_allows_the_authorization(self):
         result = migrate.plan_migration(
             approval_rows=[

@@ -413,8 +413,13 @@ def plan_migration(
     emails: dict[int, str],
     licenses: list[dict],
     home_declarations: list[dict] | None = None,
+    provider_ids: dict[int, str] | None = None,
 ) -> dict:
-    """Return provider-table items for approved users, plus skip counts."""
+    """Return provider-table items for approved users, plus skip counts.
+
+    provider_ids replaces the email-derived id for those user ids. The dumped
+    items still come from the provider, license, and authorization schemas.
+    """
     provider_schema, license_schema, authorization_schema = _record_schemas()
     declared_homes = current_home_jurisdictions(home_declarations or [])
     authorizations = approved_authorizations(approval_rows)
@@ -448,7 +453,7 @@ def plan_migration(
                 continue
             selected_users.pop(previous, None)
         email_owner[normalized] = user_id
-        selected_users[user_id] = provider_id_for_email(normalized)
+        selected_users[user_id] = (provider_ids or {}).get(user_id) or provider_id_for_email(normalized)
 
     _require_qualifying_licenses(selected_users, authorizations, licenses_by_user)
 

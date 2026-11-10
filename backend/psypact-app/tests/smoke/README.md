@@ -123,6 +123,8 @@ Some tests require manual interaction:
 
 Many tests create temporary test data (staff users, configurations, etc.) and clean it up automatically. However, if a test fails partway through, you may need to manually clean up test data.
 
+`application_workflow_smoke_tests.py` writes provider, license, and authorization records for the signed-in practitioner by calling the PSYPRO migration planner, then deletes that provider partition when the run ends. A passing run checks that every execution it started reached Succeeded, except a generation an abort scenario stopped. A failed run stops only this run's still-running executions. The caller-driven run reopens an application after an admin deactivation and after the script aborts its running execution. Each of those stops is run once before reviewers exist and once after section reviews have been saved. After reopen, the same reviewers edit those reviews, and the script checks that the original review objects were updated. The Cognito user still has to exist. Leave that partition empty before the run. The script will not replace records that are already there.
+
 ## Troubleshooting
 
 ### Common Issues
