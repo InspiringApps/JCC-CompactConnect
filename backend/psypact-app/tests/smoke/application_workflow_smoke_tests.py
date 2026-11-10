@@ -4,13 +4,13 @@ Run from backend/psypact-app:
 
     python3 tests/smoke/application_workflow_smoke_tests.py
 
-The script reads tests/smoke/smoke_tests_env.json. It writes provider, license,
-and authorization records for the signed-in practitioner through the PSYPRO
-migration schemas, then deletes that provider partition at the end. A passing
-run leaves every execution it started in Succeeded, except a generation an
-abort scenario stopped. A failed run stops only this run's still-running
-executions. The Cognito user must already exist. Its custom:providerId is the
-partition key, so the signed-in user does not need license records beforehand.
+The script reads tests/smoke/smoke_tests_env.json. It creates a provider Cognito
+user for a test email, writes that user's provider, license, and authorization
+records through the PSYPRO migration schemas, and deletes the user and that
+partition at the end. The provider id is the one the migration derives from the
+email. A passing run leaves every execution it started in Succeeded, except a
+generation an abort scenario stopped. A failed run stops only this run's
+still-running executions.
 
 Each scenario creates its own application for that practitioner and fills every
 section. Three compact-admin staff users are created for the run and deleted at
@@ -49,8 +49,8 @@ from smoke_common import (
     create_test_staff_user,
     delete_test_staff_user,
     get_api_base_url,
-    get_provider_user_auth_headers_cached,
     get_staff_user_auth_headers,
+    get_user_tokens,
     load_smoke_test_env,
     logger,
 )
@@ -73,6 +73,34 @@ SECTION_BODIES = {
 }
 COMPLETE_REVIEW_ACTIONS = frozenset({'ADVANCE', 'APPROVE', 'REJECT'})
 POLL_SECONDS = 90
+_PROVIDER_PASSWORD = 'TestPass123!'  # noqa: S105 test credential for the provider created by this run
+
+
+class _ProviderLogin:
+    """Tokens for the provider user this run creates."""
+
+    def __init__(self):
+        self.email: str | None = None
+        self.token: str | None = None
+
+    def start(self, email: str) -> None:
+        self.email = email
+        self.token = None
+
+    def clear(self) -> None:
+        self.email = None
+        self.token = None
+
+    def headers(self) -> dict:
+        if self.token is None:
+            if not self.email:
+                raise SmokeTestFailureException('Provider login was not started')
+            tokens = get_user_tokens(self.email, _PROVIDER_PASSWORD, is_staff=False)
+            self.token = tokens['IdToken']
+        return {'Authorization': 'Bearer ' + self.token}
+
+
+_PROVIDER = _ProviderLogin()
 
 
 class _OwnedExecutions:
@@ -220,7 +248,7 @@ class ApplicationWalk:
 
     def _headers(self, role: str) -> dict:
         if role == 'applicant':
-            return get_provider_user_auth_headers_cached()
+            return _PROVIDER.headers()
         staff_role = 'first' if role == 'admin' else role
         email = self.staff[staff_role]['email']
         for attempt in range(3):
@@ -245,7 +273,7 @@ class ApplicationWalk:
     def _call(self, method: str, suffix: str, role: str, body: dict | None = None, params: dict | None = None) -> dict:
         response = self._request(method, suffix, role, body, params)
         if response.status_code in (401, 403) and role == 'applicant':
-            os.environ.pop('TEST_PROVIDER_USER_ID_TOKEN', None)
+            _PROVIDER.token = None
         if response.status_code in (401, 403, 409, 504):
             logger.info('Retrying %s %s after %s', method, suffix, response.status_code)
             time.sleep(2)
@@ -664,20 +692,7 @@ def _load_migrate():
     return module
 
 
-def _signed_in_provider() -> tuple[str, str]:
-    response = config.cognito_client.admin_get_user(
-        UserPoolId=config.cognito_provider_user_pool_id,
-        Username=config.test_provider_user_username,
-    )
-    attributes = {item['Name']: item['Value'] for item in response['UserAttributes']}
-    provider_id = attributes.get('custom:providerId')
-    compact = attributes.get('custom:compact')
-    if not provider_id or compact != 'psypact':
-        raise SmokeTestFailureException('The signed-in provider user needs custom:providerId and custom:compact=psypact')
-    return provider_id, compact
-
-
-def _migrated_provider_items(provider_id: str, email: str) -> list[dict]:
+def _migrated_provider_items(email: str) -> list[dict]:
     """One approved practitioner, dumped by the same schemas the migration writes."""
     migrate = _load_migrate()
     expiration = (date.today() + timedelta(days=365)).isoformat()
@@ -723,7 +738,6 @@ def _migrated_provider_items(provider_id: str, email: str) -> list[dict]:
                 'UpdatedAt': '2026-01-01T00:00:00+00:00',
             }
         ],
-        provider_ids={1: provider_id},
     )
     missing = {'provider', 'license', 'authorization'} - {item['type'] for item in result['items']}
     if missing:
@@ -732,17 +746,51 @@ def _migrated_provider_items(provider_id: str, email: str) -> list[dict]:
             + ', '.join(sorted(missing))
             + f' records (skippedProviders={result["skippedProviders"]}, skippedLicenses={result["skippedLicenses"]})'
         )
+    provider_id = migrate.provider_id_for_email(email)
+    if any(item.get('providerId') != provider_id for item in result['items']):
+        raise SmokeTestFailureException(f'Migration did not use the email-derived provider id for {email}')
     return result['items']
 
 
-def _provider_records_to_write(provider_id: str, compact: str) -> list[dict]:
+def _provider_id(items: list[dict]) -> str:
+    provider = next(item for item in items if item.get('type') == 'provider')
+    return provider['providerId']
+
+
+def _require_empty_provider_partition(provider_id: str, compact: str) -> None:
     partition_key = f'{compact}#PROVIDER#{provider_id}'
     existing = config.provider_user_dynamodb_table.query(KeyConditionExpression=Key('pk').eq(partition_key), Limit=1)
     if existing.get('Items'):
         raise SmokeTestFailureException(
             f'Provider {provider_id} already has records. Refusing to replace them for this run.'
         )
-    return _migrated_provider_items(provider_id, config.test_provider_user_username)
+
+
+def _create_provider_user(email: str, provider_id: str, compact: str) -> None:
+    """Create the Cognito user whose token carries the email-derived provider id."""
+    config.cognito_client.admin_create_user(
+        UserPoolId=config.cognito_provider_user_pool_id,
+        Username=email,
+        UserAttributes=[
+            {'Name': 'email', 'Value': email},
+            {'Name': 'email_verified', 'Value': 'true'},
+            {'Name': 'custom:compact', 'Value': compact},
+            {'Name': 'custom:providerId', 'Value': provider_id},
+        ],
+        MessageAction='SUPPRESS',
+    )
+    config.cognito_client.admin_set_user_password(
+        UserPoolId=config.cognito_provider_user_pool_id,
+        Username=email,
+        Password=_PROVIDER_PASSWORD,
+        Permanent=True,
+    )
+    logger.info('Created provider user %s', email)
+
+
+def _delete_provider_user(email: str) -> None:
+    config.cognito_client.admin_delete_user(UserPoolId=config.cognito_provider_user_pool_id, Username=email)
+    logger.info('Deleted provider user %s', email)
 
 
 def _put_provider_records(items: list[dict]) -> None:
@@ -753,12 +801,12 @@ def _put_provider_records(items: list[dict]) -> None:
 
 
 def _call_provider_me() -> dict:
-    """The shared helper times out at 10 seconds, which is shorter than a cold start."""
+    """A cold start can take longer than the shared helper's 10 second timeout."""
     url = config.api_base_url + '/v1/provider-users/me'
-    response = requests.get(url, headers=get_provider_user_auth_headers_cached(), timeout=60)
+    response = requests.get(url, headers=_PROVIDER.headers(), timeout=60)
     if response.status_code in (401, 403):
-        os.environ.pop('TEST_PROVIDER_USER_ID_TOKEN', None)
-        response = requests.get(url, headers=get_provider_user_auth_headers_cached(), timeout=60)
+        _PROVIDER.token = None
+        response = requests.get(url, headers=_PROVIDER.headers(), timeout=60)
     if response.status_code != 200:
         raise SmokeTestFailureException(f'Failed to GET provider data. Response: {response.json()}')
     return response.json()
@@ -847,16 +895,28 @@ def _create_staff(compact: str) -> list[tuple[str, str, str]]:
 def main():
     load_smoke_test_env()
     _OWNED.reset()
-    provider_id, compact = _signed_in_provider()
+    provider_email = f'application-provider-{uuid4().hex[:8]}@example.com'
     created = []
+    provider_id = None
+    compact = 'psypact'
+    created_provider_user = False
     wrote_provider_records = False
     passed = False
     try:
-        items = _provider_records_to_write(provider_id, compact)
-        wrote_provider_records = True
+        items = _migrated_provider_items(provider_email)
+        provider_id = _provider_id(items)
+        _require_empty_provider_partition(provider_id, compact)
+        _create_provider_user(provider_email, provider_id, compact)
+        created_provider_user = True
+        _PROVIDER.start(provider_email)
         _put_provider_records(items)
+        wrote_provider_records = True
         provider = _call_provider_me()
         compact = provider['compact']
+        if provider.get('providerId') != provider_id:
+            raise SmokeTestFailureException(
+                f'Signed-in provider id {provider.get("providerId")} does not match {provider_id}'
+            )
         created = _create_staff(compact)
         staff = {role: {'email': email, 'sub': sub} for role, email, sub in created}
         expiry_wait = _env('CC_TEST_APPLICATION_EXPIRY_WAIT_SECONDS')
@@ -878,8 +938,11 @@ def main():
         for role, email, sub in created:
             delete_test_staff_user(email, sub, compact)
             logger.info('Deleted %s reviewer %s', role, email)
-        if wrote_provider_records:
+        if wrote_provider_records and provider_id:
             cleanup_test_provider_records(provider_id, compact)
+        if created_provider_user:
+            _delete_provider_user(provider_email)
+        _PROVIDER.clear()
         if not passed:
             _stop_owned_running_executions()
 

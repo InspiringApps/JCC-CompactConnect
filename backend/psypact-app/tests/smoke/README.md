@@ -29,7 +29,9 @@ You must have a registered provider user in your sandbox environment. This user 
 
 ### 3. AWS Credentials
 
-Ensure your AWS credentials are configured with appropriate permissions to:
+Log in with an SSO profile that can run the Cognito commands the tests use to create users, including `AdminCreateUser`. A read-only session will fail when a test creates a provider or staff user.
+
+The profile also needs permission to:
 - Access DynamoDB tables in the sandbox environment
 - Access Cognito user pools in the sandbox environment
 - Access other AWS services used by the smoke tests
@@ -123,7 +125,7 @@ Some tests require manual interaction:
 
 Many tests create temporary test data (staff users, configurations, etc.) and clean it up automatically. However, if a test fails partway through, you may need to manually clean up test data.
 
-`application_workflow_smoke_tests.py` writes provider, license, and authorization records for the signed-in practitioner by calling the PSYPRO migration planner, then deletes that provider partition when the run ends. A passing run checks that every execution it started reached Succeeded, except a generation an abort scenario stopped. A failed run stops only this run's still-running executions. The caller-driven run reopens an application after an admin deactivation and after the script aborts its running execution. Each of those stops is run once before reviewers exist and once after section reviews have been saved. After reopen, the same reviewers edit those reviews, and the script checks that the original review objects were updated. The Cognito user still has to exist. Leave that partition empty before the run. The script will not replace records that are already there.
+`application_workflow_smoke_tests.py` creates a provider Cognito user for a test email, writes that user's provider, license, and authorization records by calling the PSYPRO migration planner, and deletes the user and that partition when the run ends. The provider id is the one the migration derives from the email. A passing run checks that every execution it started reached Succeeded, except a generation an abort scenario stopped. A failed run stops only this run's still-running executions. The caller-driven run reopens an application after an admin deactivation and after the script aborts its running execution. Each of those stops is run once before reviewers exist and once after section reviews have been saved. After reopen, the same reviewers edit those reviews, and the script checks that the original review objects were updated. The script will not replace records that are already there.
 
 ## Troubleshooting
 
