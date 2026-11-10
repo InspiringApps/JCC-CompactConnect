@@ -46,6 +46,8 @@ class TestApplicationsApi(TestApi):
             'states:DescribeExecution',
             'scheduler:CreateSchedule',
             'iam:PassRole',
+            'dynamodb:TransactGetItems',
+            'dynamodb:TransactWriteItems',
         ):
             self.assertIn(action, policies)
 
@@ -64,6 +66,14 @@ class TestApplicationsApi(TestApi):
             integration=integration,
             model_name='V1PostApplicationRequestModel',
             required=['types', 'isRenewal'],
+        )
+        self._assert_method(
+            api_template,
+            api_stack,
+            resource=applications.resource,
+            method='GET',
+            authorizer_id=authorizer_id,
+            integration=integration,
         )
         self._assert_method(
             api_template,

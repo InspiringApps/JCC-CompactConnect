@@ -79,10 +79,22 @@ class TestApplicantApplications(TstLambdas):
             AttributeDefinitions=[
                 {'AttributeName': 'pk', 'AttributeType': 'S'},
                 {'AttributeName': 'sk', 'AttributeType': 'S'},
+                {'AttributeName': 'applicantGSIPK', 'AttributeType': 'S'},
+                {'AttributeName': 'applicantGSISK', 'AttributeType': 'S'},
             ],
             KeySchema=[
                 {'AttributeName': 'pk', 'KeyType': 'HASH'},
                 {'AttributeName': 'sk', 'KeyType': 'RANGE'},
+            ],
+            GlobalSecondaryIndexes=[
+                {
+                    'IndexName': 'applicantGSI',
+                    'KeySchema': [
+                        {'AttributeName': 'applicantGSIPK', 'KeyType': 'HASH'},
+                        {'AttributeName': 'applicantGSISK', 'KeyType': 'RANGE'},
+                    ],
+                    'Projection': {'ProjectionType': 'ALL'},
+                },
             ],
         )
         self.entered = 0
@@ -125,6 +137,59 @@ class TestApplicantApplications(TstLambdas):
         self.assertEqual('started', body['expectedStatus'])
         self.assertTrue(body['id'])
         self._assert_public(body)
+
+    def test_list_returns_only_the_callers_applications(self):
+        own = self._create()
+        self._call(
+            'PATCH',
+            _SECTION,
+            {'compact': COMPACT, 'applicationId': own['id'], 'section': 'personalInformation'},
+            {'firstName': 'Ada'},
+        )
+        self._call(
+            'POST',
+            _APPLICATIONS,
+            {'compact': COMPACT},
+            {'types': ['tap'], 'isRenewal': True},
+            provider_id='someone-else',
+        )
+
+        response = self._call('GET', _APPLICATIONS, {'compact': COMPACT})
+
+        self.assertEqual(200, response['statusCode'])
+        body = json.loads(response['body'])
+        self.assertEqual([own['id']], [item['id'] for item in body['items']])
+        listed = body['items'][0]
+        self.assertEqual('Ada', listed['personalInformation']['firstName'])
+        self.assertEqual('started', listed['status'])
+        self.assertNotIn('providerId', listed)
+        self.assertNotIn('stateName', listed)
+        self._assert_public(listed)
+        self.assertEqual(100, body['pagination']['pageSize'])
+        self.assertIsNone(body['pagination']['lastKey'])
+
+    def test_list_paginates_with_last_key(self):
+        first = self._create()
+        second = self._create()
+
+        page = self._call('GET', _APPLICATIONS, {'compact': COMPACT}, query={'pageSize': '1'})
+
+        self.assertEqual(200, page['statusCode'])
+        body = json.loads(page['body'])
+        self.assertEqual(1, len(body['items']))
+        self.assertIsNotNone(body['pagination']['lastKey'])
+
+        next_page = self._call(
+            'GET',
+            _APPLICATIONS,
+            {'compact': COMPACT},
+            query={'pageSize': '1', 'lastKey': body['pagination']['lastKey']},
+        )
+        self.assertEqual(200, next_page['statusCode'])
+        rest = json.loads(next_page['body'])
+        self.assertEqual(1, len(rest['items']))
+        self.assertIsNone(rest['pagination']['lastKey'])
+        self.assertEqual({first['id'], second['id']}, {body['items'][0]['id'], rest['items'][0]['id']})
 
     def test_get_is_limited_to_the_owning_practitioner(self):
         created = self._create()
@@ -253,11 +318,12 @@ class TestApplicantApplications(TstLambdas):
         body=None,
         provider_id: str = PROVIDER_ID,
         compact: str = COMPACT,
+        query: dict | None = None,
     ):
-        return applicant_applications.applicant_applications(
-            _event(method, resource, path, body, provider_id=provider_id, compact=compact),
-            self.mock_context,
-        )
+        event = _event(method, resource, path, body, provider_id=provider_id, compact=compact)
+        if query is not None:
+            event['queryStringParameters'] = query
+        return applicant_applications.applicant_applications(event, self.mock_context)
 
     def _assert_public(self, body: dict) -> None:
         encoded = json.dumps(body)

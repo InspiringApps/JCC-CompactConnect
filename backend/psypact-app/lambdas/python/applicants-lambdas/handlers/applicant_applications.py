@@ -116,6 +116,39 @@ def _create(event, compact: str, provider_id: str) -> dict:
     return _outcome(compact, application_id, result)
 
 
+def _pagination(event) -> dict:
+    params = event.get('queryStringParameters') or {}
+    pagination = {}
+    if params.get('pageSize') is not None:
+        try:
+            pagination['pageSize'] = int(params['pageSize'])
+        except ValueError as error:
+            raise CCInvalidRequestException('pageSize must be an integer') from error
+    if params.get('lastKey'):
+        pagination['lastKey'] = params['lastKey']
+    return pagination
+
+
+def _list(event, compact: str, provider_id: str) -> dict:
+    """Return the caller's applications from applicantGSI.
+
+    The index is eventually consistent. The query key is the caller's provider id, so
+    another provider's applications are not in the page.
+    """
+    page = _config().application_client.query_by_applicant(compact, provider_id, _pagination(event))
+    items = []
+    for item in page['items']:
+        application_id = item.get('applicationId') or item.get('id')
+        if not application_id:
+            continue
+        try:
+            snapshot = _config().application_client.get_snapshot(compact, application_id)
+        except CCNotFoundException:
+            continue
+        items.append(_from_snapshot(snapshot))
+    return {'items': items, 'pagination': page['pagination']}
+
+
 def _get(compact: str, provider_id: str, event) -> dict:
     application_id = _path(event, 'applicationId')
     _require_owner(compact, application_id, provider_id)
@@ -162,6 +195,8 @@ def applicant_applications(event, context):
     resource = event.get('resource') or event['requestContext']['resourcePath']
     if method == 'POST' and resource == _APPLICATIONS:
         return _create(event, compact, provider_id)
+    if method == 'GET' and resource == _APPLICATIONS:
+        return _list(event, compact, provider_id)
     if method == 'GET' and resource == _APPLICATION:
         return _get(compact, provider_id, event)
     if method == 'PATCH' and resource == _SECTION:

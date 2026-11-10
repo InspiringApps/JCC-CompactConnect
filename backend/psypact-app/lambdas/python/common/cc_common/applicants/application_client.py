@@ -398,6 +398,19 @@ class ApplicationClient:
             pagination,
         )
 
+    def query_by_applicant(self, compact: str, provider_id: str, pagination: dict | None = None) -> dict:
+        """Query applicantGSI for one provider's applications.
+
+        The index is eventually consistent. Its partition key is the provider id, so the
+        page contains only that provider's APPLICATION items.
+        """
+        return self._query_index(
+            self.config.application_applicant_gsi_name,
+            'applicantGSIPK',
+            f'{compact}#PROVIDER#{provider_id}',
+            pagination,
+        )
+
     def _query_index(self, index_name: str, key_name: str, key_value: str, pagination: dict | None) -> dict:
         pagination = pagination or {}
         page_size = _query_page_size(pagination.get('pageSize'))
