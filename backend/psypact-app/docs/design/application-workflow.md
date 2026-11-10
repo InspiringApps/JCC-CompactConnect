@@ -109,6 +109,7 @@ Practitioner routes are under `/v1/compacts/{compact}/applications` and use the 
 Practitioner:
 
 - `POST /applications` creates an application.
+- `GET /applications` lists the caller's applications from `applicantGSI`. `pageSize` and `lastKey` paginate. Each item is the practitioner application, including its sections.
 - `GET /applications/{applicationId}` reads the caller's application.
 - `PATCH /applications/{applicationId}/sections/{section}` updates one section.
 - `POST /applications/{applicationId}/submit` sends `SUBMIT`.

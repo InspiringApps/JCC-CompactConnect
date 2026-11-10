@@ -2476,6 +2476,33 @@ class ApiModel:
         return self.api._v1_application_response_model
 
     @property
+    def application_list_response_model(self) -> Model:
+        """Page of the caller's applications, each in the practitioner schema."""
+        if not hasattr(self.api, '_v1_application_list_response_model'):
+            self.api._v1_application_list_response_model = self.api.add_model(
+                'V1ApplicationListResponseModel',
+                description='The caller applications',
+                schema=JsonSchema(
+                    type=JsonSchemaType.OBJECT,
+                    additional_properties=False,
+                    required=['items', 'pagination'],
+                    properties={
+                        'items': JsonSchema(
+                            type=JsonSchemaType.ARRAY,
+                            items=JsonSchema(
+                                type=JsonSchemaType.OBJECT,
+                                additional_properties=False,
+                                required=['id'],
+                                properties=self._application_response_properties(staff=False),
+                            ),
+                        ),
+                        'pagination': self._pagination_response_schema,
+                    },
+                ),
+            )
+        return self.api._v1_application_list_response_model
+
+    @property
     def application_section_response_model(self) -> Model:
         """One application section, including its calculated statuses."""
         if not hasattr(self.api, '_v1_application_section_response_model'):

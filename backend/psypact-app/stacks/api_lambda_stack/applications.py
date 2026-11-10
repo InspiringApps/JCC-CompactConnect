@@ -34,6 +34,7 @@ class ApplicationsLambdas:
             environment=_application_environment(stack, application_table, application_workflow_stack),
         )
         application_table.grant_read_write_data(self.applicant_applications_handler)
+        _grant_application_transactions(self.applicant_applications_handler, application_table)
         persistent_stack.shared_encryption_key.grant_encrypt_decrypt(self.applicant_applications_handler)
         self.applicant_applications_handler.add_to_role_policy(
             PolicyStatement(
@@ -104,6 +105,7 @@ class ApplicationsLambdas:
             },
         )
         application_table.grant_read_write_data(self.staff_applications_handler)
+        _grant_application_transactions(self.staff_applications_handler, application_table)
         users_table.grant_read_data(self.staff_applications_handler)
         persistent_stack.shared_encryption_key.grant_encrypt_decrypt(self.staff_applications_handler)
         self.staff_applications_handler.add_to_role_policy(
@@ -162,6 +164,22 @@ class ApplicationsLambdas:
             ],
         )
         api_lambda_stack.log_groups.append(self.staff_applications_handler.log_group)
+
+
+def _grant_application_transactions(handler: PythonFunction, application_table) -> None:
+    """Allow the transactional reads and writes the application client uses.
+
+    ``grant_read_write_data`` covers ``Query`` and ``GetItem``. Loading a snapshot
+    uses ``TransactGetItems``. Creating and updating an application uses
+    ``TransactWriteItems``.
+    """
+    handler.add_to_role_policy(
+        PolicyStatement(
+            effect=Effect.ALLOW,
+            actions=['dynamodb:TransactGetItems', 'dynamodb:TransactWriteItems'],
+            resources=[application_table.table_arn],
+        )
+    )
 
 
 def _sandbox_lifetime(stack: Stack) -> dict:

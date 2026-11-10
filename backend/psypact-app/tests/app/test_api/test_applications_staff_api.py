@@ -47,6 +47,8 @@ class TestApplicationsStaffApi(TestApi):
             'scheduler:CreateSchedule',
             'scheduler:DeleteSchedule',
             'iam:PassRole',
+            'dynamodb:TransactGetItems',
+            'dynamodb:TransactWriteItems',
         ):
             self.assertIn(action, policies)
 

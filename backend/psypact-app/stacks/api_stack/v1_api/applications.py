@@ -39,6 +39,7 @@ class Applications:
         self.resubmit_resource = self.application_resource.add_resource('resubmit')
 
         self._add_create()
+        self._add_list()
         self._add_get()
         self._add_patch_section()
         self._add_submit()
@@ -48,10 +49,18 @@ class Applications:
     def _integration(self) -> LambdaIntegration:
         return LambdaIntegration(self.handler, timeout=Duration.seconds(29))
 
-    def _method_options(self) -> dict:
+    def _method_options(self, *, query: bool = False) -> dict:
+        parameters = {'method.request.header.Authorization': True}
+        if query:
+            parameters.update(
+                {
+                    'method.request.querystring.pageSize': False,
+                    'method.request.querystring.lastKey': False,
+                }
+            )
         return {
             'request_validator': self.api.parameter_body_validator,
-            'request_parameters': {'method.request.header.Authorization': True},
+            'request_parameters': parameters,
             'authorizer': self.api.provider_users_authorizer,
             'integration': self._integration(),
         }
@@ -71,6 +80,18 @@ class Applications:
                 ),
             ],
             **self._method_options(),
+        )
+
+    def _add_list(self) -> None:
+        self.resource.add_method(
+            'GET',
+            method_responses=[
+                MethodResponse(
+                    status_code='200',
+                    response_models={'application/json': self.api_model.application_list_response_model},
+                ),
+            ],
+            **self._method_options(query=True),
         )
 
     def _add_get(self) -> None:
