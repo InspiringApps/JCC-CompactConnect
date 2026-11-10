@@ -34,10 +34,75 @@ class TestProviderUsersApi(TestApi):
             },
         )
 
-    def test_synth_does_not_wire_provider_registration(self):
-        v1_api = self.app.sandbox_backend_stage.api_stack.api.v1_api
-        self.assertFalse(hasattr(v1_api.provider_users, 'provider_users_registration_resource'))
-        self.assertFalse(hasattr(self.app.sandbox_backend_stage.api_lambda_stack.provider_users_lambdas, 'provider_registration_handler'))
+    def test_synth_generates_provider_users_registration_endpoint_resource(self):
+        api_stack = self.app.sandbox_backend_stage.api_stack
+        api_stack_template = Template.from_stack(api_stack)
+        api_lambda_stack = self.app.sandbox_backend_stage.api_lambda_stack
+        api_lambda_stack_template = Template.from_stack(api_lambda_stack)
+
+        api_stack_template.has_resource_properties(
+            type=CfnResource.CFN_RESOURCE_TYPE_NAME,
+            props={
+                'ParentId': {
+                    'Ref': api_stack.get_logical_id(api_stack.api.v1_api.provider_users_resource.node.default_child),
+                },
+                'PathPart': 'registration',
+            },
+        )
+
+        api_lambda_stack_template.has_resource_properties(
+            type=CfnFunction.CFN_RESOURCE_TYPE_NAME,
+            props={'Handler': 'handlers.registration.register_provider'},
+        )
+
+        post_method_request_model_logical_id_capture = Capture()
+        method_model_logical_id_capture = Capture()
+
+        api_stack_template.has_resource_properties(
+            type=CfnMethod.CFN_RESOURCE_TYPE_NAME,
+            props={
+                'HttpMethod': 'POST',
+                'ResourceId': {
+                    'Ref': api_stack.get_logical_id(
+                        api_stack.api.v1_api.provider_users.provider_users_registration_resource.node.default_child
+                    ),
+                },
+                'Integration': TestApi.generate_expected_integration_object_for_imported_lambda(
+                    api_lambda_stack,
+                    api_lambda_stack_template,
+                    api_lambda_stack.provider_users_lambdas.provider_registration_handler,
+                ),
+                'RequestModels': {
+                    'application/json': {'Ref': post_method_request_model_logical_id_capture},
+                },
+                'MethodResponses': [
+                    {
+                        'ResponseModels': {'application/json': {'Ref': method_model_logical_id_capture}},
+                        'StatusCode': '200',
+                    },
+                ],
+            },
+        )
+
+        post_request_model = TestApi.get_resource_properties_by_logical_id(
+            post_method_request_model_logical_id_capture.as_string(),
+            api_stack_template.find_resources(CfnModel.CFN_RESOURCE_TYPE_NAME),
+        )
+        self.compare_snapshot(
+            post_request_model['Schema'],
+            'POST_PROVIDER_USERS_REGISTRATION_REQUEST_SCHEMA',
+            overwrite_snapshot=False,
+        )
+
+        post_response_model = TestApi.get_resource_properties_by_logical_id(
+            method_model_logical_id_capture.as_string(),
+            api_stack_template.find_resources(CfnModel.CFN_RESOURCE_TYPE_NAME),
+        )
+        self.compare_snapshot(
+            post_response_model['Schema'],
+            'POST_PROVIDER_USERS_REGISTRATION_RESPONSE_SCHEMA',
+            overwrite_snapshot=False,
+        )
 
     def test_synth_generates_get_provider_users_me_endpoint_resource(self):
         api_stack = self.app.sandbox_backend_stage.api_stack

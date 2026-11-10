@@ -59,6 +59,10 @@ class ProviderUsers:
         self.provider_users_me_email_verify_resource = self.provider_users_me_email_resource.add_resource('verify')
         self._add_provider_user_me_email_verify()
 
+        # /v1/provider-users/registration
+        self.provider_users_registration_resource = self.provider_users_resource.add_resource('registration')
+        self._add_provider_registration(api_lambda_stack=api_lambda_stack)
+
     def _add_get_provider_user_me(self):
         self.provider_users_me_resource.add_method(
             'GET',

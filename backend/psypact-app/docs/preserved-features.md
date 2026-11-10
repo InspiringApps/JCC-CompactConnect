@@ -15,11 +15,14 @@ Copied from Compact Connect so a practitioner can register, sign in, and maintai
 
 | Feature | Where it runs | Source |
 | --- | --- | --- |
-| Registration, profile, email change | `backend/common-python/lambdas/provider-data-v1/handlers/provider_users.py` | `backend/compact-connect/lambdas/python/provider-data-v1/handlers/provider_users.py` |
+| Registration | `backend/psypact-app/lambdas/python/provider-data-v1/handlers/registration.py` | Email-only PSYPACT signup. Duplicate-signup helpers are copied into `common_lambdas/provider_registration.py` from Compact Connect `handlers/registration.py`. |
+| Profile, email change | `backend/common-python/lambdas/provider-data-v1/handlers/provider_users.py` | `backend/compact-connect/lambdas/python/provider-data-v1/handlers/provider_users.py` |
 | Account recovery | `backend/common-python/lambdas/provider-data-v1/handlers/account_recovery.py` | `backend/compact-connect/lambdas/python/provider-data-v1/handlers/account_recovery.py` |
 | Home-jurisdiction change events | `backend/common-python/lambdas/data-events/handlers/home_jurisdiction_events.py` | `backend/compact-connect/lambdas/python/data-events/handlers/home_jurisdiction_events.py` |
 | Email delivery | `common_lambdas/email_service_client.py` | `backend/compact-connect/lambdas/python/common/cc_common/email_service_client.py` |
 | Practitioner and military schemas | `common_lambdas/data_model/schema/provider/jcc_provider*.py`, `common_lambdas/data_model/schema/military_affiliation/` | `backend/compact-connect/lambdas/python/common/cc_common/data_model/schema/provider/` and `schema/military_affiliation/` |
+
+PSYPACT registration is `POST /v1/provider-users/registration` and accepts only an email. It is not the Compact Connect license-match flow. `cc_common/provider_id.py` derives the provider id from the address, the same id migration writes, so a migrated provider keeps its licenses and authorizations. A new address stores a provider shell with the registered email. Duplicate requests use the copied `FORCE_CHANGE_PASSWORD` helpers.
 
 `lambdas/python/common/cc_common/psypact_home_jurisdiction.py` is PSYPACT-specific. The `put_home_jurisdiction.py` Lambda entry calls it. It calls the shared home-jurisdiction writer and rejects a change unless the selected jurisdiction has an unexpired, compact-eligible license.
 

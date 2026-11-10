@@ -2188,70 +2188,14 @@ class ApiModel:
             description='Provider registration request model',
             schema=JsonSchema(
                 type=JsonSchemaType.OBJECT,
-                required=[
-                    'givenName',
-                    'familyName',
-                    'email',
-                    'partialSocial',
-                    'dob',
-                    'jurisdiction',
-                    'licenseType',
-                    'compact',
-                    'token',
-                ],
+                required=['email'],
                 properties={
-                    'givenName': JsonSchema(
-                        type=JsonSchemaType.STRING,
-                        description="Provider's given name",
-                        max_length=200,
-                    ),
-                    'familyName': JsonSchema(
-                        type=JsonSchemaType.STRING,
-                        description="Provider's family name",
-                        max_length=200,
-                    ),
                     'email': JsonSchema(
                         type=JsonSchemaType.STRING,
                         description="Provider's email address",
                         format='email',
                         min_length=5,
                         max_length=100,
-                    ),
-                    'partialSocial': JsonSchema(
-                        type=JsonSchemaType.STRING,
-                        description='Last 4 digits of SSN',
-                        min_length=4,
-                        max_length=4,
-                    ),
-                    'dob': JsonSchema(
-                        type=JsonSchemaType.STRING,
-                        description='Date of birth in YYYY-MM-DD format',
-                        pattern=cc_api.YMD_FORMAT,
-                    ),
-                    'jurisdiction': JsonSchema(
-                        type=JsonSchemaType.STRING,
-                        description='Two-letter jurisdiction code',
-                        min_length=2,
-                        max_length=2,
-                        enum=self.api.node.get_context('jurisdictions'),
-                    ),
-                    'licenseType': JsonSchema(
-                        type=JsonSchemaType.STRING,
-                        description='Type of license',
-                        max_length=500,
-                        enum=self.stack.license_type_names,
-                    ),
-                    'compact': JsonSchema(
-                        type=JsonSchemaType.STRING,
-                        description='Compact name',
-                        # note that here we do not specify the enum with the list of compacts
-                        # this is intentional as we do not want the api to return this list
-                        # from the registration endpoint.
-                        max_length=100,
-                    ),
-                    'token': JsonSchema(
-                        type=JsonSchemaType.STRING,
-                        description='ReCAPTCHA token',
                     ),
                 },
             ),
