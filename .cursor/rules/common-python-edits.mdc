@@ -1,5 +1,5 @@
 ---
-description: Put a feature in the compact app that owns it. Edit backend/common-python only when every compact needs it or the behavior cannot be extended.
+description: Put a feature in the compact app that owns it. Edit backend/common-python only when every compact needs it, it cannot be extended, or only part of another compact's file can be copied.
 alwaysApply: true
 ---
 
@@ -11,6 +11,7 @@ Put a feature in the app that owns it: `backend/psypact-app`, `backend/cosmetolo
 
 1. The behavior cannot be added any other way. There is no subclass, wrapper, or override in the owning app that can supply it.
 2. The feature is explicitly meant for every compact. Update the copied source in the same change so copy-sync still matches.
+3. The owning app must call another compact's code exactly, and only part of that source file can be copied. Follow Partial copies below. Leave the compact-specific handler in the owning app.
 
 `backend/common-python` must not import a compact app. No import of `cc_common`, and no import of a module under any app directory above. Compact code imports `common_lambdas`. The shared package does not import the compact.
 
@@ -27,3 +28,15 @@ class PsypactPrivilegeGeneralResponseSchema(PrivilegeGeneralResponseSchema):
 ```
 
 A field used by one compact belongs on that subclass.
+
+## Partial copies
+
+Copy part of a source file into `common-python` when the owning app depends on that part and the rest of the file cannot be imported. `registration.py` is the example: its `schema.provider` import is the Cosmetology schema in `common-python`, while the Compact Connect schema is `jcc_provider`. The duplicate-signup helpers do not use that schema, so they can be copied and the license-match handler stays behind.
+
+- New module, header `# Copied method bodies from <source path>`. Keep each copied function's text identical. Rewrite imports only (`cc_common` → `common_lambdas`).
+- Duplicate into the owning app only the source lines that are not a function, such as the inline `admin_create_user`.
+- Add the file to `WHOLE_FILE_COMPARE_EXCLUSIONS` with a reason. Give it a new test file. Do not add its checks to an existing exclusion's test.
+
+Use the DataClient mixin only when the copied pieces are `DataClient` methods that must be mixed onto a different base class, and those methods import a schema whose name collides (`schema.provider` → `schema.provider.jcc_provider`). `jcc_data_client_mixin.py`, its extractor, and `test_jcc_data_client_mixin.py` are that case. `comparable_method_sources` compares class methods only.
+
+Module-level functions are not mixin methods. Compare them in their own test with `function_source` and `normalize_copied_body`, as `test_provider_registration_rules.py` does for `_should_allow_reregistration` and the other four helpers.

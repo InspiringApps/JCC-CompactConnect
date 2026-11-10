@@ -19,6 +19,8 @@ run replaces those items.
 import uuid
 from datetime import UTC, date, datetime
 
+from cc_common.provider_id import provider_id_for_email
+
 COMPACT = 'psypact'
 LICENSE_TYPE = 'psychologist'
 # Source Licensures values that were stored as the psych and doc-psych sort keys.
@@ -40,15 +42,6 @@ RENEWAL_STATUS_NAMES = {
     10: 'Deceased',
     11: 'Closed',
 }
-
-
-# Stable namespace so the same email always produces the same provider id.
-EMAIL_PROVIDER_NAMESPACE = uuid.UUID('a3c1e7b2-4d58-4f0a-9c6e-2b7d1a0e5f34')
-
-
-def provider_id_for_email(email: str) -> str:
-    """UUID string from the stripped, lower-cased email."""
-    return str(uuid.uuid5(EMAIL_PROVIDER_NAMESPACE, email.strip().lower()))
 
 
 def _as_date(value) -> date | None:

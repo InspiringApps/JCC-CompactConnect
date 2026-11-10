@@ -414,24 +414,16 @@ class ProviderPublicResponseSchema(ForgivingSchema):
 # We set this to a strict schema, to avoid extra values from entering the system.
 class ProviderRegistrationRequestSchema(CCRequestSchema):
     """
-    Schema for provider registration requests.
+    Schema for PSYPACT provider registration requests.
 
-    This schema is used to validate incoming requests to the provider registration API endpoint.
-    It corresponds to the V1ProviderRegistrationRequestModel in the API model.
+    Signup accepts only an email. The compact is always psypact, and the provider id is
+    derived from the address. This is not the Compact Connect license-match request.
 
     Serialization direction:
     API -> load() -> Python
     """
 
-    givenName = String(required=True, allow_none=False)
-    familyName = String(required=True, allow_none=False)
     email = Email(required=True, allow_none=False)
-    partialSocial = String(required=True, allow_none=False)
-    dob = Date(required=True, allow_none=False)
-    jurisdiction = Jurisdiction(required=True, allow_none=False)
-    licenseType = String(required=True, allow_none=False)
-    compact = String(required=True, allow_none=False)
-    token = String(required=True, allow_none=False)
 
 
 class QueryProvidersRequestSchema(CCRequestSchema):

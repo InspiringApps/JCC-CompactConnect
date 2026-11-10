@@ -7,7 +7,8 @@ silently edit a "shared" file.
 Each WHOLE_FILE_COMPARE_EXCLUSIONS path needs its own test file. Do not collect
 mixed-lineage files into one module. The DataClient mixin is checked in
 test_jcc_data_client_mixin.py. It imports JCC privilege record types, not a
-compact's privilege response schema.
+compact's privilege response schema. The registration helpers are checked in
+test_provider_registration_rules.py.
 """
 
 import ast
@@ -27,9 +28,13 @@ from copy_sync_tests.copied_file_text import (
 # cross-project need that prevents copying complete source files, and combining multiple. Each entry
 # also needs its own test file (Ex. see test_jcc_data_client_mixin.py).
 # The DataClient mixin is a partial copy of JCC DataClient. Whole-file compare would fail it.
+# provider_registration.py copies only the duplicate-signup helpers. The license-match
+# handler cannot be a whole-file copy because its provider schema path collides with
+# Cosmetology. Method-body checks live in test_provider_registration_rules.py.
 WHOLE_FILE_COMPARE_EXCLUSIONS: frozenset[str] = frozenset(
     {
         'common_lambdas/data_model/jcc_data_client_mixin.py',
+        'common_lambdas/provider_registration.py',
     }
 )
 

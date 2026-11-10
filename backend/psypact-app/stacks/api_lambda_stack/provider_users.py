@@ -452,13 +452,9 @@ class ProviderUsersLambdas:
 
         # Grant necessary permissions
         self.persistent_stack.provider_table.grant_read_write_data(handler)
-        self.persistent_stack.compact_configuration_table.grant_read_data(handler)
-        self.recaptcha_secret.grant_read(handler)
         self.provider_users_stack.provider_users.grant(handler, 'cognito-idp:AdminCreateUser')
         self.provider_users_stack.provider_users.grant(handler, 'cognito-idp:AdminGetUser')
-        # This is granted to allow the registration handler to clean up user accounts that were never logged into and
-        # need to be re-registered under a different email (ie mistyped their email address during the first
-        # registration)
+        # Delete the Cognito user when the provider write fails after the invite is created.
         self.provider_users_stack.provider_users.grant(handler, 'cognito-idp:AdminDeleteUser')
         self.persistent_stack.rate_limiting_table.grant_read_write_data(handler)
         self.persistent_stack.email_notification_service_lambda.grant_invoke(handler)
@@ -470,7 +466,8 @@ class ProviderUsersLambdas:
                 {
                     'id': 'AwsSolutions-IAM5',
                     'reason': 'The actions in this policy are specifically what this lambda needs '
-                    'and is scoped to one table, user pool, and one secret.',
+                    'and are scoped to the provider table, the rate limiting table, the user pool, '
+                    'and the email notification lambda.',
                 },
             ],
         )

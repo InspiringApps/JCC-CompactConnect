@@ -32,7 +32,7 @@ class TstLambdas(TestCase):
                 'SSN_INDEX_NAME': 'ssnIndex',
                 'USER_POOL_ID': 'us-east-1-12345',
                 'PROVIDER_USER_BUCKET_NAME': 'provider-user-bucket',
-                'COMPACTS': '["aslp", "octp", "coun"]',
+                'COMPACTS': '["aslp", "octp", "coun", "psypact"]',
                 'JURISDICTIONS': json.dumps(
                     [
                         'al',
