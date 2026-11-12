@@ -2465,3 +2465,413 @@ class ApiModel:
                 ),
             )
         return self.api._v1_patch_license_investigation_request_model
+
+    @property
+    def post_application_request_model(self) -> Model:
+        """POST /applications create request."""
+        if not hasattr(self.api, '_v1_post_application_request_model'):
+            self.api._v1_post_application_request_model = self.api.add_model(
+                'V1PostApplicationRequestModel',
+                description='Create a practitioner application',
+                schema=JsonSchema(
+                    type=JsonSchemaType.OBJECT,
+                    additional_properties=False,
+                    required=['types', 'isRenewal'],
+                    properties={
+                        'types': JsonSchema(
+                            type=JsonSchemaType.ARRAY,
+                            min_items=1,
+                            items=JsonSchema(type=JsonSchemaType.STRING, enum=['apit', 'tap']),
+                        ),
+                        'isRenewal': JsonSchema(type=JsonSchemaType.BOOLEAN),
+                    },
+                ),
+            )
+        return self.api._v1_post_application_request_model
+
+    @property
+    def patch_application_section_request_model(self) -> Model:
+        """PATCH one application section. The handler validates the section fields."""
+        if not hasattr(self.api, '_v1_patch_application_section_request_model'):
+            self.api._v1_patch_application_section_request_model = self.api.add_model(
+                'V1PatchApplicationSectionRequestModel',
+                description='Merge fields into one application section',
+                schema=JsonSchema(type=JsonSchemaType.OBJECT),
+            )
+        return self.api._v1_patch_application_section_request_model
+
+    @property
+    def post_application_submission_request_model(self) -> Model:
+        """POST submit or resubmit. requestId is optional."""
+        if not hasattr(self.api, '_v1_post_application_submission_request_model'):
+            self.api._v1_post_application_submission_request_model = self.api.add_model(
+                'V1PostApplicationSubmissionRequestModel',
+                description='Submit or resubmit an application',
+                schema=JsonSchema(
+                    type=JsonSchemaType.OBJECT,
+                    additional_properties=False,
+                    properties={'requestId': JsonSchema(type=JsonSchemaType.STRING)},
+                ),
+            )
+        return self.api._v1_post_application_submission_request_model
+
+    @property
+    def application_response_model(self) -> Model:
+        """Practitioner application. Workflow internals are not part of this model."""
+        if not hasattr(self.api, '_v1_application_response_model'):
+            self.api._v1_application_response_model = self.api.add_model(
+                'V1ApplicationResponseModel',
+                description='Practitioner application',
+                schema=JsonSchema(
+                    type=JsonSchemaType.OBJECT,
+                    additional_properties=False,
+                    required=['id'],
+                    properties=self._application_response_properties(staff=False),
+                ),
+            )
+        return self.api._v1_application_response_model
+
+    @property
+    def application_list_response_model(self) -> Model:
+        """Page of the caller's applications, each in the practitioner schema."""
+        if not hasattr(self.api, '_v1_application_list_response_model'):
+            self.api._v1_application_list_response_model = self.api.add_model(
+                'V1ApplicationListResponseModel',
+                description='The caller applications',
+                schema=JsonSchema(
+                    type=JsonSchemaType.OBJECT,
+                    additional_properties=False,
+                    required=['items', 'pagination'],
+                    properties={
+                        'items': JsonSchema(
+                            type=JsonSchemaType.ARRAY,
+                            items=JsonSchema(
+                                type=JsonSchemaType.OBJECT,
+                                additional_properties=False,
+                                required=['id'],
+                                properties=self._application_response_properties(staff=False),
+                            ),
+                        ),
+                        'pagination': self._pagination_response_schema,
+                    },
+                ),
+            )
+        return self.api._v1_application_list_response_model
+
+    @property
+    def application_section_response_model(self) -> Model:
+        """One application section, including its calculated statuses."""
+        if not hasattr(self.api, '_v1_application_section_response_model'):
+            self.api._v1_application_section_response_model = self.api.add_model(
+                'V1ApplicationSectionResponseModel',
+                description='One application section',
+                schema=self._application_section_schema(staff=False),
+            )
+        return self.api._v1_application_section_response_model
+
+    @property
+    def application_accepted_response_model(self) -> Model:
+        """202 body for a create, submit, or resubmit that has not settled yet."""
+        if not hasattr(self.api, '_v1_application_accepted_response_model'):
+            self.api._v1_application_accepted_response_model = self.api.add_model(
+                'V1ApplicationAcceptedResponseModel',
+                description='Accepted application request that has not settled yet',
+                schema=JsonSchema(
+                    type=JsonSchemaType.OBJECT,
+                    additional_properties=False,
+                    required=['id'],
+                    properties={
+                        'id': JsonSchema(type=JsonSchemaType.STRING),
+                        'expectedStatus': JsonSchema(type=JsonSchemaType.STRING),
+                        'pending': JsonSchema(type=JsonSchemaType.BOOLEAN),
+                        'requestId': JsonSchema(type=JsonSchemaType.STRING),
+                    },
+                ),
+            )
+        return self.api._v1_application_accepted_response_model
+
+    @property
+    def put_application_reviewers_request_model(self) -> Model:
+        """Assign one or more compact-admin reviewers."""
+        if not hasattr(self.api, '_v1_put_application_reviewers_request_model'):
+            reviewer = JsonSchema(type=JsonSchemaType.STRING)
+            self.api._v1_put_application_reviewers_request_model = self.api.add_model(
+                'V1PutApplicationReviewersRequestModel',
+                description='Assign application reviewers',
+                schema=JsonSchema(
+                    type=JsonSchemaType.OBJECT,
+                    additional_properties=False,
+                    properties={
+                        'firstReviewerSub': reviewer,
+                        'secondReviewerSub': reviewer,
+                        'finalReviewerSub': reviewer,
+                    },
+                ),
+            )
+        return self.api._v1_put_application_reviewers_request_model
+
+    @property
+    def put_application_section_review_request_model(self) -> Model:
+        """Save the caller's section review."""
+        if not hasattr(self.api, '_v1_put_application_section_review_request_model'):
+            self.api._v1_put_application_section_review_request_model = self.api.add_model(
+                'V1PutApplicationSectionReviewRequestModel',
+                description='Save one section review',
+                schema=JsonSchema(
+                    type=JsonSchemaType.OBJECT,
+                    additional_properties=False,
+                    required=['sectionStatus'],
+                    properties={
+                        'sectionStatus': JsonSchema(
+                            type=JsonSchemaType.STRING,
+                            enum=['pending', 'approved', 'rejected'],
+                        ),
+                        'notesForApplicant': JsonSchema(type=JsonSchemaType.STRING),
+                        'notesForReviewers': JsonSchema(type=JsonSchemaType.STRING),
+                    },
+                ),
+            )
+        return self.api._v1_put_application_section_review_request_model
+
+    @property
+    def post_application_transition_request_model(self) -> Model:
+        """Take one workflow action."""
+        if not hasattr(self.api, '_v1_post_application_transition_request_model'):
+            self.api._v1_post_application_transition_request_model = self.api.add_model(
+                'V1PostApplicationTransitionRequestModel',
+                description='Transition an application',
+                schema=JsonSchema(
+                    type=JsonSchemaType.OBJECT,
+                    additional_properties=False,
+                    required=['action', 'requestId'],
+                    properties={
+                        'action': JsonSchema(type=JsonSchemaType.STRING),
+                        'notesForApplicant': JsonSchema(type=JsonSchemaType.STRING),
+                        'notesForReviewers': JsonSchema(type=JsonSchemaType.STRING),
+                        'requestId': JsonSchema(type=JsonSchemaType.STRING),
+                    },
+                ),
+            )
+        return self.api._v1_post_application_transition_request_model
+
+    @property
+    def post_application_status_request_model(self) -> Model:
+        """Admin override to a target state."""
+        if not hasattr(self.api, '_v1_post_application_status_request_model'):
+            self.api._v1_post_application_status_request_model = self.api.add_model(
+                'V1PostApplicationStatusRequestModel',
+                description='Override an application state',
+                schema=JsonSchema(
+                    type=JsonSchemaType.OBJECT,
+                    additional_properties=False,
+                    required=['targetState', 'requestId'],
+                    properties={
+                        'targetState': JsonSchema(type=JsonSchemaType.STRING),
+                        'reason': JsonSchema(type=JsonSchemaType.STRING),
+                        'requestId': JsonSchema(type=JsonSchemaType.STRING),
+                    },
+                ),
+            )
+        return self.api._v1_post_application_status_request_model
+
+    @property
+    def post_application_reopen_request_model(self) -> Model:
+        """Reopen an application into a new staff-review generation."""
+        if not hasattr(self.api, '_v1_post_application_reopen_request_model'):
+            self.api._v1_post_application_reopen_request_model = self.api.add_model(
+                'V1PostApplicationReopenRequestModel',
+                description='Reopen an application',
+                schema=JsonSchema(
+                    type=JsonSchemaType.OBJECT,
+                    additional_properties=False,
+                    properties={
+                        'requestId': JsonSchema(type=JsonSchemaType.STRING),
+                        'reason': JsonSchema(type=JsonSchemaType.STRING),
+                    },
+                ),
+            )
+        return self.api._v1_post_application_reopen_request_model
+
+    @property
+    def staff_application_response_model(self) -> Model:
+        """Staff application, including state and reviewer assignment."""
+        if not hasattr(self.api, '_v1_staff_application_response_model'):
+            self.api._v1_staff_application_response_model = self.api.add_model(
+                'V1StaffApplicationResponseModel',
+                description='Staff view of one application',
+                schema=JsonSchema(
+                    type=JsonSchemaType.OBJECT,
+                    additional_properties=False,
+                    properties=self._application_response_properties(staff=True),
+                ),
+            )
+        return self.api._v1_staff_application_response_model
+
+    @property
+    def staff_application_section_response_model(self) -> Model:
+        """One application section as returned to compact admins."""
+        if not hasattr(self.api, '_v1_staff_application_section_response_model'):
+            self.api._v1_staff_application_section_response_model = self.api.add_model(
+                'V1StaffApplicationSectionResponseModel',
+                description='Staff view of one application section',
+                schema=self._application_section_schema(staff=True),
+            )
+        return self.api._v1_staff_application_section_response_model
+
+    @property
+    def staff_application_list_response_model(self) -> Model:
+        """Page of application summaries."""
+        if not hasattr(self.api, '_v1_staff_application_list_response_model'):
+            self.api._v1_staff_application_list_response_model = self.api.add_model(
+                'V1StaffApplicationListResponseModel',
+                description='Application summaries',
+                schema=JsonSchema(
+                    type=JsonSchemaType.OBJECT,
+                    additional_properties=False,
+                    required=['items', 'pagination'],
+                    properties={
+                        'items': JsonSchema(
+                            type=JsonSchemaType.ARRAY,
+                            items=JsonSchema(
+                                type=JsonSchemaType.OBJECT,
+                                additional_properties=False,
+                                properties={
+                                    'id': JsonSchema(type=JsonSchemaType.STRING),
+                                    'status': JsonSchema(type=JsonSchemaType.STRING),
+                                    'stateName': JsonSchema(type=JsonSchemaType.STRING),
+                                    'providerId': JsonSchema(type=JsonSchemaType.STRING),
+                                    'types': JsonSchema(
+                                        type=JsonSchemaType.ARRAY,
+                                        items=JsonSchema(type=JsonSchemaType.STRING),
+                                    ),
+                                    'submitted': JsonSchema(type=JsonSchemaType.STRING),
+                                    'actorSub': JsonSchema(type=JsonSchemaType.STRING),
+                                },
+                            ),
+                        ),
+                        'pagination': JsonSchema(
+                            type=JsonSchemaType.OBJECT,
+                            additional_properties=False,
+                            properties={
+                                'pageSize': JsonSchema(type=JsonSchemaType.NUMBER),
+                                'prevLastKey': JsonSchema(type=JsonSchemaType.STRING),
+                                'lastKey': JsonSchema(type=JsonSchemaType.STRING),
+                            },
+                        ),
+                    },
+                ),
+            )
+        return self.api._v1_staff_application_list_response_model
+
+    def _application_response_properties(self, *, staff: bool) -> dict:
+        section = self._application_section_schema(staff=staff)
+        properties = {
+            'id': JsonSchema(type=JsonSchemaType.STRING),
+            'created': JsonSchema(type=JsonSchemaType.STRING),
+            'submitted': JsonSchema(type=JsonSchemaType.STRING),
+            'completed': JsonSchema(type=JsonSchemaType.STRING),
+            'types': JsonSchema(
+                type=JsonSchemaType.ARRAY,
+                items=JsonSchema(type=JsonSchemaType.STRING, enum=['apit', 'tap']),
+            ),
+            'isRenewal': JsonSchema(type=JsonSchemaType.BOOLEAN),
+            'status': JsonSchema(
+                type=JsonSchemaType.STRING,
+                enum=[
+                    'started',
+                    'staff-review',
+                    'first-review',
+                    'second-review',
+                    'final-review',
+                    'committee-review',
+                    'awaiting-applicant',
+                    'approved',
+                    'rejected',
+                    'deactivated',
+                ],
+            ),
+            'reviews': JsonSchema(type=JsonSchemaType.ARRAY, items=self._application_review_schema(staff=staff)),
+            'attestations': JsonSchema(
+                type=JsonSchemaType.ARRAY,
+                items=JsonSchema(type=JsonSchemaType.STRING),
+            ),
+            'paymentCompensated': JsonSchema(
+                type=JsonSchemaType.ARRAY,
+                items=JsonSchema(type=JsonSchemaType.STRING, enum=['apit', 'tap']),
+            ),
+            'personalInformation': section,
+            'licenseHistory': section,
+            'education': section,
+            'conductHistory': section,
+            'homeState': section,
+            'acknowledgements': section,
+        }
+        if staff:
+            properties.update(
+                {
+                    'stateName': JsonSchema(type=JsonSchemaType.STRING),
+                    'providerId': JsonSchema(type=JsonSchemaType.STRING),
+                    'firstReviewerSub': JsonSchema(type=JsonSchemaType.STRING),
+                    'firstReviewerFirstName': JsonSchema(type=JsonSchemaType.STRING),
+                    'firstReviewerLastName': JsonSchema(type=JsonSchemaType.STRING),
+                    'secondReviewerSub': JsonSchema(type=JsonSchemaType.STRING),
+                    'secondReviewerFirstName': JsonSchema(type=JsonSchemaType.STRING),
+                    'secondReviewerLastName': JsonSchema(type=JsonSchemaType.STRING),
+                    'finalReviewerSub': JsonSchema(type=JsonSchemaType.STRING),
+                    'finalReviewerFirstName': JsonSchema(type=JsonSchemaType.STRING),
+                    'finalReviewerLastName': JsonSchema(type=JsonSchemaType.STRING),
+                }
+            )
+        return properties
+
+    def _application_review_schema(self, *, staff: bool, section: bool = False) -> JsonSchema:
+        if not staff:
+            return JsonSchema(
+                type=JsonSchemaType.OBJECT,
+                additional_properties=False,
+                properties={
+                    'notesForApplicant': JsonSchema(type=JsonSchemaType.STRING),
+                    'reviewCompletionDate': JsonSchema(type=JsonSchemaType.STRING),
+                },
+            )
+        properties = {
+            'assignmentId': JsonSchema(type=JsonSchemaType.STRING),
+            'reviewerType': JsonSchema(
+                type=JsonSchemaType.STRING,
+                enum=['first-reviewer', 'second-reviewer', 'final-reviewer'],
+            ),
+            'reviewer': JsonSchema(
+                type=JsonSchemaType.OBJECT,
+                additional_properties=False,
+                properties={
+                    'id': JsonSchema(type=JsonSchemaType.STRING),
+                    'firstName': JsonSchema(type=JsonSchemaType.STRING),
+                    'lastName': JsonSchema(type=JsonSchemaType.STRING),
+                },
+            ),
+            'assignedDate': JsonSchema(type=JsonSchemaType.STRING),
+            'reviewCompletionDate': JsonSchema(type=JsonSchemaType.STRING),
+            'notesForApplicant': JsonSchema(type=JsonSchemaType.STRING),
+            'notesForReviewers': JsonSchema(type=JsonSchemaType.STRING),
+        }
+        if section:
+            properties['reviewerSelectedApplicationSectionStatus'] = JsonSchema(
+                type=JsonSchemaType.STRING,
+                enum=['pending', 'approved', 'rejected'],
+            )
+        else:
+            properties['reviewerSelectedApplicationStatus'] = JsonSchema(type=JsonSchemaType.STRING)
+        return JsonSchema(type=JsonSchemaType.OBJECT, additional_properties=False, properties=properties)
+
+    def _application_section_schema(self, *, staff: bool) -> JsonSchema:
+        return JsonSchema(
+            type=JsonSchemaType.OBJECT,
+            properties={
+                'calculatedSectionStatusForApplicant': JsonSchema(type=JsonSchemaType.STRING),
+                'calculatedSectionStatusForReviewComparison': JsonSchema(type=JsonSchemaType.STRING),
+                'reviews': JsonSchema(
+                    type=JsonSchemaType.ARRAY,
+                    items=self._application_review_schema(staff=staff, section=True),
+                ),
+            },
+        )

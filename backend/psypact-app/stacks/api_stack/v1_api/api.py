@@ -8,6 +8,7 @@ from stacks import search_persistent_stack as sps
 from stacks.api_lambda_stack import ApiLambdaStack
 
 from .api_model import ApiModel
+from .applications import Applications
 from .attestations import Attestations
 from .compact_configuration_api import CompactConfigurationApi
 from .credentials import Credentials
@@ -128,6 +129,9 @@ class V1Api:
         # /v1/compacts/{compact}
         self.compact_resource = self.compacts_resource.add_resource('{compact}')
 
+        # /v1/compacts/{compact}/applications
+        self.applications_resource = self.compact_resource.add_resource('applications')
+
         # /v1/compacts/{compact}/attestations
         self.attestations_resource = self.compact_resource.add_resource('attestations')
         self.attestations = Attestations(
@@ -193,4 +197,12 @@ class V1Api:
             admin_scopes=admin_scopes,
             api_model=self.api_model,
             api_lambda_stack=api_lambda_stack,
+        )
+        # /v1/compacts/{compact}/staff-users/applications
+        self.applications = Applications(
+            resource=self.applications_resource,
+            staff_resource=self.staff_users_admin_resource.add_resource('applications'),
+            api_model=self.api_model,
+            api_lambda_stack=api_lambda_stack,
+            compact_admin_scopes=[f'{compact}/admin' for compact in _active_compacts],
         )

@@ -29,7 +29,9 @@ You must have a registered provider user in your sandbox environment. This user 
 
 ### 3. AWS Credentials
 
-Ensure your AWS credentials are configured with appropriate permissions to:
+Log in with an SSO profile that can run the Cognito commands the tests use to create users, including `AdminCreateUser`. A read-only session will fail when a test creates a provider or staff user.
+
+The profile also needs permission to:
 - Access DynamoDB tables in the sandbox environment
 - Access Cognito user pools in the sandbox environment
 - Access other AWS services used by the smoke tests
@@ -87,6 +89,8 @@ Install the required Python packages. The smoke tests use the same dependencies 
    - `CC_TEST_RATE_LIMITING_DYNAMO_TABLE_NAME`: DynamoDB table name for rate limiting
    - `CC_TEST_SSN_DYNAMO_TABLE_NAME`: DynamoDB table name for SSN data
    - `CC_TEST_GET_PROVIDER_SSN_LAMBDA_NAME`: Lambda function name for SSN retrieval
+   - `CC_TEST_APPLICATION_TABLE_NAME`: DynamoDB table name for practitioner applications. Required by the expiry scenario.
+   - `CC_TEST_APPLICATION_EXPIRY_WAIT_SECONDS`: When set, `application_workflow_smoke_tests.py` runs only the expiry and reopen scenario. Leave it empty to run the caller-driven scenarios instead. The sandbox for the expiry run needs `"sandbox": true` and `application_workflow_lifetime_seconds` shorter than this wait. Do not set that lifetime while running the caller-driven scenarios.
 
 3. **Important:** Never commit `smoke_tests_env.json` to version control. It contains sensitive credentials and should be in `.gitignore`.
 
@@ -106,6 +110,7 @@ python3 tests/smoke/investigation_smoke_tests.py
 python3 tests/smoke/public_search_smoke_tests.py
 python3 tests/smoke/home_jurisdiction_change_smoke_tests.py
 python3 tests/smoke/query_provider_smoke_tests.py
+python3 tests/smoke/application_workflow_smoke_tests.py
 ```
 
 ## Special Test Requirements
@@ -119,6 +124,8 @@ Some tests require manual interaction:
 ### Tests Creating Test Data
 
 Many tests create temporary test data (staff users, configurations, etc.) and clean it up automatically. However, if a test fails partway through, you may need to manually clean up test data.
+
+`application_workflow_smoke_tests.py` creates a provider Cognito user for a test email, writes that user's provider, license, and authorization records by calling the PSYPRO migration planner, and deletes the user and that partition when the run ends. The provider id is the one the migration derives from the email. A passing run checks that every execution it started reached Succeeded, except a generation an abort scenario stopped. A failed run stops only this run's still-running executions. The caller-driven run reopens an application after an admin deactivation and after the script aborts its running execution. Each of those stops is run once before reviewers exist and once after section reviews have been saved. After reopen, the same reviewers edit those reviews, and the script checks that the original review objects were updated. The script will not replace records that are already there.
 
 ## Troubleshooting
 

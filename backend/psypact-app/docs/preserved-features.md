@@ -111,6 +111,20 @@ Shared Cosmetology modules used by those handlers include `common_lambdas/config
 
 Compact Connect also contributes `common_lambdas/event_bus_client.py` and `common_lambdas/event_state_client.py`, from `backend/compact-connect/lambdas/python/common/cc_common/`.
 
+## Practitioner applications
+
+The application workflow and its data model are PSYPACT-specific. Records, transitions, reopen, and the Step Functions definition live under `lambdas/python/common/cc_common/applicants/`, `lambdas/python/applicants-lambdas/`, and `stacks/application_workflow_stack/`.
+
+Those modules call shared `common_lambdas` helpers instead of copying them:
+
+| Helper | Use |
+| --- | --- |
+| `common_lambdas.utils.api_handler` | Request logging and HTTP error mapping. `cc_common.psypact_api_handler.api_handler_psypact` wraps it so a conflict is HTTP 409 and a pending transition is HTTP 202. |
+| `common_lambdas.utils.authorize_compact_level_only_action` | Staff routes require `{compact}/admin`. A jurisdiction admin scope does not match. |
+| `BaseRecordSchema` | Application table schemas extend the shared record base. The import in `cc_common/applicants/schema/records.py` is `common_lambdas.data_model.schema.base_record.BaseRecordSchema`. |
+
+The workflow does not send email and does not publish on the event bus, so `email_service_client` and `event_bus_client` are not part of this flow.
+
 ## Intentionally not carried
 
 Privileges are generated at read time, so these JCC flows are not carried:
