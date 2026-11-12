@@ -37,7 +37,13 @@ class TestProviderUsersApi(TestApi):
     def test_synth_does_not_wire_provider_registration(self):
         v1_api = self.app.sandbox_backend_stage.api_stack.api.v1_api
         self.assertFalse(hasattr(v1_api.provider_users, 'provider_users_registration_resource'))
-        self.assertFalse(hasattr(self.app.sandbox_backend_stage.api_lambda_stack.provider_users_lambdas, 'provider_registration_handler'))
+        # The function remains so the live API stack can drop its import before the export is deleted.
+        self.assertTrue(
+            hasattr(
+                self.app.sandbox_backend_stage.api_lambda_stack.provider_users_lambdas,
+                'provider_registration_handler',
+            )
+        )
 
     def test_synth_generates_get_provider_users_me_endpoint_resource(self):
         api_stack = self.app.sandbox_backend_stage.api_stack
