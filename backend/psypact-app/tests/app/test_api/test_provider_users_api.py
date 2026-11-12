@@ -44,6 +44,8 @@ class TestProviderUsersApi(TestApi):
                 'provider_registration_handler',
             )
         )
+        outputs = Template.from_stack(self.app.sandbox_backend_stage.api_lambda_stack).to_json()['Outputs']
+        self.assertIn('ExportsOutputFnGetAttProviderRegistrationHandler27C4CD127Arn3DCE0349', outputs)
 
     def test_synth_generates_get_provider_users_me_endpoint_resource(self):
         api_stack = self.app.sandbox_backend_stage.api_stack
