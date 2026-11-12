@@ -1193,7 +1193,9 @@
         "continueApplication": "Continuar solicitud",
         "updateApplication": "Actualizar solicitud",
         "decision": "Decisión",
-        "stepOfTotal": "Paso {step} de {total}"
+        "stepOfTotal": "Paso {step} de {total}",
+        "needHelp": "¿Necesitar ayuda?",
+        "helpInstructions": "Si tiene preguntas sobre los requisitos o el proceso de solicitud, póngase en contacto con "
     },
     "military": {
         "militaryStatusTitle": "Estado militar",

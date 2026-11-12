@@ -1209,7 +1209,9 @@
         "continueApplication": "Continue application",
         "updateApplication": "Update application",
         "decision": "Decision",
-        "stepOfTotal": "Step {step} of {total}"
+        "stepOfTotal": "Step {step} of {total}",
+        "needHelp": "Need help?",
+        "helpInstructions": "For questions about eligibility or the application process, please contact "
     },
     "military": {
         "militaryStatusTitle": "Military status",

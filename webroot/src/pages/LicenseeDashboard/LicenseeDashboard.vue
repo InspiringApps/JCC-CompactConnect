@@ -112,6 +112,20 @@
                 />
             </div>
         </div>
+        <div v-if="$isAppModePsyPact" class="help-section">
+            <div class="help-title">{{ $t('application.needHelp') }}</div>
+            <div class="help-description">
+                {{ $t('application.helpInstructions') }}
+                <a
+                    href="mailto:info@psypact.gov"
+                    class="email-link"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    info@psypact.gov
+                </a>.
+            </div>
+        </div>
         <TransitionGroup>
             <Modal
                 v-if="isPurchaseUnavailableModalDisplayed"
