@@ -21,6 +21,14 @@ aws-cdk-lib==2.265.0
     #   -r requirements.in
     #   aws-cdk-aws-lambda-python-alpha
     #   cdk-nag
+aws-lambda-powertools==3.40.0
+    # via -r requirements.in
+boto3==1.44.1
+    # via -r requirements.in
+botocore==1.44.1
+    # via
+    #   boto3
+    #   s3transfer
 cattrs==26.1.0
     # via jsii
 cdk-nag==2.38.2
@@ -31,6 +39,11 @@ constructs==10.8.1
     #   aws-cdk-aws-lambda-python-alpha
     #   aws-cdk-lib
     #   cdk-nag
+jmespath==1.1.0
+    # via
+    #   aws-lambda-powertools
+    #   boto3
+    #   botocore
 jsii==1.139.0
     # via
     #   aws-cdk-asset-awscli-v1
@@ -40,6 +53,8 @@ jsii==1.139.0
     #   aws-cdk-lib
     #   cdk-nag
     #   constructs
+marshmallow==4.4.0
+    # via -r requirements.in
 publication==0.0.3
     # via
     #   aws-cdk-asset-awscli-v1
@@ -51,9 +66,13 @@ publication==0.0.3
     #   constructs
     #   jsii
 python-dateutil==2.9.0.post0
-    # via jsii
+    # via
+    #   botocore
+    #   jsii
 pyyaml==6.0.3
     # via -r requirements.in
+s3transfer==0.19.3
+    # via boto3
 six==1.17.0
     # via python-dateutil
 typeguard==2.13.3
@@ -63,5 +82,8 @@ typeguard==2.13.3
     #   jsii
 typing-extensions==4.16.0
     # via
+    #   aws-lambda-powertools
     #   cattrs
     #   jsii
+urllib3==2.8.0
+    # via botocore
