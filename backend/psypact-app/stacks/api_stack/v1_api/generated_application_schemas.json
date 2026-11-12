@@ -1,0 +1,3849 @@
+{
+  "CREATE_APPLICATION": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "types": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "apit",
+            "tap"
+          ]
+        },
+        "minItems": 1
+      },
+      "isRenewal": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "types",
+      "isRenewal"
+    ]
+  },
+  "PATCH_SECTION": {
+    "type": "object",
+    "description": "Stored section document for the {section} path parameter. The handler validates the body with the section schema for that section."
+  },
+  "SUBMISSION": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "requestId": {
+        "type": "string"
+      }
+    }
+  },
+  "ASSIGN_REVIEWERS": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "firstReviewerSub": {
+        "type": "string"
+      },
+      "secondReviewerSub": {
+        "type": "string"
+      },
+      "finalReviewerSub": {
+        "type": "string"
+      }
+    }
+  },
+  "SECTION_REVIEW": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "sectionStatus": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "approved",
+          "rejected"
+        ]
+      },
+      "notesForApplicant": {
+        "type": "string"
+      },
+      "notesForReviewers": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "sectionStatus"
+    ]
+  },
+  "TRANSITION": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "action": {
+        "type": "string",
+        "enum": [
+          "SUBMIT",
+          "REVIEWERS_ASSIGNED",
+          "ADVANCE",
+          "SEND_TO_COMMITTEE",
+          "REQUEST_CHANGES",
+          "RETURN_TO_REVIEW",
+          "RESUBMIT",
+          "APPROVE",
+          "REJECT",
+          "ADMIN_OVERRIDE",
+          "ADMIN_DEACTIVATE"
+        ]
+      },
+      "notesForApplicant": {
+        "type": "string"
+      },
+      "notesForReviewers": {
+        "type": "string"
+      },
+      "requestId": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "action",
+      "requestId"
+    ]
+  },
+  "SET_STATUS": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "targetState": {
+        "type": "string",
+        "enum": [
+          "Started",
+          "StaffReview",
+          "FirstReview",
+          "SecondReview",
+          "FinalReview",
+          "CommitteeFromFirst",
+          "CommitteeFromSecond",
+          "CommitteeFromFinal",
+          "AwaitingApplicantFromFirst",
+          "AwaitingApplicantFromSecond",
+          "AwaitingApplicantFromFinal",
+          "Approved",
+          "Rejected",
+          "Deactivated",
+          "InternalError"
+        ]
+      },
+      "reason": {
+        "type": "string"
+      },
+      "requestId": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "targetState",
+      "requestId"
+    ]
+  },
+  "REOPEN": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "requestId": {
+        "type": "string"
+      },
+      "reason": {
+        "type": "string"
+      }
+    }
+  },
+  "PROVIDER_APPLICATION": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "created": {
+        "type": "string"
+      },
+      "submitted": {
+        "type": "string"
+      },
+      "completed": {
+        "type": "string"
+      },
+      "types": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "apit",
+            "tap"
+          ]
+        }
+      },
+      "isRenewal": {
+        "type": "boolean"
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "started",
+          "staff-review",
+          "first-review",
+          "second-review",
+          "final-review",
+          "committee-review",
+          "awaiting-applicant",
+          "approved",
+          "rejected",
+          "deactivated",
+          "internal-error"
+        ]
+      },
+      "reviews": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "reviewCompletionDate": {
+              "type": "string"
+            },
+            "notesForApplicant": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "attestations": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "paymentCompensated": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "apit",
+            "tap"
+          ]
+        }
+      },
+      "personalInformation": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "calculatedSectionStatusForApplicant": {
+            "type": "string",
+            "enum": [
+              "incomplete",
+              "complete",
+              "needs-attention",
+              "confirm-details"
+            ]
+          },
+          "calculatedSectionStatusForReviewComparison": {
+            "type": "string",
+            "enum": [
+              "both-approve",
+              "reviewers-differ"
+            ]
+          },
+          "reviews": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "reviewCompletionDate": {
+                  "type": "string"
+                },
+                "notesForApplicant": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "middleName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "suffix": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "altPhone": {
+            "type": "string"
+          },
+          "dob": {
+            "type": "string"
+          },
+          "ssnLastFour": {
+            "type": "string"
+          },
+          "npi": {
+            "type": "string"
+          },
+          "gender": {
+            "type": "string"
+          },
+          "professionalName": {
+            "type": "string"
+          },
+          "citizenship": {
+            "type": "string"
+          },
+          "placeOfBirth": {
+            "type": "string"
+          },
+          "languages": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "mailingAddress1": {
+            "type": "string"
+          },
+          "mailingAddress2": {
+            "type": "string"
+          },
+          "mailingCity": {
+            "type": "string"
+          },
+          "mailingState": {
+            "type": "string"
+          },
+          "mailingZip": {
+            "type": "string"
+          }
+        }
+      },
+      "licenseHistory": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "calculatedSectionStatusForApplicant": {
+            "type": "string",
+            "enum": [
+              "incomplete",
+              "complete",
+              "needs-attention",
+              "confirm-details"
+            ]
+          },
+          "calculatedSectionStatusForReviewComparison": {
+            "type": "string",
+            "enum": [
+              "both-approve",
+              "reviewers-differ"
+            ]
+          },
+          "reviews": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "reviewCompletionDate": {
+                  "type": "string"
+                },
+                "notesForApplicant": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "ePassport": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "mobilityNumber": {
+                "type": "string"
+              },
+              "issueDate": {
+                "type": "string"
+              }
+            }
+          },
+          "ipc": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "mobilityNumber": {
+                "type": "string"
+              },
+              "issueDate": {
+                "type": "string"
+              }
+            }
+          },
+          "licenses": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "state": {
+                  "type": "string"
+                },
+                "issueDate": {
+                  "type": "string"
+                },
+                "licenseNumber": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "active",
+                    "inactive"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "education": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "calculatedSectionStatusForApplicant": {
+            "type": "string",
+            "enum": [
+              "incomplete",
+              "complete",
+              "needs-attention",
+              "confirm-details"
+            ]
+          },
+          "calculatedSectionStatusForReviewComparison": {
+            "type": "string",
+            "enum": [
+              "both-approve",
+              "reviewers-differ"
+            ]
+          },
+          "reviews": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "reviewCompletionDate": {
+                  "type": "string"
+                },
+                "notesForApplicant": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "nameAtTime": {
+            "type": "string"
+          },
+          "institution": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "degreeType": {
+            "type": "string"
+          },
+          "program": {
+            "type": "string"
+          },
+          "department": {
+            "type": "string"
+          },
+          "conferredDate": {
+            "type": "string"
+          },
+          "isCompleted": {
+            "type": "boolean"
+          },
+          "accreditingBody": {
+            "type": "string"
+          },
+          "accreditingYear": {
+            "type": "string"
+          },
+          "isAccreditedByAuthority": {
+            "type": "boolean"
+          },
+          "isProgramEquivalent": {
+            "type": "boolean"
+          },
+          "accreditingContact": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "email": {
+                "type": "string"
+              },
+              "city": {
+                "type": "string"
+              },
+              "state": {
+                "type": "string"
+              },
+              "zip": {
+                "type": "string"
+              },
+              "phone": {
+                "type": "string"
+              },
+              "attestations": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "hasResidence": {
+            "type": "boolean"
+          },
+          "transcripts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "filename": {
+                  "type": "string"
+                },
+                "sizeBytes": {
+                  "type": "integer"
+                },
+                "downloadUri": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "conductHistory": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "calculatedSectionStatusForApplicant": {
+            "type": "string",
+            "enum": [
+              "incomplete",
+              "complete",
+              "needs-attention",
+              "confirm-details"
+            ]
+          },
+          "calculatedSectionStatusForReviewComparison": {
+            "type": "string",
+            "enum": [
+              "both-approve",
+              "reviewers-differ"
+            ]
+          },
+          "reviews": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "reviewCompletionDate": {
+                  "type": "string"
+                },
+                "notesForApplicant": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "attestations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "convictions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "charge": {
+                  "type": "string"
+                },
+                "location": {
+                  "type": "string"
+                },
+                "date": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "notes": {
+            "type": "string"
+          },
+          "documents": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "filename": {
+                  "type": "string"
+                },
+                "sizeBytes": {
+                  "type": "integer"
+                },
+                "downloadUri": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "homeState": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "calculatedSectionStatusForApplicant": {
+            "type": "string",
+            "enum": [
+              "incomplete",
+              "complete",
+              "needs-attention",
+              "confirm-details"
+            ]
+          },
+          "calculatedSectionStatusForReviewComparison": {
+            "type": "string",
+            "enum": [
+              "both-approve",
+              "reviewers-differ"
+            ]
+          },
+          "reviews": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "reviewCompletionDate": {
+                  "type": "string"
+                },
+                "notesForApplicant": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "applicationTypes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "applicationType": {
+                  "type": "string",
+                  "enum": [
+                    "apit",
+                    "tap"
+                  ]
+                },
+                "state": {
+                  "type": "string"
+                },
+                "startDate": {
+                  "type": "string"
+                },
+                "isActiveMilitary": {
+                  "type": "boolean"
+                },
+                "militaryDocuments": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "filename": {
+                        "type": "string"
+                      },
+                      "sizeBytes": {
+                        "type": "integer"
+                      },
+                      "downloadUri": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "attestations": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "acknowledgements": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "calculatedSectionStatusForApplicant": {
+            "type": "string",
+            "enum": [
+              "incomplete",
+              "complete",
+              "needs-attention",
+              "confirm-details"
+            ]
+          },
+          "calculatedSectionStatusForReviewComparison": {
+            "type": "string",
+            "enum": [
+              "both-approve",
+              "reviewers-differ"
+            ]
+          },
+          "reviews": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "reviewCompletionDate": {
+                  "type": "string"
+                },
+                "notesForApplicant": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "attestations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "signatureName": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "required": [
+      "id"
+    ]
+  },
+  "STAFF_APPLICATION": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "created": {
+        "type": "string"
+      },
+      "submitted": {
+        "type": "string"
+      },
+      "completed": {
+        "type": "string"
+      },
+      "types": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "apit",
+            "tap"
+          ]
+        }
+      },
+      "isRenewal": {
+        "type": "boolean"
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "started",
+          "staff-review",
+          "first-review",
+          "second-review",
+          "final-review",
+          "committee-review",
+          "awaiting-applicant",
+          "approved",
+          "rejected",
+          "deactivated",
+          "internal-error"
+        ]
+      },
+      "reviews": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "assignmentId": {
+              "type": "string"
+            },
+            "reviewerType": {
+              "type": "string",
+              "enum": [
+                "first-reviewer",
+                "second-reviewer",
+                "final-reviewer"
+              ]
+            },
+            "reviewer": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "firstName": {
+                  "type": "string"
+                },
+                "lastName": {
+                  "type": "string"
+                }
+              }
+            },
+            "assignedDate": {
+              "type": "string"
+            },
+            "reviewCompletionDate": {
+              "type": "string"
+            },
+            "notesForApplicant": {
+              "type": "string"
+            },
+            "notesForReviewers": {
+              "type": "string"
+            },
+            "reviewerSelectedApplicationStatus": {
+              "type": "string",
+              "enum": [
+                "started",
+                "staff-review",
+                "first-review",
+                "second-review",
+                "final-review",
+                "committee-review",
+                "awaiting-applicant",
+                "approved",
+                "rejected",
+                "deactivated",
+                "internal-error"
+              ],
+              "description": "The reviewer's recorded choice, not the live application status."
+            }
+          }
+        }
+      },
+      "attestations": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "paymentCompensated": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "apit",
+            "tap"
+          ]
+        }
+      },
+      "personalInformation": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "calculatedSectionStatusForApplicant": {
+            "type": "string",
+            "enum": [
+              "incomplete",
+              "complete",
+              "needs-attention",
+              "confirm-details"
+            ]
+          },
+          "calculatedSectionStatusForReviewComparison": {
+            "type": "string",
+            "enum": [
+              "both-approve",
+              "reviewers-differ"
+            ]
+          },
+          "reviews": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "assignmentId": {
+                  "type": "string"
+                },
+                "reviewerType": {
+                  "type": "string",
+                  "enum": [
+                    "first-reviewer",
+                    "second-reviewer",
+                    "final-reviewer"
+                  ]
+                },
+                "reviewer": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "firstName": {
+                      "type": "string"
+                    },
+                    "lastName": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "assignedDate": {
+                  "type": "string"
+                },
+                "reviewCompletionDate": {
+                  "type": "string"
+                },
+                "notesForApplicant": {
+                  "type": "string"
+                },
+                "notesForReviewers": {
+                  "type": "string"
+                },
+                "reviewerSelectedApplicationSectionStatus": {
+                  "type": "string",
+                  "enum": [
+                    "pending",
+                    "approved",
+                    "rejected"
+                  ]
+                }
+              }
+            }
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "middleName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "suffix": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "altPhone": {
+            "type": "string"
+          },
+          "dob": {
+            "type": "string"
+          },
+          "ssnLastFour": {
+            "type": "string"
+          },
+          "npi": {
+            "type": "string"
+          },
+          "gender": {
+            "type": "string"
+          },
+          "professionalName": {
+            "type": "string"
+          },
+          "citizenship": {
+            "type": "string"
+          },
+          "placeOfBirth": {
+            "type": "string"
+          },
+          "languages": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "mailingAddress1": {
+            "type": "string"
+          },
+          "mailingAddress2": {
+            "type": "string"
+          },
+          "mailingCity": {
+            "type": "string"
+          },
+          "mailingState": {
+            "type": "string"
+          },
+          "mailingZip": {
+            "type": "string"
+          }
+        }
+      },
+      "licenseHistory": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "calculatedSectionStatusForApplicant": {
+            "type": "string",
+            "enum": [
+              "incomplete",
+              "complete",
+              "needs-attention",
+              "confirm-details"
+            ]
+          },
+          "calculatedSectionStatusForReviewComparison": {
+            "type": "string",
+            "enum": [
+              "both-approve",
+              "reviewers-differ"
+            ]
+          },
+          "reviews": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "assignmentId": {
+                  "type": "string"
+                },
+                "reviewerType": {
+                  "type": "string",
+                  "enum": [
+                    "first-reviewer",
+                    "second-reviewer",
+                    "final-reviewer"
+                  ]
+                },
+                "reviewer": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "firstName": {
+                      "type": "string"
+                    },
+                    "lastName": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "assignedDate": {
+                  "type": "string"
+                },
+                "reviewCompletionDate": {
+                  "type": "string"
+                },
+                "notesForApplicant": {
+                  "type": "string"
+                },
+                "notesForReviewers": {
+                  "type": "string"
+                },
+                "reviewerSelectedApplicationSectionStatus": {
+                  "type": "string",
+                  "enum": [
+                    "pending",
+                    "approved",
+                    "rejected"
+                  ]
+                }
+              }
+            }
+          },
+          "ePassport": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "mobilityNumber": {
+                "type": "string"
+              },
+              "issueDate": {
+                "type": "string"
+              }
+            }
+          },
+          "ipc": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "mobilityNumber": {
+                "type": "string"
+              },
+              "issueDate": {
+                "type": "string"
+              }
+            }
+          },
+          "licenses": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "state": {
+                  "type": "string"
+                },
+                "issueDate": {
+                  "type": "string"
+                },
+                "licenseNumber": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "active",
+                    "inactive"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "education": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "calculatedSectionStatusForApplicant": {
+            "type": "string",
+            "enum": [
+              "incomplete",
+              "complete",
+              "needs-attention",
+              "confirm-details"
+            ]
+          },
+          "calculatedSectionStatusForReviewComparison": {
+            "type": "string",
+            "enum": [
+              "both-approve",
+              "reviewers-differ"
+            ]
+          },
+          "reviews": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "assignmentId": {
+                  "type": "string"
+                },
+                "reviewerType": {
+                  "type": "string",
+                  "enum": [
+                    "first-reviewer",
+                    "second-reviewer",
+                    "final-reviewer"
+                  ]
+                },
+                "reviewer": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "firstName": {
+                      "type": "string"
+                    },
+                    "lastName": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "assignedDate": {
+                  "type": "string"
+                },
+                "reviewCompletionDate": {
+                  "type": "string"
+                },
+                "notesForApplicant": {
+                  "type": "string"
+                },
+                "notesForReviewers": {
+                  "type": "string"
+                },
+                "reviewerSelectedApplicationSectionStatus": {
+                  "type": "string",
+                  "enum": [
+                    "pending",
+                    "approved",
+                    "rejected"
+                  ]
+                }
+              }
+            }
+          },
+          "nameAtTime": {
+            "type": "string"
+          },
+          "institution": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "degreeType": {
+            "type": "string"
+          },
+          "program": {
+            "type": "string"
+          },
+          "department": {
+            "type": "string"
+          },
+          "conferredDate": {
+            "type": "string"
+          },
+          "isCompleted": {
+            "type": "boolean"
+          },
+          "accreditingBody": {
+            "type": "string"
+          },
+          "accreditingYear": {
+            "type": "string"
+          },
+          "isAccreditedByAuthority": {
+            "type": "boolean"
+          },
+          "isProgramEquivalent": {
+            "type": "boolean"
+          },
+          "accreditingContact": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "email": {
+                "type": "string"
+              },
+              "city": {
+                "type": "string"
+              },
+              "state": {
+                "type": "string"
+              },
+              "zip": {
+                "type": "string"
+              },
+              "phone": {
+                "type": "string"
+              },
+              "attestations": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "hasResidence": {
+            "type": "boolean"
+          },
+          "transcripts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "filename": {
+                  "type": "string"
+                },
+                "sizeBytes": {
+                  "type": "integer"
+                },
+                "downloadUri": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "conductHistory": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "calculatedSectionStatusForApplicant": {
+            "type": "string",
+            "enum": [
+              "incomplete",
+              "complete",
+              "needs-attention",
+              "confirm-details"
+            ]
+          },
+          "calculatedSectionStatusForReviewComparison": {
+            "type": "string",
+            "enum": [
+              "both-approve",
+              "reviewers-differ"
+            ]
+          },
+          "reviews": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "assignmentId": {
+                  "type": "string"
+                },
+                "reviewerType": {
+                  "type": "string",
+                  "enum": [
+                    "first-reviewer",
+                    "second-reviewer",
+                    "final-reviewer"
+                  ]
+                },
+                "reviewer": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "firstName": {
+                      "type": "string"
+                    },
+                    "lastName": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "assignedDate": {
+                  "type": "string"
+                },
+                "reviewCompletionDate": {
+                  "type": "string"
+                },
+                "notesForApplicant": {
+                  "type": "string"
+                },
+                "notesForReviewers": {
+                  "type": "string"
+                },
+                "reviewerSelectedApplicationSectionStatus": {
+                  "type": "string",
+                  "enum": [
+                    "pending",
+                    "approved",
+                    "rejected"
+                  ]
+                }
+              }
+            }
+          },
+          "attestations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "convictions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "charge": {
+                  "type": "string"
+                },
+                "location": {
+                  "type": "string"
+                },
+                "date": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "notes": {
+            "type": "string"
+          },
+          "documents": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "filename": {
+                  "type": "string"
+                },
+                "sizeBytes": {
+                  "type": "integer"
+                },
+                "downloadUri": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "homeState": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "calculatedSectionStatusForApplicant": {
+            "type": "string",
+            "enum": [
+              "incomplete",
+              "complete",
+              "needs-attention",
+              "confirm-details"
+            ]
+          },
+          "calculatedSectionStatusForReviewComparison": {
+            "type": "string",
+            "enum": [
+              "both-approve",
+              "reviewers-differ"
+            ]
+          },
+          "reviews": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "assignmentId": {
+                  "type": "string"
+                },
+                "reviewerType": {
+                  "type": "string",
+                  "enum": [
+                    "first-reviewer",
+                    "second-reviewer",
+                    "final-reviewer"
+                  ]
+                },
+                "reviewer": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "firstName": {
+                      "type": "string"
+                    },
+                    "lastName": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "assignedDate": {
+                  "type": "string"
+                },
+                "reviewCompletionDate": {
+                  "type": "string"
+                },
+                "notesForApplicant": {
+                  "type": "string"
+                },
+                "notesForReviewers": {
+                  "type": "string"
+                },
+                "reviewerSelectedApplicationSectionStatus": {
+                  "type": "string",
+                  "enum": [
+                    "pending",
+                    "approved",
+                    "rejected"
+                  ]
+                }
+              }
+            }
+          },
+          "applicationTypes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "applicationType": {
+                  "type": "string",
+                  "enum": [
+                    "apit",
+                    "tap"
+                  ]
+                },
+                "state": {
+                  "type": "string"
+                },
+                "startDate": {
+                  "type": "string"
+                },
+                "isActiveMilitary": {
+                  "type": "boolean"
+                },
+                "militaryDocuments": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "filename": {
+                        "type": "string"
+                      },
+                      "sizeBytes": {
+                        "type": "integer"
+                      },
+                      "downloadUri": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "attestations": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "acknowledgements": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "calculatedSectionStatusForApplicant": {
+            "type": "string",
+            "enum": [
+              "incomplete",
+              "complete",
+              "needs-attention",
+              "confirm-details"
+            ]
+          },
+          "calculatedSectionStatusForReviewComparison": {
+            "type": "string",
+            "enum": [
+              "both-approve",
+              "reviewers-differ"
+            ]
+          },
+          "reviews": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "assignmentId": {
+                  "type": "string"
+                },
+                "reviewerType": {
+                  "type": "string",
+                  "enum": [
+                    "first-reviewer",
+                    "second-reviewer",
+                    "final-reviewer"
+                  ]
+                },
+                "reviewer": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "firstName": {
+                      "type": "string"
+                    },
+                    "lastName": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "assignedDate": {
+                  "type": "string"
+                },
+                "reviewCompletionDate": {
+                  "type": "string"
+                },
+                "notesForApplicant": {
+                  "type": "string"
+                },
+                "notesForReviewers": {
+                  "type": "string"
+                },
+                "reviewerSelectedApplicationSectionStatus": {
+                  "type": "string",
+                  "enum": [
+                    "pending",
+                    "approved",
+                    "rejected"
+                  ]
+                }
+              }
+            }
+          },
+          "attestations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "signatureName": {
+            "type": "string"
+          }
+        }
+      },
+      "stateName": {
+        "type": "string",
+        "enum": [
+          "Started",
+          "StaffReview",
+          "FirstReview",
+          "SecondReview",
+          "FinalReview",
+          "CommitteeFromFirst",
+          "CommitteeFromSecond",
+          "CommitteeFromFinal",
+          "AwaitingApplicantFromFirst",
+          "AwaitingApplicantFromSecond",
+          "AwaitingApplicantFromFinal",
+          "Approved",
+          "Rejected",
+          "Deactivated",
+          "InternalError"
+        ],
+        "description": "Step Functions node for this generation, such as CommitteeFromFirst or AwaitingApplicantFromSecond. status is the projection clients should display. Several nodes share one status, including the three committee nodes and the three awaiting-applicant nodes."
+      },
+      "providerId": {
+        "type": "string"
+      },
+      "assignedFirstReviewerMetadata": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "cognitoSub": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "assignmentId": {
+            "type": "string"
+          }
+        }
+      },
+      "assignedSecondReviewerMetadata": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "cognitoSub": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "assignmentId": {
+            "type": "string"
+          }
+        }
+      },
+      "assignedFinalReviewerMetadata": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "cognitoSub": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "assignmentId": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "ACCEPTED": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "expectedStatus": {
+        "type": "string",
+        "enum": [
+          "started",
+          "staff-review",
+          "first-review",
+          "second-review",
+          "final-review",
+          "committee-review",
+          "awaiting-applicant",
+          "approved",
+          "rejected",
+          "deactivated",
+          "internal-error"
+        ]
+      },
+      "pending": {
+        "type": "boolean"
+      },
+      "requestId": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "id"
+    ]
+  },
+  "STAFF_LIST_ITEM": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "status": {
+        "type": "string",
+        "enum": [
+          "started",
+          "staff-review",
+          "first-review",
+          "second-review",
+          "final-review",
+          "committee-review",
+          "awaiting-applicant",
+          "approved",
+          "rejected",
+          "deactivated",
+          "internal-error"
+        ]
+      },
+      "stateName": {
+        "type": "string",
+        "enum": [
+          "Started",
+          "StaffReview",
+          "FirstReview",
+          "SecondReview",
+          "FinalReview",
+          "CommitteeFromFirst",
+          "CommitteeFromSecond",
+          "CommitteeFromFinal",
+          "AwaitingApplicantFromFirst",
+          "AwaitingApplicantFromSecond",
+          "AwaitingApplicantFromFinal",
+          "Approved",
+          "Rejected",
+          "Deactivated",
+          "InternalError"
+        ],
+        "description": "Step Functions node for this generation, such as CommitteeFromFirst or AwaitingApplicantFromSecond. status is the projection clients should display. Several nodes share one status, including the three committee nodes and the three awaiting-applicant nodes."
+      },
+      "providerId": {
+        "type": "string"
+      },
+      "types": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "enum": [
+            "apit",
+            "tap"
+          ]
+        }
+      },
+      "submitted": {
+        "type": "string"
+      },
+      "actorSub": {
+        "type": "string"
+      }
+    }
+  },
+  "PROVIDER_SECTION": {
+    "type": "object",
+    "additionalProperties": false,
+    "description": "Response for one {section}. Properties from every section are included because this path uses one model. The application response lists each section separately. The handler validates a PATCH body with the stored section schema for the path section.",
+    "properties": {
+      "calculatedSectionStatusForApplicant": {
+        "type": "string",
+        "enum": [
+          "incomplete",
+          "complete",
+          "needs-attention",
+          "confirm-details"
+        ]
+      },
+      "calculatedSectionStatusForReviewComparison": {
+        "type": "string",
+        "enum": [
+          "both-approve",
+          "reviewers-differ"
+        ]
+      },
+      "reviews": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "reviewCompletionDate": {
+              "type": "string"
+            },
+            "notesForApplicant": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "firstName": {
+        "type": "string"
+      },
+      "middleName": {
+        "type": "string"
+      },
+      "lastName": {
+        "type": "string"
+      },
+      "suffix": {
+        "type": "string"
+      },
+      "phone": {
+        "type": "string"
+      },
+      "altPhone": {
+        "type": "string"
+      },
+      "dob": {
+        "type": "string"
+      },
+      "ssnLastFour": {
+        "type": "string"
+      },
+      "npi": {
+        "type": "string"
+      },
+      "gender": {
+        "type": "string"
+      },
+      "professionalName": {
+        "type": "string"
+      },
+      "citizenship": {
+        "type": "string"
+      },
+      "placeOfBirth": {
+        "type": "string"
+      },
+      "languages": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "mailingAddress1": {
+        "type": "string"
+      },
+      "mailingAddress2": {
+        "type": "string"
+      },
+      "mailingCity": {
+        "type": "string"
+      },
+      "mailingState": {
+        "type": "string"
+      },
+      "mailingZip": {
+        "type": "string"
+      },
+      "ePassport": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "mobilityNumber": {
+            "type": "string"
+          },
+          "issueDate": {
+            "type": "string"
+          }
+        }
+      },
+      "ipc": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "mobilityNumber": {
+            "type": "string"
+          },
+          "issueDate": {
+            "type": "string"
+          }
+        }
+      },
+      "licenses": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "state": {
+              "type": "string"
+            },
+            "issueDate": {
+              "type": "string"
+            },
+            "licenseNumber": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "active",
+                "inactive"
+              ]
+            }
+          }
+        }
+      },
+      "nameAtTime": {
+        "type": "string"
+      },
+      "institution": {
+        "type": "string"
+      },
+      "city": {
+        "type": "string"
+      },
+      "state": {
+        "type": "string"
+      },
+      "degreeType": {
+        "type": "string"
+      },
+      "program": {
+        "type": "string"
+      },
+      "department": {
+        "type": "string"
+      },
+      "conferredDate": {
+        "type": "string"
+      },
+      "isCompleted": {
+        "type": "boolean"
+      },
+      "accreditingBody": {
+        "type": "string"
+      },
+      "accreditingYear": {
+        "type": "string"
+      },
+      "isAccreditedByAuthority": {
+        "type": "boolean"
+      },
+      "isProgramEquivalent": {
+        "type": "boolean"
+      },
+      "accreditingContact": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "zip": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "attestations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "hasResidence": {
+        "type": "boolean"
+      },
+      "transcripts": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "filename": {
+              "type": "string"
+            },
+            "sizeBytes": {
+              "type": "integer"
+            },
+            "downloadUri": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "attestations": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "convictions": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "charge": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string"
+            },
+            "date": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "notes": {
+        "type": "string"
+      },
+      "documents": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "filename": {
+              "type": "string"
+            },
+            "sizeBytes": {
+              "type": "integer"
+            },
+            "downloadUri": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "applicationTypes": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "applicationType": {
+              "type": "string",
+              "enum": [
+                "apit",
+                "tap"
+              ]
+            },
+            "state": {
+              "type": "string"
+            },
+            "startDate": {
+              "type": "string"
+            },
+            "isActiveMilitary": {
+              "type": "boolean"
+            },
+            "militaryDocuments": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "filename": {
+                    "type": "string"
+                  },
+                  "sizeBytes": {
+                    "type": "integer"
+                  },
+                  "downloadUri": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "attestations": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "signatureName": {
+        "type": "string"
+      }
+    }
+  },
+  "STAFF_SECTION": {
+    "type": "object",
+    "additionalProperties": false,
+    "description": "Response for one {section}. Properties from every section are included because this path uses one model. The application response lists each section separately. The handler validates a PATCH body with the stored section schema for the path section.",
+    "properties": {
+      "calculatedSectionStatusForApplicant": {
+        "type": "string",
+        "enum": [
+          "incomplete",
+          "complete",
+          "needs-attention",
+          "confirm-details"
+        ]
+      },
+      "calculatedSectionStatusForReviewComparison": {
+        "type": "string",
+        "enum": [
+          "both-approve",
+          "reviewers-differ"
+        ]
+      },
+      "reviews": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "assignmentId": {
+              "type": "string"
+            },
+            "reviewerType": {
+              "type": "string",
+              "enum": [
+                "first-reviewer",
+                "second-reviewer",
+                "final-reviewer"
+              ]
+            },
+            "reviewer": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "firstName": {
+                  "type": "string"
+                },
+                "lastName": {
+                  "type": "string"
+                }
+              }
+            },
+            "assignedDate": {
+              "type": "string"
+            },
+            "reviewCompletionDate": {
+              "type": "string"
+            },
+            "notesForApplicant": {
+              "type": "string"
+            },
+            "notesForReviewers": {
+              "type": "string"
+            },
+            "reviewerSelectedApplicationSectionStatus": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "approved",
+                "rejected"
+              ]
+            }
+          }
+        }
+      },
+      "firstName": {
+        "type": "string"
+      },
+      "middleName": {
+        "type": "string"
+      },
+      "lastName": {
+        "type": "string"
+      },
+      "suffix": {
+        "type": "string"
+      },
+      "phone": {
+        "type": "string"
+      },
+      "altPhone": {
+        "type": "string"
+      },
+      "dob": {
+        "type": "string"
+      },
+      "ssnLastFour": {
+        "type": "string"
+      },
+      "npi": {
+        "type": "string"
+      },
+      "gender": {
+        "type": "string"
+      },
+      "professionalName": {
+        "type": "string"
+      },
+      "citizenship": {
+        "type": "string"
+      },
+      "placeOfBirth": {
+        "type": "string"
+      },
+      "languages": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "mailingAddress1": {
+        "type": "string"
+      },
+      "mailingAddress2": {
+        "type": "string"
+      },
+      "mailingCity": {
+        "type": "string"
+      },
+      "mailingState": {
+        "type": "string"
+      },
+      "mailingZip": {
+        "type": "string"
+      },
+      "ePassport": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "mobilityNumber": {
+            "type": "string"
+          },
+          "issueDate": {
+            "type": "string"
+          }
+        }
+      },
+      "ipc": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "mobilityNumber": {
+            "type": "string"
+          },
+          "issueDate": {
+            "type": "string"
+          }
+        }
+      },
+      "licenses": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "state": {
+              "type": "string"
+            },
+            "issueDate": {
+              "type": "string"
+            },
+            "licenseNumber": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "active",
+                "inactive"
+              ]
+            }
+          }
+        }
+      },
+      "nameAtTime": {
+        "type": "string"
+      },
+      "institution": {
+        "type": "string"
+      },
+      "city": {
+        "type": "string"
+      },
+      "state": {
+        "type": "string"
+      },
+      "degreeType": {
+        "type": "string"
+      },
+      "program": {
+        "type": "string"
+      },
+      "department": {
+        "type": "string"
+      },
+      "conferredDate": {
+        "type": "string"
+      },
+      "isCompleted": {
+        "type": "boolean"
+      },
+      "accreditingBody": {
+        "type": "string"
+      },
+      "accreditingYear": {
+        "type": "string"
+      },
+      "isAccreditedByAuthority": {
+        "type": "boolean"
+      },
+      "isProgramEquivalent": {
+        "type": "boolean"
+      },
+      "accreditingContact": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "city": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "zip": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "attestations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "hasResidence": {
+        "type": "boolean"
+      },
+      "transcripts": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "filename": {
+              "type": "string"
+            },
+            "sizeBytes": {
+              "type": "integer"
+            },
+            "downloadUri": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "attestations": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "convictions": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "charge": {
+              "type": "string"
+            },
+            "location": {
+              "type": "string"
+            },
+            "date": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "notes": {
+        "type": "string"
+      },
+      "documents": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "filename": {
+              "type": "string"
+            },
+            "sizeBytes": {
+              "type": "integer"
+            },
+            "downloadUri": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "applicationTypes": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "applicationType": {
+              "type": "string",
+              "enum": [
+                "apit",
+                "tap"
+              ]
+            },
+            "state": {
+              "type": "string"
+            },
+            "startDate": {
+              "type": "string"
+            },
+            "isActiveMilitary": {
+              "type": "boolean"
+            },
+            "militaryDocuments": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "filename": {
+                    "type": "string"
+                  },
+                  "sizeBytes": {
+                    "type": "integer"
+                  },
+                  "downloadUri": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "attestations": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "signatureName": {
+        "type": "string"
+      }
+    }
+  },
+  "SECTION_MODEL_SCHEMAS": {
+    "StaffPersonalInformation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "calculatedSectionStatusForApplicant": {
+          "type": "string",
+          "enum": [
+            "incomplete",
+            "complete",
+            "needs-attention",
+            "confirm-details"
+          ]
+        },
+        "calculatedSectionStatusForReviewComparison": {
+          "type": "string",
+          "enum": [
+            "both-approve",
+            "reviewers-differ"
+          ]
+        },
+        "reviews": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "assignmentId": {
+                "type": "string"
+              },
+              "reviewerType": {
+                "type": "string",
+                "enum": [
+                  "first-reviewer",
+                  "second-reviewer",
+                  "final-reviewer"
+                ]
+              },
+              "reviewer": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "firstName": {
+                    "type": "string"
+                  },
+                  "lastName": {
+                    "type": "string"
+                  }
+                }
+              },
+              "assignedDate": {
+                "type": "string"
+              },
+              "reviewCompletionDate": {
+                "type": "string"
+              },
+              "notesForApplicant": {
+                "type": "string"
+              },
+              "notesForReviewers": {
+                "type": "string"
+              },
+              "reviewerSelectedApplicationSectionStatus": {
+                "type": "string",
+                "enum": [
+                  "pending",
+                  "approved",
+                  "rejected"
+                ]
+              }
+            }
+          }
+        },
+        "firstName": {
+          "type": "string"
+        },
+        "middleName": {
+          "type": "string"
+        },
+        "lastName": {
+          "type": "string"
+        },
+        "suffix": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "altPhone": {
+          "type": "string"
+        },
+        "dob": {
+          "type": "string"
+        },
+        "ssnLastFour": {
+          "type": "string"
+        },
+        "npi": {
+          "type": "string"
+        },
+        "gender": {
+          "type": "string"
+        },
+        "professionalName": {
+          "type": "string"
+        },
+        "citizenship": {
+          "type": "string"
+        },
+        "placeOfBirth": {
+          "type": "string"
+        },
+        "languages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "mailingAddress1": {
+          "type": "string"
+        },
+        "mailingAddress2": {
+          "type": "string"
+        },
+        "mailingCity": {
+          "type": "string"
+        },
+        "mailingState": {
+          "type": "string"
+        },
+        "mailingZip": {
+          "type": "string"
+        }
+      }
+    },
+    "PersonalInformation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "calculatedSectionStatusForApplicant": {
+          "type": "string",
+          "enum": [
+            "incomplete",
+            "complete",
+            "needs-attention",
+            "confirm-details"
+          ]
+        },
+        "calculatedSectionStatusForReviewComparison": {
+          "type": "string",
+          "enum": [
+            "both-approve",
+            "reviewers-differ"
+          ]
+        },
+        "reviews": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "reviewCompletionDate": {
+                "type": "string"
+              },
+              "notesForApplicant": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "firstName": {
+          "type": "string"
+        },
+        "middleName": {
+          "type": "string"
+        },
+        "lastName": {
+          "type": "string"
+        },
+        "suffix": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "altPhone": {
+          "type": "string"
+        },
+        "dob": {
+          "type": "string"
+        },
+        "ssnLastFour": {
+          "type": "string"
+        },
+        "npi": {
+          "type": "string"
+        },
+        "gender": {
+          "type": "string"
+        },
+        "professionalName": {
+          "type": "string"
+        },
+        "citizenship": {
+          "type": "string"
+        },
+        "placeOfBirth": {
+          "type": "string"
+        },
+        "languages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "mailingAddress1": {
+          "type": "string"
+        },
+        "mailingAddress2": {
+          "type": "string"
+        },
+        "mailingCity": {
+          "type": "string"
+        },
+        "mailingState": {
+          "type": "string"
+        },
+        "mailingZip": {
+          "type": "string"
+        }
+      }
+    },
+    "StaffLicenseHistory": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "calculatedSectionStatusForApplicant": {
+          "type": "string",
+          "enum": [
+            "incomplete",
+            "complete",
+            "needs-attention",
+            "confirm-details"
+          ]
+        },
+        "calculatedSectionStatusForReviewComparison": {
+          "type": "string",
+          "enum": [
+            "both-approve",
+            "reviewers-differ"
+          ]
+        },
+        "reviews": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "assignmentId": {
+                "type": "string"
+              },
+              "reviewerType": {
+                "type": "string",
+                "enum": [
+                  "first-reviewer",
+                  "second-reviewer",
+                  "final-reviewer"
+                ]
+              },
+              "reviewer": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "firstName": {
+                    "type": "string"
+                  },
+                  "lastName": {
+                    "type": "string"
+                  }
+                }
+              },
+              "assignedDate": {
+                "type": "string"
+              },
+              "reviewCompletionDate": {
+                "type": "string"
+              },
+              "notesForApplicant": {
+                "type": "string"
+              },
+              "notesForReviewers": {
+                "type": "string"
+              },
+              "reviewerSelectedApplicationSectionStatus": {
+                "type": "string",
+                "enum": [
+                  "pending",
+                  "approved",
+                  "rejected"
+                ]
+              }
+            }
+          }
+        },
+        "ePassport": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "mobilityNumber": {
+              "type": "string"
+            },
+            "issueDate": {
+              "type": "string"
+            }
+          }
+        },
+        "ipc": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "mobilityNumber": {
+              "type": "string"
+            },
+            "issueDate": {
+              "type": "string"
+            }
+          }
+        },
+        "licenses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "state": {
+                "type": "string"
+              },
+              "issueDate": {
+                "type": "string"
+              },
+              "licenseNumber": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "inactive"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "LicenseHistory": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "calculatedSectionStatusForApplicant": {
+          "type": "string",
+          "enum": [
+            "incomplete",
+            "complete",
+            "needs-attention",
+            "confirm-details"
+          ]
+        },
+        "calculatedSectionStatusForReviewComparison": {
+          "type": "string",
+          "enum": [
+            "both-approve",
+            "reviewers-differ"
+          ]
+        },
+        "reviews": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "reviewCompletionDate": {
+                "type": "string"
+              },
+              "notesForApplicant": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "ePassport": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "mobilityNumber": {
+              "type": "string"
+            },
+            "issueDate": {
+              "type": "string"
+            }
+          }
+        },
+        "ipc": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "mobilityNumber": {
+              "type": "string"
+            },
+            "issueDate": {
+              "type": "string"
+            }
+          }
+        },
+        "licenses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "state": {
+                "type": "string"
+              },
+              "issueDate": {
+                "type": "string"
+              },
+              "licenseNumber": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "inactive"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "StaffEducation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "calculatedSectionStatusForApplicant": {
+          "type": "string",
+          "enum": [
+            "incomplete",
+            "complete",
+            "needs-attention",
+            "confirm-details"
+          ]
+        },
+        "calculatedSectionStatusForReviewComparison": {
+          "type": "string",
+          "enum": [
+            "both-approve",
+            "reviewers-differ"
+          ]
+        },
+        "reviews": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "assignmentId": {
+                "type": "string"
+              },
+              "reviewerType": {
+                "type": "string",
+                "enum": [
+                  "first-reviewer",
+                  "second-reviewer",
+                  "final-reviewer"
+                ]
+              },
+              "reviewer": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "firstName": {
+                    "type": "string"
+                  },
+                  "lastName": {
+                    "type": "string"
+                  }
+                }
+              },
+              "assignedDate": {
+                "type": "string"
+              },
+              "reviewCompletionDate": {
+                "type": "string"
+              },
+              "notesForApplicant": {
+                "type": "string"
+              },
+              "notesForReviewers": {
+                "type": "string"
+              },
+              "reviewerSelectedApplicationSectionStatus": {
+                "type": "string",
+                "enum": [
+                  "pending",
+                  "approved",
+                  "rejected"
+                ]
+              }
+            }
+          }
+        },
+        "nameAtTime": {
+          "type": "string"
+        },
+        "institution": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "degreeType": {
+          "type": "string"
+        },
+        "program": {
+          "type": "string"
+        },
+        "department": {
+          "type": "string"
+        },
+        "conferredDate": {
+          "type": "string"
+        },
+        "isCompleted": {
+          "type": "boolean"
+        },
+        "accreditingBody": {
+          "type": "string"
+        },
+        "accreditingYear": {
+          "type": "string"
+        },
+        "isAccreditedByAuthority": {
+          "type": "boolean"
+        },
+        "isProgramEquivalent": {
+          "type": "boolean"
+        },
+        "accreditingContact": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "email": {
+              "type": "string"
+            },
+            "city": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "zip": {
+              "type": "string"
+            },
+            "phone": {
+              "type": "string"
+            },
+            "attestations": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "hasResidence": {
+          "type": "boolean"
+        },
+        "transcripts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "filename": {
+                "type": "string"
+              },
+              "sizeBytes": {
+                "type": "integer"
+              },
+              "downloadUri": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "Education": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "calculatedSectionStatusForApplicant": {
+          "type": "string",
+          "enum": [
+            "incomplete",
+            "complete",
+            "needs-attention",
+            "confirm-details"
+          ]
+        },
+        "calculatedSectionStatusForReviewComparison": {
+          "type": "string",
+          "enum": [
+            "both-approve",
+            "reviewers-differ"
+          ]
+        },
+        "reviews": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "reviewCompletionDate": {
+                "type": "string"
+              },
+              "notesForApplicant": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "nameAtTime": {
+          "type": "string"
+        },
+        "institution": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string"
+        },
+        "degreeType": {
+          "type": "string"
+        },
+        "program": {
+          "type": "string"
+        },
+        "department": {
+          "type": "string"
+        },
+        "conferredDate": {
+          "type": "string"
+        },
+        "isCompleted": {
+          "type": "boolean"
+        },
+        "accreditingBody": {
+          "type": "string"
+        },
+        "accreditingYear": {
+          "type": "string"
+        },
+        "isAccreditedByAuthority": {
+          "type": "boolean"
+        },
+        "isProgramEquivalent": {
+          "type": "boolean"
+        },
+        "accreditingContact": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "email": {
+              "type": "string"
+            },
+            "city": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "zip": {
+              "type": "string"
+            },
+            "phone": {
+              "type": "string"
+            },
+            "attestations": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "hasResidence": {
+          "type": "boolean"
+        },
+        "transcripts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "filename": {
+                "type": "string"
+              },
+              "sizeBytes": {
+                "type": "integer"
+              },
+              "downloadUri": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "StaffConductHistory": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "calculatedSectionStatusForApplicant": {
+          "type": "string",
+          "enum": [
+            "incomplete",
+            "complete",
+            "needs-attention",
+            "confirm-details"
+          ]
+        },
+        "calculatedSectionStatusForReviewComparison": {
+          "type": "string",
+          "enum": [
+            "both-approve",
+            "reviewers-differ"
+          ]
+        },
+        "reviews": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "assignmentId": {
+                "type": "string"
+              },
+              "reviewerType": {
+                "type": "string",
+                "enum": [
+                  "first-reviewer",
+                  "second-reviewer",
+                  "final-reviewer"
+                ]
+              },
+              "reviewer": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "firstName": {
+                    "type": "string"
+                  },
+                  "lastName": {
+                    "type": "string"
+                  }
+                }
+              },
+              "assignedDate": {
+                "type": "string"
+              },
+              "reviewCompletionDate": {
+                "type": "string"
+              },
+              "notesForApplicant": {
+                "type": "string"
+              },
+              "notesForReviewers": {
+                "type": "string"
+              },
+              "reviewerSelectedApplicationSectionStatus": {
+                "type": "string",
+                "enum": [
+                  "pending",
+                  "approved",
+                  "rejected"
+                ]
+              }
+            }
+          }
+        },
+        "attestations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "convictions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "charge": {
+                "type": "string"
+              },
+              "location": {
+                "type": "string"
+              },
+              "date": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "notes": {
+          "type": "string"
+        },
+        "documents": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "filename": {
+                "type": "string"
+              },
+              "sizeBytes": {
+                "type": "integer"
+              },
+              "downloadUri": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "ConductHistory": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "calculatedSectionStatusForApplicant": {
+          "type": "string",
+          "enum": [
+            "incomplete",
+            "complete",
+            "needs-attention",
+            "confirm-details"
+          ]
+        },
+        "calculatedSectionStatusForReviewComparison": {
+          "type": "string",
+          "enum": [
+            "both-approve",
+            "reviewers-differ"
+          ]
+        },
+        "reviews": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "reviewCompletionDate": {
+                "type": "string"
+              },
+              "notesForApplicant": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "attestations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "convictions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "charge": {
+                "type": "string"
+              },
+              "location": {
+                "type": "string"
+              },
+              "date": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "notes": {
+          "type": "string"
+        },
+        "documents": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "filename": {
+                "type": "string"
+              },
+              "sizeBytes": {
+                "type": "integer"
+              },
+              "downloadUri": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "StaffHomeState": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "calculatedSectionStatusForApplicant": {
+          "type": "string",
+          "enum": [
+            "incomplete",
+            "complete",
+            "needs-attention",
+            "confirm-details"
+          ]
+        },
+        "calculatedSectionStatusForReviewComparison": {
+          "type": "string",
+          "enum": [
+            "both-approve",
+            "reviewers-differ"
+          ]
+        },
+        "reviews": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "assignmentId": {
+                "type": "string"
+              },
+              "reviewerType": {
+                "type": "string",
+                "enum": [
+                  "first-reviewer",
+                  "second-reviewer",
+                  "final-reviewer"
+                ]
+              },
+              "reviewer": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "firstName": {
+                    "type": "string"
+                  },
+                  "lastName": {
+                    "type": "string"
+                  }
+                }
+              },
+              "assignedDate": {
+                "type": "string"
+              },
+              "reviewCompletionDate": {
+                "type": "string"
+              },
+              "notesForApplicant": {
+                "type": "string"
+              },
+              "notesForReviewers": {
+                "type": "string"
+              },
+              "reviewerSelectedApplicationSectionStatus": {
+                "type": "string",
+                "enum": [
+                  "pending",
+                  "approved",
+                  "rejected"
+                ]
+              }
+            }
+          }
+        },
+        "applicationTypes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "applicationType": {
+                "type": "string",
+                "enum": [
+                  "apit",
+                  "tap"
+                ]
+              },
+              "state": {
+                "type": "string"
+              },
+              "startDate": {
+                "type": "string"
+              },
+              "isActiveMilitary": {
+                "type": "boolean"
+              },
+              "militaryDocuments": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "filename": {
+                      "type": "string"
+                    },
+                    "sizeBytes": {
+                      "type": "integer"
+                    },
+                    "downloadUri": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "attestations": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "HomeState": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "calculatedSectionStatusForApplicant": {
+          "type": "string",
+          "enum": [
+            "incomplete",
+            "complete",
+            "needs-attention",
+            "confirm-details"
+          ]
+        },
+        "calculatedSectionStatusForReviewComparison": {
+          "type": "string",
+          "enum": [
+            "both-approve",
+            "reviewers-differ"
+          ]
+        },
+        "reviews": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "reviewCompletionDate": {
+                "type": "string"
+              },
+              "notesForApplicant": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "applicationTypes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "applicationType": {
+                "type": "string",
+                "enum": [
+                  "apit",
+                  "tap"
+                ]
+              },
+              "state": {
+                "type": "string"
+              },
+              "startDate": {
+                "type": "string"
+              },
+              "isActiveMilitary": {
+                "type": "boolean"
+              },
+              "militaryDocuments": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "filename": {
+                      "type": "string"
+                    },
+                    "sizeBytes": {
+                      "type": "integer"
+                    },
+                    "downloadUri": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "attestations": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "StaffAcknowledgements": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "calculatedSectionStatusForApplicant": {
+          "type": "string",
+          "enum": [
+            "incomplete",
+            "complete",
+            "needs-attention",
+            "confirm-details"
+          ]
+        },
+        "calculatedSectionStatusForReviewComparison": {
+          "type": "string",
+          "enum": [
+            "both-approve",
+            "reviewers-differ"
+          ]
+        },
+        "reviews": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "assignmentId": {
+                "type": "string"
+              },
+              "reviewerType": {
+                "type": "string",
+                "enum": [
+                  "first-reviewer",
+                  "second-reviewer",
+                  "final-reviewer"
+                ]
+              },
+              "reviewer": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "firstName": {
+                    "type": "string"
+                  },
+                  "lastName": {
+                    "type": "string"
+                  }
+                }
+              },
+              "assignedDate": {
+                "type": "string"
+              },
+              "reviewCompletionDate": {
+                "type": "string"
+              },
+              "notesForApplicant": {
+                "type": "string"
+              },
+              "notesForReviewers": {
+                "type": "string"
+              },
+              "reviewerSelectedApplicationSectionStatus": {
+                "type": "string",
+                "enum": [
+                  "pending",
+                  "approved",
+                  "rejected"
+                ]
+              }
+            }
+          }
+        },
+        "attestations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "signatureName": {
+          "type": "string"
+        }
+      }
+    },
+    "Acknowledgements": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "calculatedSectionStatusForApplicant": {
+          "type": "string",
+          "enum": [
+            "incomplete",
+            "complete",
+            "needs-attention",
+            "confirm-details"
+          ]
+        },
+        "calculatedSectionStatusForReviewComparison": {
+          "type": "string",
+          "enum": [
+            "both-approve",
+            "reviewers-differ"
+          ]
+        },
+        "reviews": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "reviewCompletionDate": {
+                "type": "string"
+              },
+              "notesForApplicant": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "attestations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "signatureName": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
