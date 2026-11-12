@@ -13,6 +13,7 @@ from marshmallow.fields import Boolean, Integer, List, Nested, String
 from marshmallow.validate import Length, OneOf
 
 from cc_common.applicants.application_state import (
+    STATE_NAME_DESCRIPTION,
     ApplicantSectionStatus,
     ApplicationStatus,
     ApplicationType,
@@ -23,7 +24,9 @@ from cc_common.applicants.application_state import (
     StateName,
     WorkflowAction,
 )
+from cc_common.applicants.assigned_reviewer import assigned_reviewer_metadata
 from cc_common.applicants.schema.calculated import calculate_applicant_status, calculate_review_comparison
+from cc_common.applicants.schema.records import AssignedReviewerMetadataSchema
 from cc_common.applicants.schema.reviews import (
     NOTE_MAX_LENGTH,
     ApplicationReviewSchema,
@@ -41,12 +44,6 @@ from cc_common.applicants.schema.sections import (
     _str,
     section_data_schema,
 )
-
-_ASSIGNMENT_ID_FIELDS = {
-    ReviewerType.FIRST_REVIEWER.value: 'firstReviewerAssignmentId',
-    ReviewerType.SECOND_REVIEWER.value: 'secondReviewerAssignmentId',
-    ReviewerType.FINAL_REVIEWER.value: 'finalReviewerAssignmentId',
-}
 
 
 def _enum(enum_cls, **kwargs) -> String:
@@ -69,7 +66,7 @@ class StrictRequestSchema(CCRequestSchema):
 
 
 class SectionReviewRequestSchema(StrictRequestSchema):
-    sectionStatus = _enum(ReviewSectionStatus)
+    sectionStatus = _enum(ReviewSectionStatus, required=True, allow_none=False)
     notesForApplicant = _note()
     notesForReviewers = _note()
 
@@ -176,15 +173,9 @@ _OMITTED_PROVIDER_REVIEW_FIELDS = (
 _STAFF_RESPONSE_FIELDS = (
     'stateName',
     'providerId',
-    'firstReviewerSub',
-    'secondReviewerSub',
-    'finalReviewerSub',
-    'firstReviewerFirstName',
-    'firstReviewerLastName',
-    'secondReviewerFirstName',
-    'secondReviewerLastName',
-    'finalReviewerFirstName',
-    'finalReviewerLastName',
+    'assignedFirstReviewerMetadata',
+    'assignedSecondReviewerMetadata',
+    'assignedFinalReviewerMetadata',
 )
 
 
@@ -248,21 +239,38 @@ class StaffApplicationResponseSchema(ForgivingSchema):
     conductHistory = Nested(ConductHistorySectionResponseSchema, required=False, allow_none=True)
     homeState = Nested(HomeStateSectionResponseSchema, required=False, allow_none=True)
     acknowledgements = Nested(AcknowledgementsResponseSchema, required=False, allow_none=True)
-    stateName = _enum(StateName)
+    stateName = _enum(StateName, metadata={'description': STATE_NAME_DESCRIPTION})
     providerId = _str()
-    firstReviewerSub = _str()
-    secondReviewerSub = _str()
-    finalReviewerSub = _str()
-    firstReviewerFirstName = _str()
-    firstReviewerLastName = _str()
-    secondReviewerFirstName = _str()
-    secondReviewerLastName = _str()
-    finalReviewerFirstName = _str()
-    finalReviewerLastName = _str()
+    assignedFirstReviewerMetadata = Nested(AssignedReviewerMetadataSchema, required=False, allow_none=True)
+    assignedSecondReviewerMetadata = Nested(AssignedReviewerMetadataSchema, required=False, allow_none=True)
+    assignedFinalReviewerMetadata = Nested(AssignedReviewerMetadataSchema, required=False, allow_none=True)
+
+
+class ApplicationAcceptedResponseSchema(ForgivingSchema):
+    """202 body for a create, submit, or resubmit that has not settled yet."""
+
+    id = _str(required=True, allow_none=False)
+    expectedStatus = _enum(ApplicationStatus)
+    pending = Boolean(required=False, allow_none=True)
+    requestId = _str()
+
+
+class StaffApplicationListItemSchema(ForgivingSchema):
+    """One row in the staff application list."""
+
+    id = _str()
+    status = _enum(ApplicationStatus)
+    stateName = _enum(StateName, metadata={'description': STATE_NAME_DESCRIPTION})
+    providerId = _str()
+    types = List(_enum(ApplicationType), required=False, allow_none=True)
+    submitted = _str()
+    actorSub = _str()
 
 
 class ApplicationResponseSchema(StaffApplicationResponseSchema):
     """Provider application. Staff-only fields and incomplete reviews are omitted."""
+
+    id = _str(required=True, allow_none=False)
 
     class Meta:
         unknown = EXCLUDE
@@ -306,8 +314,7 @@ def _current_reviews(application_item: dict, reviews: list) -> list:
     current = []
     for review in reviews:
         reviewer_type = _enum_value(review.get('reviewerType'))
-        assignment_field = _ASSIGNMENT_ID_FIELDS.get(reviewer_type)
-        assignment_id = application_item.get(assignment_field) if assignment_field else None
+        assignment_id = assigned_reviewer_metadata(application_item, str(reviewer_type or '')).get('assignmentId')
         if assignment_id and review.get('assignmentId') == assignment_id:
             current.append(review)
     return current

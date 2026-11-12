@@ -93,6 +93,13 @@ class WorkflowAction(StrEnum):
     ADMIN_DEACTIVATE = 'ADMIN_DEACTIVATE'
 
 
+STATE_NAME_DESCRIPTION = (
+    'Step Functions node for this generation, such as CommitteeFromFirst or AwaitingApplicantFromSecond. '
+    'status is the projection clients should display. Several nodes share one status, including the three '
+    'committee nodes and the three awaiting-applicant nodes.'
+)
+
+
 class StateName(StrEnum):
     STARTED = 'Started'
     STAFF_REVIEW = 'StaffReview'

@@ -25,6 +25,7 @@ from cc_common.applicants.application_workflow_client import (
     WorkflowStartAmbiguous,
     inputs_match,
 )
+from cc_common.applicants.assigned_reviewer import assigned_reviewer_metadata
 from cc_common.config import logger, metrics
 
 _MAX_DELIVERY_ATTEMPTS = 3
@@ -659,9 +660,9 @@ def _auth_context(compact: str, application: Mapping) -> ApplicationAuthContext:
         compact=compact,
         state_name=StateName(application['stateName']),
         provider_id=application.get('providerId'),
-        first_reviewer_sub=application.get('firstReviewerSub'),
-        second_reviewer_sub=application.get('secondReviewerSub'),
-        final_reviewer_sub=application.get('finalReviewerSub'),
+        first_reviewer_sub=assigned_reviewer_metadata(application, 'first-reviewer').get('cognitoSub'),
+        second_reviewer_sub=assigned_reviewer_metadata(application, 'second-reviewer').get('cognitoSub'),
+        final_reviewer_sub=assigned_reviewer_metadata(application, 'final-reviewer').get('cognitoSub'),
     )
 
 

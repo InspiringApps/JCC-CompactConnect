@@ -93,18 +93,24 @@ FULL_APPLICATION = {
             'reviewerSelectedApplicationStatus': 'first-review',
         }
     ],
-    'firstReviewerSub': 'first-sub',
-    'secondReviewerSub': 'second-sub',
-    'finalReviewerSub': 'first-sub',
-    'firstReviewerAssignmentId': 'assign-1',
-    'secondReviewerAssignmentId': 'assign-2',
-    'finalReviewerAssignmentId': 'assign-3',
-    'firstReviewerFirstName': 'Ada',
-    'firstReviewerLastName': 'Lovelace',
-    'secondReviewerFirstName': 'Grace',
-    'secondReviewerLastName': 'Hopper',
-    'finalReviewerFirstName': 'Ada',
-    'finalReviewerLastName': 'Lovelace',
+    'assignedFirstReviewerMetadata': {
+        'cognitoSub': 'first-sub',
+        'firstName': 'Ada',
+        'lastName': 'Lovelace',
+        'assignmentId': 'assign-1',
+    },
+    'assignedSecondReviewerMetadata': {
+        'cognitoSub': 'second-sub',
+        'firstName': 'Grace',
+        'lastName': 'Hopper',
+        'assignmentId': 'assign-2',
+    },
+    'assignedFinalReviewerMetadata': {
+        'cognitoSub': 'first-sub',
+        'firstName': 'Ada',
+        'lastName': 'Lovelace',
+        'assignmentId': 'assign-3',
+    },
     'actorGSIPK': 'psypact#ACTOR#first-sub',
     'actorGSISK': 'staff-review#app-1',
     'notAField': 'drop me',
@@ -450,7 +456,7 @@ class TestResponseAndCalculatedStatus(TestCase):
         self.assertEqual('incomplete', response['licenseHistory']['calculatedSectionStatusForApplicant'])
         self.assertEqual([], response['reviews'])
         self.assertEqual([], response['personalInformation']['reviews'])
-        self.assertNotIn('firstReviewerSub', response)
+        self.assertNotIn('assignedFirstReviewerMetadata', response)
         self.assertNotIn('providerId', response)
         loaded = ApplicationResponseSchema().load({**response, 'taskToken': 'secret', 'executionArn': 'arn'})
         self.assertNotIn('taskToken', loaded)
@@ -506,8 +512,8 @@ class TestResponseAndCalculatedStatus(TestCase):
             [{'notesForApplicant': 'please update', 'reviewCompletionDate': '2026-01-04T00:00:00+00:00'}],
             provider['personalInformation']['reviews'],
         )
-        self.assertNotIn('firstReviewerSub', provider)
-        self.assertEqual('first-sub', staff['firstReviewerSub'])
+        self.assertNotIn('assignedFirstReviewerMetadata', provider)
+        self.assertEqual('first-sub', staff['assignedFirstReviewerMetadata']['cognitoSub'])
         self.assertEqual('internal', staff['reviews'][0]['notesForReviewers'])
         self.assertEqual('second-sub', staff['reviews'][1]['reviewer']['id'])
         self.assertEqual(2, len(staff['personalInformation']['reviews']))

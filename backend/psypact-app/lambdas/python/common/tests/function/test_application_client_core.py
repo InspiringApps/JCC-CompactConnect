@@ -221,8 +221,8 @@ class TestApplicationClientCore(TstFunction):
         self._create()
         self._application_table.update_item(
             Key=self._application_key(),
-            UpdateExpression='SET firstReviewerSub = :sub',
-            ExpressionAttributeValues={':sub': 'reviewer-1'},
+            UpdateExpression='SET assignedFirstReviewerMetadata = :metadata',
+            ExpressionAttributeValues={':metadata': {'cognitoSub': 'reviewer-1'}},
         )
 
         stored = self.client.enter_state(

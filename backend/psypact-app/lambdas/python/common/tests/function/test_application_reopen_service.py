@@ -153,8 +153,8 @@ class TestApplicationReopenService(TstLambdas):
                 self.assertEqual('staff-review', stored['status'])
                 self.assertEqual(2, int(stored['generation']))
                 self.assertNotIn('reopenLock', stored)
-                self.assertEqual(FIRST, stored['firstReviewerSub'])
-                self.assertEqual(SECOND, stored['secondReviewerSub'])
+                self.assertEqual(FIRST, stored['assignedFirstReviewerMetadata']['cognitoSub'])
+                self.assertEqual(SECOND, stored['assignedSecondReviewerMetadata']['cognitoSub'])
                 self.assertEqual('assign-1', stored['reviews'][0]['assignmentId'])
                 self.assertEqual('kept', self._section_data()['school'])
                 self.assertEqual(6, self._section_count())
@@ -352,10 +352,13 @@ class TestApplicationReopenService(TstLambdas):
     def _preserve_review_history(self):
         self._application_table.update_item(
             Key=self._key('APPLICATION'),
-            UpdateExpression='SET firstReviewerSub = :first, secondReviewerSub = :second, reviews = :reviews',
+            UpdateExpression=(
+                'SET assignedFirstReviewerMetadata = :first, assignedSecondReviewerMetadata = :second, '
+                'reviews = :reviews'
+            ),
             ExpressionAttributeValues={
-                ':first': FIRST,
-                ':second': SECOND,
+                ':first': {'cognitoSub': FIRST},
+                ':second': {'cognitoSub': SECOND},
                 ':reviews': [{'assignmentId': 'assign-1', 'reviewerType': 'first-reviewer'}],
             },
         )

@@ -12,6 +12,7 @@ from marshmallow.fields import AwareDateTime, Boolean, Dict, Integer, List, Nest
 from marshmallow.validate import OneOf
 
 from cc_common.applicants.application_state import (
+    STATE_NAME_DESCRIPTION,
     ApplicationStatus,
     ApplicationType,
     SectionName,
@@ -35,8 +36,17 @@ def _bool() -> Boolean:
     return Boolean(required=False, allow_none=True)
 
 
-def _enum(enum_cls) -> String:
-    return _str(validate=OneOf([member.value for member in enum_cls]))
+def _enum(enum_cls, **kwargs) -> String:
+    return _str(validate=OneOf([member.value for member in enum_cls]), **kwargs)
+
+
+class AssignedReviewerMetadataSchema(ApplicationValueSchema):
+    """Current assignment for one reviewer role, stored as one map."""
+
+    cognitoSub = _str()
+    firstName = _str()
+    lastName = _str()
+    assignmentId = _str()
 
 
 def _strings() -> List:
@@ -95,7 +105,7 @@ class ApplicationRecordSchema(ApplicationTableRecordSchema):
     types = List(_enum(ApplicationType), required=False, allow_none=True)
     isRenewal = _bool()
     status = _enum(ApplicationStatus)
-    stateName = _enum(StateName)
+    stateName = _enum(StateName, metadata={'description': STATE_NAME_DESCRIPTION})
     executionArn = _str()
     generation = _int()
     workflowExpiresAt = _str()
@@ -114,18 +124,9 @@ class ApplicationRecordSchema(ApplicationTableRecordSchema):
     attestations = _strings()
     paymentCompensated = List(_enum(ApplicationType), required=False, allow_none=True)
     reviews = List(Nested(ApplicationReviewSchema), required=False, allow_none=True)
-    firstReviewerSub = _str()
-    secondReviewerSub = _str()
-    finalReviewerSub = _str()
-    firstReviewerAssignmentId = _str()
-    secondReviewerAssignmentId = _str()
-    finalReviewerAssignmentId = _str()
-    firstReviewerFirstName = _str()
-    firstReviewerLastName = _str()
-    secondReviewerFirstName = _str()
-    secondReviewerLastName = _str()
-    finalReviewerFirstName = _str()
-    finalReviewerLastName = _str()
+    assignedFirstReviewerMetadata = Nested(AssignedReviewerMetadataSchema, required=False, allow_none=True)
+    assignedSecondReviewerMetadata = Nested(AssignedReviewerMetadataSchema, required=False, allow_none=True)
+    assignedFinalReviewerMetadata = Nested(AssignedReviewerMetadataSchema, required=False, allow_none=True)
     statusGSIPK = _str()
     statusGSISK = _str()
     actorGSIPK = _str()

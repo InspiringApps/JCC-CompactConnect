@@ -647,9 +647,14 @@ def _assert_preserved(compact: str, application_id: str, staff: dict[str, dict])
     application = next((item for item in items if item.get('sk') == 'APPLICATION'), None)
     if application is None:
         raise SmokeTestFailureException(f'Application {application_id} has no APPLICATION item after reopen')
-    for role in ('first', 'second', 'final'):
-        field_name = f'{role}ReviewerSub'
-        if application.get(field_name) != staff[role]['sub']:
+    metadata_fields = {
+        'first': 'assignedFirstReviewerMetadata',
+        'second': 'assignedSecondReviewerMetadata',
+        'final': 'assignedFinalReviewerMetadata',
+    }
+    for role, field_name in metadata_fields.items():
+        metadata = application.get(field_name) or {}
+        if metadata.get('cognitoSub') != staff[role]['sub']:
             raise SmokeTestFailureException(f'{field_name} was not preserved on {application_id}')
     section_items = [item for item in items if str(item.get('sk', '')).startswith('SECTION#')]
     if len(section_items) != len(SECTIONS):

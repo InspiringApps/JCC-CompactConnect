@@ -253,20 +253,20 @@ class TestAssignReviewers(ApplicationTableCase):
             {'secondReviewerSub': SECOND, 'finalReviewerSub': FIRST},
             expected_version=int(result.snapshot.application['version']),
         )
-        self.assertEqual(FIRST, matched_first.snapshot.application['finalReviewerSub'])
-        self.assertEqual(SECOND, matched_first.snapshot.application['secondReviewerSub'])
+        self.assertEqual(FIRST, matched_first.snapshot.application['assignedFinalReviewerMetadata']['cognitoSub'])
+        self.assertEqual(SECOND, matched_first.snapshot.application['assignedSecondReviewerMetadata']['cognitoSub'])
 
         matched_second = self._staff_then_assign(
             {'firstReviewerSub': FIRST, 'secondReviewerSub': SECOND, 'finalReviewerSub': SECOND},
             application_id='app-2',
         )
-        self.assertEqual(SECOND, matched_second.snapshot.application['finalReviewerSub'])
-        self.assertEqual(FIRST, matched_second.snapshot.application['firstReviewerSub'])
+        self.assertEqual(SECOND, matched_second.snapshot.application['assignedFinalReviewerMetadata']['cognitoSub'])
+        self.assertEqual(FIRST, matched_second.snapshot.application['assignedFirstReviewerMetadata']['cognitoSub'])
 
     def test_reassignment_keeps_old_reviews_and_refreshes_actor_gsi(self):
         assigned = self._staff_then_assign({'firstReviewerSub': FIRST})
         self._enter(StateName.FIRST_REVIEW)
-        previous_id = assigned.snapshot.application['firstReviewerAssignmentId']
+        previous_id = assigned.snapshot.application['assignedFirstReviewerMetadata']['assignmentId']
         version = int(self._application()['version'])
 
         reassigned = self.client.assign_reviewers(
@@ -277,12 +277,12 @@ class TestAssignReviewers(ApplicationTableCase):
         )
 
         application = reassigned.snapshot.application
-        self.assertNotEqual(previous_id, application['firstReviewerAssignmentId'])
+        self.assertNotEqual(previous_id, application['assignedFirstReviewerMetadata']['assignmentId'])
         self.assertEqual(2, len(application['reviews']))
         self.assertEqual(previous_id, application['reviews'][0]['assignmentId'])
         section_reviews = reassigned.snapshot.sections[SectionName.PERSONAL_INFORMATION]['reviews']
         self.assertEqual(
-            [previous_id, application['firstReviewerAssignmentId']],
+            [previous_id, application['assignedFirstReviewerMetadata']['assignmentId']],
             [review['assignmentId'] for review in section_reviews],
         )
         self.assertEqual(f'{COMPACT}#ACTOR#reviewer-new', application['actorGSIPK'])
@@ -316,8 +316,8 @@ class TestAssignReviewers(ApplicationTableCase):
             )
 
         application = self._application()
-        self.assertEqual(FIRST, application['secondReviewerSub'])
-        self.assertNotIn('firstReviewerSub', application)
+        self.assertEqual(FIRST, application['assignedSecondReviewerMetadata']['cognitoSub'])
+        self.assertNotIn('assignedFirstReviewerMetadata', application)
 
     def test_null_reviewer_field_keeps_the_existing_assignment(self):
         result = self._staff_then_assign({'firstReviewerSub': FIRST, 'secondReviewerSub': SECOND})
@@ -331,8 +331,8 @@ class TestAssignReviewers(ApplicationTableCase):
             )
         self.assertEqual(FIRST_AND_SECOND_REVIEWER_MUST_DIFFER, raised.exception.message)
         application = self._application()
-        self.assertEqual(FIRST, application['firstReviewerSub'])
-        self.assertEqual(SECOND, application['secondReviewerSub'])
+        self.assertEqual(FIRST, application['assignedFirstReviewerMetadata']['cognitoSub'])
+        self.assertEqual(SECOND, application['assignedSecondReviewerMetadata']['cognitoSub'])
 
         kept = self.client.assign_reviewers(
             COMPACT,
@@ -340,8 +340,8 @@ class TestAssignReviewers(ApplicationTableCase):
             {'firstReviewerSub': None, 'finalReviewerSub': FINAL},
             expected_version=version,
         )
-        self.assertEqual(FIRST, kept.snapshot.application['firstReviewerSub'])
-        self.assertEqual(FINAL, kept.snapshot.application['finalReviewerSub'])
+        self.assertEqual(FIRST, kept.snapshot.application['assignedFirstReviewerMetadata']['cognitoSub'])
+        self.assertEqual(FINAL, kept.snapshot.application['assignedFinalReviewerMetadata']['cognitoSub'])
 
     def test_distinctness_condition_applies_when_another_role_changes(self):
         self._create()
@@ -363,7 +363,7 @@ class TestAssignReviewers(ApplicationTableCase):
         )
 
         condition = captured['items'][0]['Update']['ConditionExpression']
-        self.assertIn('secondReviewerSub <> :distinctSub', condition)
+        self.assertIn('assignedSecondReviewerMetadata.cognitoSub <> :distinctSub', condition)
 
 
 @mock_aws
@@ -415,8 +415,8 @@ class TestSectionReviews(ApplicationTableCase):
         )
         reviews = saved.sections[SectionName.PERSONAL_INFORMATION]['reviews']
         by_assignment = {review['assignmentId']: review for review in reviews}
-        first_id = assigned.snapshot.application['firstReviewerAssignmentId']
-        final_id = saved.application['finalReviewerAssignmentId']
+        first_id = assigned.snapshot.application['assignedFirstReviewerMetadata']['assignmentId']
+        final_id = saved.application['assignedFinalReviewerMetadata']['assignmentId']
         self.assertEqual(
             ReviewSectionStatus.APPROVED.value,
             by_assignment[first_id]['reviewerSelectedApplicationSectionStatus'],
@@ -479,7 +479,7 @@ class TestSectionReviews(ApplicationTableCase):
             )
         complete = self.client.get_snapshot(COMPACT, APPLICATION_ID)
         self.client.require_complete_reviews(complete, ActorRole.FIRST_REVIEWER)
-        self.assertEqual(FIRST, assigned.snapshot.application['firstReviewerSub'])
+        self.assertEqual(FIRST, assigned.snapshot.application['assignedFirstReviewerMetadata']['cognitoSub'])
 
 
 @mock_aws

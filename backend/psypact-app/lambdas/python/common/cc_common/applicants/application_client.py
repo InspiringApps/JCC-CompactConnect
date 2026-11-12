@@ -29,6 +29,10 @@ from cc_common.applicants.application_state import (
     reviewer_edit_states,
     validate_reviewer_assignment,
 )
+from cc_common.applicants.assigned_reviewer import (
+    ASSIGNED_REVIEWER_METADATA_FIELDS,
+    assigned_reviewer_metadata,
+)
 from cc_common.applicants.workflow_lifetime import workflow_lifetime
 
 APPLICATION_SK = 'APPLICATION'
@@ -37,34 +41,20 @@ APPLICATION_SECTION_RECORD_TYPE = 'applicationSection'
 APPLICATION_TRANSITION_RECORD_TYPE = 'applicationTransition'
 APPLICATION_REQUEST_RECORD_TYPE = 'applicationRequest'
 
-_REVIEWER_SUB_FIELDS = {
+_REQUEST_SUB_FIELDS = {
     ActorRole.FIRST_REVIEWER: 'firstReviewerSub',
     ActorRole.SECOND_REVIEWER: 'secondReviewerSub',
     ActorRole.FINAL_REVIEWER: 'finalReviewerSub',
 }
-
-_ROLE_FIELDS = {
-    ActorRole.FIRST_REVIEWER: (
-        'firstReviewerSub',
-        'firstReviewerAssignmentId',
-        'firstReviewerFirstName',
-        'firstReviewerLastName',
-        ReviewerType.FIRST_REVIEWER,
-    ),
-    ActorRole.SECOND_REVIEWER: (
-        'secondReviewerSub',
-        'secondReviewerAssignmentId',
-        'secondReviewerFirstName',
-        'secondReviewerLastName',
-        ReviewerType.SECOND_REVIEWER,
-    ),
-    ActorRole.FINAL_REVIEWER: (
-        'finalReviewerSub',
-        'finalReviewerAssignmentId',
-        'finalReviewerFirstName',
-        'finalReviewerLastName',
-        ReviewerType.FINAL_REVIEWER,
-    ),
+_REQUEST_NAME_FIELDS = {
+    ActorRole.FIRST_REVIEWER: ('firstReviewerFirstName', 'firstReviewerLastName'),
+    ActorRole.SECOND_REVIEWER: ('secondReviewerFirstName', 'secondReviewerLastName'),
+    ActorRole.FINAL_REVIEWER: ('finalReviewerFirstName', 'finalReviewerLastName'),
+}
+_ROLE_REVIEWER_TYPES = {
+    ActorRole.FIRST_REVIEWER: ReviewerType.FIRST_REVIEWER,
+    ActorRole.SECOND_REVIEWER: ReviewerType.SECOND_REVIEWER,
+    ActorRole.FINAL_REVIEWER: ReviewerType.FINAL_REVIEWER,
 }
 
 _ASSIGNABLE_STATUSES = (
@@ -136,10 +126,9 @@ def actor_sub_for_state(application_item: Mapping, state_name: StateName | str) 
         return None if provider_id is None else str(provider_id)
     if definition.actor_role is ActorRole.COMPACT_ADMIN:
         return None
-    field_name = _REVIEWER_SUB_FIELDS.get(definition.actor_role)
-    if field_name is None:
+    if definition.actor_role not in ASSIGNED_REVIEWER_METADATA_FIELDS:
         return None
-    reviewer_sub = application_item.get(field_name)
+    reviewer_sub = assigned_reviewer_metadata(application_item, definition.actor_role.value).get('cognitoSub')
     return None if reviewer_sub is None else str(reviewer_sub)
 
 
@@ -234,12 +223,12 @@ def _locate_active_review(application_item: Mapping, role: ActorRole | str) -> d
     A sub alone is not enough, because one person may hold more than one role.
     """
     actor_role = _actor_role(role)
-    sub_field, assignment_field, _first_name, _last_name, reviewer_type = _ROLE_FIELDS[actor_role]
+    metadata = assigned_reviewer_metadata(application_item, actor_role.value)
     located = _matching_review(
         application_item.get('reviews'),
-        reviewer_type=reviewer_type.value,
-        sub=application_item.get(sub_field),
-        assignment_id=application_item.get(assignment_field),
+        reviewer_type=_ROLE_REVIEWER_TYPES[actor_role].value,
+        sub=metadata.get('cognitoSub'),
+        assignment_id=metadata.get('assignmentId'),
     )
     if located is None:
         return None
@@ -251,12 +240,12 @@ def _locate_active_section_review(
 ) -> dict | None:
     """Return the current assignment's section review, or None when it is absent."""
     actor_role = _actor_role(role)
-    sub_field, assignment_field, _first_name, _last_name, reviewer_type = _ROLE_FIELDS[actor_role]
+    metadata = assigned_reviewer_metadata(application_item, actor_role.value)
     located = _matching_review(
         section_item.get('reviews'),
-        reviewer_type=reviewer_type.value,
-        sub=application_item.get(sub_field),
-        assignment_id=application_item.get(assignment_field),
+        reviewer_type=_ROLE_REVIEWER_TYPES[actor_role].value,
+        sub=metadata.get('cognitoSub'),
+        assignment_id=metadata.get('assignmentId'),
     )
     if located is None:
         return None
@@ -1129,9 +1118,7 @@ class ApplicationClient:
             raise CCNotFoundException('Application not found')
 
         resulting = {
-            ActorRole.FIRST_REVIEWER: _resulting_reviewer_sub(request, application, 'firstReviewerSub'),
-            ActorRole.SECOND_REVIEWER: _resulting_reviewer_sub(request, application, 'secondReviewerSub'),
-            ActorRole.FINAL_REVIEWER: _resulting_reviewer_sub(request, application, 'finalReviewerSub'),
+            role: _resulting_reviewer_sub(request, application, role) for role in _REQUEST_SUB_FIELDS
         }
         validate_reviewer_assignment(
             resulting[ActorRole.FIRST_REVIEWER],
@@ -1141,12 +1128,13 @@ class ApplicationClient:
 
         updated = self._timestamp()
         changes = []
-        for role, (sub_field, _assignment_field, first_field, last_field, _reviewer_type) in _ROLE_FIELDS.items():
-            if sub_field not in request or not request.get(sub_field):
+        for role, request_field in _REQUEST_SUB_FIELDS.items():
+            if request_field not in request or not request.get(request_field):
                 continue
-            new_sub = str(request[sub_field])
-            if new_sub == application.get(sub_field):
+            new_sub = str(request[request_field])
+            if new_sub == assigned_reviewer_metadata(application, role.value).get('cognitoSub'):
                 continue
+            first_field, last_field = _REQUEST_NAME_FIELDS[role]
             changes.append(
                 {
                     'role': role,
@@ -1154,11 +1142,8 @@ class ApplicationClient:
                     'assignment_id': str(uuid4()),
                     'first_name': request.get(first_field),
                     'last_name': request.get(last_field),
-                    'sub_field': sub_field,
-                    'assignment_field': _assignment_field,
-                    'first_field': first_field,
-                    'last_field': last_field,
-                    'reviewer_type': _reviewer_type,
+                    'metadata_field': ASSIGNED_REVIEWER_METADATA_FIELDS[role.value],
+                    'reviewer_type': _ROLE_REVIEWER_TYPES[role],
                 }
             )
 
@@ -1261,17 +1246,19 @@ class ApplicationClient:
         if section_item is None:
             raise CCNotFoundException('Application section not found')
 
-        sub_field, assignment_field, _first, _last, reviewer_type = _ROLE_FIELDS[actor_role]
+        metadata = assigned_reviewer_metadata(application, actor_role.value)
+        reviewer_type = _ROLE_REVIEWER_TYPES[actor_role]
         located = _matching_review(
             section_item.get('reviews'),
             reviewer_type=reviewer_type.value,
-            sub=application.get(sub_field),
-            assignment_id=application.get(assignment_field),
+            sub=metadata.get('cognitoSub'),
+            assignment_id=metadata.get('assignmentId'),
         )
         if located is None:
             raise CCInvalidRequestException('Active section review is missing')
         index, _review = located
-        assignment_id = application.get(assignment_field)
+        assignment_id = metadata.get('assignmentId')
+        metadata_field = ASSIGNED_REVIEWER_METADATA_FIELDS[actor_role.value]
         updated = self._timestamp()
         review_node, committee_node = reviewer_edit_states(actor_role)
         set_parts = [
@@ -1314,8 +1301,8 @@ class ApplicationClient:
                             'ConditionExpression': (
                                 'stateName IN (:reviewNode, :committeeNode) '
                                 'AND attribute_not_exists(pendingAction) '
-                                f'AND {sub_field} = :callerSub '
-                                f'AND {assignment_field} = :assignmentId'
+                                f'AND {metadata_field}.cognitoSub = :callerSub '
+                                f'AND {metadata_field}.assignmentId = :assignmentId'
                             ),
                             'ExpressionAttributeValues': _attribute_values(application_values),
                         }
@@ -1511,25 +1498,17 @@ class ApplicationClient:
             'dateOfUpdate = :updated',
             'reviews = list_append(if_not_exists(reviews, :emptyReviews), :newReviews)',
         ]
-        remove_parts = []
         changed_roles = {change['role'] for change in changes}
         first_change = None
         second_change = None
         for change in changes:
-            set_parts.append(f'{change["sub_field"]} = :{change["sub_field"]}')
-            set_parts.append(f'{change["assignment_field"]} = :{change["assignment_field"]}')
-            values[f':{change["sub_field"]}'] = change['sub']
-            values[f':{change["assignment_field"]}'] = change['assignment_id']
+            metadata = {'cognitoSub': change['sub'], 'assignmentId': change['assignment_id']}
             if change['first_name']:
-                set_parts.append(f'{change["first_field"]} = :{change["first_field"]}')
-                values[f':{change["first_field"]}'] = change['first_name']
-            else:
-                remove_parts.append(change['first_field'])
+                metadata['firstName'] = change['first_name']
             if change['last_name']:
-                set_parts.append(f'{change["last_field"]} = :{change["last_field"]}')
-                values[f':{change["last_field"]}'] = change['last_name']
-            else:
-                remove_parts.append(change['last_field'])
+                metadata['lastName'] = change['last_name']
+            set_parts.append(f'{change["metadata_field"]} = :{change["metadata_field"]}')
+            values[f':{change["metadata_field"]}'] = metadata
             if change['role'] is ActorRole.FIRST_REVIEWER:
                 first_change = change
             elif change['role'] is ActorRole.SECOND_REVIEWER:
@@ -1556,15 +1535,18 @@ class ApplicationClient:
         )
         if first_change is not None and second_change is None:
             values[':distinctSub'] = first_change['sub']
-            condition += ' AND (attribute_not_exists(secondReviewerSub) OR secondReviewerSub <> :distinctSub)'
+            condition += (
+                ' AND (attribute_not_exists(assignedSecondReviewerMetadata.cognitoSub)'
+                ' OR assignedSecondReviewerMetadata.cognitoSub <> :distinctSub)'
+            )
         elif second_change is not None and first_change is None:
             values[':distinctSub'] = second_change['sub']
-            condition += ' AND (attribute_not_exists(firstReviewerSub) OR firstReviewerSub <> :distinctSub)'
+            condition += (
+                ' AND (attribute_not_exists(assignedFirstReviewerMetadata.cognitoSub)'
+                ' OR assignedFirstReviewerMetadata.cognitoSub <> :distinctSub)'
+            )
 
-        expression = f'SET {", ".join(set_parts)}'
-        if remove_parts:
-            expression += f' REMOVE {", ".join(remove_parts)}'
-        expression += ' ADD version :one'
+        expression = f'SET {", ".join(set_parts)} ADD version :one'
         return {
             'Update': {
                 'TableName': self.config.application_table_name,
@@ -1608,20 +1590,21 @@ class ApplicationClient:
         values: dict,
     ) -> None:
         role = _actor_role(review_update['role'])
-        sub_field, assignment_field, first_field, last_field, reviewer_type = _ROLE_FIELDS[role]
+        metadata = assigned_reviewer_metadata(application, role.value)
+        reviewer_type = _ROLE_REVIEWER_TYPES[role]
         located = _matching_review(
             application.get('reviews'),
             reviewer_type=reviewer_type.value,
-            sub=application.get(sub_field),
-            assignment_id=application.get(assignment_field),
+            sub=metadata.get('cognitoSub'),
+            assignment_id=metadata.get('assignmentId'),
         )
         if located is None:
             shell = _review_shell(
-                assignment_id=str(application.get(assignment_field) or uuid4()),
+                assignment_id=str(metadata.get('assignmentId') or uuid4()),
                 reviewer_type=reviewer_type,
-                sub=str(application.get(sub_field) or ''),
-                first_name=application.get(first_field),
-                last_name=application.get(last_field),
+                sub=str(metadata.get('cognitoSub') or ''),
+                first_name=metadata.get('firstName'),
+                last_name=metadata.get('lastName'),
                 assigned_date=updated,
                 section=False,
             )
@@ -1650,16 +1633,19 @@ class ApplicationClient:
         values[':reviewCompleted'] = updated
 
 
-def _resulting_reviewer_sub(request: Mapping, application: Mapping, field: str):
+def _resulting_reviewer_sub(request: Mapping, application: Mapping, role: ActorRole):
     """Return the sub that will be stored for one reviewer role.
 
     A missing or null request field keeps the current assignment. Validation has to see
     that stored value, not the null that arrived on the request.
     """
+    field = _REQUEST_SUB_FIELDS[role]
     if field in request and request[field]:
         return str(request[field])
-    return application.get(field)
+    return assigned_reviewer_metadata(application, role.value).get('cognitoSub')
 
 
 def _all_reviewers_set(application: Mapping) -> bool:
-    return all(application.get(field) for field in _REVIEWER_SUB_FIELDS.values())
+    return all(
+        assigned_reviewer_metadata(application, role.value).get('cognitoSub') for role in _REQUEST_SUB_FIELDS
+    )

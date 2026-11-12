@@ -88,6 +88,54 @@ class TestApplicationsStaffApi(TestApi):
                 required=required,
             )
 
+    def test_application_models_follow_the_backend_schemas(self):
+        api_stack = self.app.sandbox_backend_stage.api_stack
+        template = Template.from_stack(api_stack)
+        models = {
+            resource['Properties'].get('Description'): resource['Properties']['Schema']
+            for resource in template.find_resources(CfnModel.CFN_RESOURCE_TYPE_NAME).values()
+        }
+        staff = models['Staff view of one application']
+        provider = models['Practitioner application']
+        education = staff['properties']['education']['properties']
+        reviewer = staff['properties']['assignedFirstReviewerMetadata']['properties']
+
+        self.assertEqual('string', education['degreeType']['type'])
+        self.assertNotIn('s3Key', json.dumps(staff))
+        self.assertNotIn('s3Key', json.dumps(provider))
+        self.assertIn('downloadUri', education['transcripts']['items']['properties'])
+        self.assertEqual(
+            {'cognitoSub', 'firstName', 'lastName', 'assignmentId'},
+            set(reviewer),
+        )
+        for role in (
+            'assignedFirstReviewerMetadata',
+            'assignedSecondReviewerMetadata',
+            'assignedFinalReviewerMetadata',
+        ):
+            self.assertEqual(reviewer, staff['properties'][role]['properties'])
+            self.assertNotIn(role, provider['properties'])
+        self.assertIn('Step Functions node', staff['properties']['stateName']['description'])
+        self.assertIn('CommitteeFromFirst', staff['properties']['stateName']['enum'])
+        list_item = models['Application summaries']['properties']['items']['items']['properties']
+        self.assertIn('Step Functions node', list_item['stateName']['description'])
+        self.assertEqual(
+            ['incomplete', 'complete', 'needs-attention', 'confirm-details'],
+            education['calculatedSectionStatusForApplicant']['enum'],
+        )
+        selected = staff['properties']['reviews']['items']['properties']['reviewerSelectedApplicationStatus']
+        self.assertIn('recorded choice', selected['description'])
+        self.assertIn('degreeType', models['Provider Education section']['properties'])
+        self.assertIn('degreeType', models['Staff Education section']['properties'])
+        self.assertNotIn('reviewer', provider['properties']['reviews']['items']['properties'])
+        self.assertIn('SUBMIT', models['Transition an application']['properties']['action']['enum'])
+        self.assertIn('Started', models['Override an application state']['properties']['targetState']['enum'])
+        accepted = models['Accepted application request that has not settled yet']
+        self.assertIn('started', accepted['properties']['expectedStatus']['enum'])
+        license_status = models['Staff LicenseHistory section']['properties']['licenses']['items']
+        self.assertIn('active', license_status['properties']['status']['enum'])
+        self.assertIn('Stored section document', models['Stored section document for the path section']['description'])
+
     def _assert_compact_admin_method(
         self,
         template: Template,

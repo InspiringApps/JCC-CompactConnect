@@ -171,8 +171,8 @@ class TestStaffApplications(TstLambdas):
         body = json.loads(response['body'])
         self.assertEqual(application_id, body['id'])
         self.assertEqual('StaffReview', body['stateName'])
-        self.assertEqual(FIRST, body['firstReviewerSub'])
-        self.assertEqual('First', body['firstReviewerFirstName'])
+        self.assertEqual(FIRST, body['assignedFirstReviewerMetadata']['cognitoSub'])
+        self.assertEqual('First', body['assignedFirstReviewerMetadata']['firstName'])
         self.assertIn('reviews', body)
         self._assert_staff(body)
         missing = self._call('GET', _APPLICATION, {'compact': COMPACT, 'applicationId': 'missing-application'})
@@ -215,7 +215,7 @@ class TestStaffApplications(TstLambdas):
             {'firstReviewerSub': FIRST},
         )
         self.assertEqual(200, partial['statusCode'])
-        self.assertEqual(FIRST, json.loads(partial['body'])['firstReviewerSub'])
+        self.assertEqual(FIRST, json.loads(partial['body'])['assignedFirstReviewerMetadata']['cognitoSub'])
         self.sfn.send_task_success.assert_not_called()
 
         complete = self._call(

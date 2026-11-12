@@ -33,7 +33,12 @@ class ReviewSchema(ApplicationValueSchema):
 
 
 class ApplicationReviewSchema(ReviewSchema):
-    reviewerSelectedApplicationStatus = _str(validate=OneOf([status.value for status in ApplicationStatus]))
+    reviewerSelectedApplicationStatus = _str(
+        validate=OneOf([status.value for status in ApplicationStatus]),
+        metadata={
+            'description': "The reviewer's recorded choice, not the live application status.",
+        },
+    )
 
 
 class ApplicationSectionReviewSchema(ReviewSchema):

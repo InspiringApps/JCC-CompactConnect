@@ -98,9 +98,12 @@ class TestApplicationClientRaces(ApplicationTableCase):
 
         snapshot = self.client.get_snapshot(COMPACT, APPLICATION_ID)
         reviews = snapshot.sections[SectionName.PERSONAL_INFORMATION]['reviews']
-        self.assertEqual(assigned.snapshot.application['firstReviewerAssignmentId'], reviews[0]['assignmentId'])
+        self.assertEqual(
+            assigned.snapshot.application['assignedFirstReviewerMetadata']['assignmentId'],
+            reviews[0]['assignmentId'],
+        )
         self.assertEqual(ReviewSectionStatus.PENDING.value, reviews[0]['reviewerSelectedApplicationSectionStatus'])
-        self.assertEqual('reviewer-new', snapshot.application['firstReviewerSub'])
+        self.assertEqual('reviewer-new', snapshot.application['assignedFirstReviewerMetadata']['cognitoSub'])
 
     def test_transition_during_transition_lets_exactly_one_win(self):
         self._create()
