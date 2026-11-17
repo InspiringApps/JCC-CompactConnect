@@ -55,6 +55,12 @@ class TestApplicationsApi(TestApi):
             api_template,
             api_stack,
             parent=api_stack.api.v1_api.compact_resource,
+            path_part='provider-users',
+        )
+        self._assert_route(
+            api_template,
+            api_stack,
+            parent=api_stack.api.v1_api.provider_users_compact_resource,
             path_part='applications',
         )
         self._assert_method(

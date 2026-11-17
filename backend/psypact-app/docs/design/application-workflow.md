@@ -104,16 +104,16 @@ API responses do not include `taskToken`, `executionArn`, `pendingAction`, or `r
 
 ## API routes
 
-Practitioner routes are under `/v1/compacts/{compact}/applications` and use the provider-user authorizer. Staff routes are under `/v1/compacts/{compact}/staff-users/applications`. They use the staff-user authorizer and the `{compact}/admin` scope only. A jurisdiction `{jurisdiction}/{compact}.admin` scope does not authorize these methods.
+Practitioner routes are under `/v1/compacts/{compact}/provider-users/applications` and use the provider-user authorizer. Staff routes are under `/v1/compacts/{compact}/staff-users/applications`. They use the staff-user authorizer and the `{compact}/admin` scope only. A jurisdiction `{jurisdiction}/{compact}.admin` scope does not authorize these methods.
 
 Practitioner:
 
-- `POST /applications` creates an application.
-- `GET /applications` lists the caller's applications from `applicantGSI`. `pageSize` and `lastKey` paginate. Each item is the practitioner application, including its sections.
-- `GET /applications/{applicationId}` reads the caller's application.
-- `PATCH /applications/{applicationId}/sections/{section}` updates one section.
-- `POST /applications/{applicationId}/submit` sends `SUBMIT`.
-- `POST /applications/{applicationId}/resubmit` sends `RESUBMIT`.
+- `POST /provider-users/applications` creates an application.
+- `GET /provider-users/applications` lists the caller's applications from `applicantGSI`. `pageSize` and `lastKey` paginate. Each item is the practitioner application, including its sections.
+- `GET /provider-users/applications/{applicationId}` reads the caller's application.
+- `PATCH /provider-users/applications/{applicationId}/sections/{section}` updates one section.
+- `POST /provider-users/applications/{applicationId}/submit` sends `SUBMIT`.
+- `POST /provider-users/applications/{applicationId}/resubmit` sends `RESUBMIT`.
 
 Staff:
 

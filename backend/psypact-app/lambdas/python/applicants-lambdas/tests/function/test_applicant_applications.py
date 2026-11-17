@@ -15,7 +15,7 @@ from tests import TstLambdas
 COMPACT = 'psypact'
 PROVIDER_ID = 'provider-1'
 STATE_MACHINE_ARN = 'arn:aws:states:us-east-1:000000000000:stateMachine:ApplicationWorkflow'
-_APPLICATIONS = '/v1/compacts/{compact}/applications'
+_APPLICATIONS = '/v1/compacts/{compact}/provider-users/applications'
 _APPLICATION = _APPLICATIONS + '/{applicationId}'
 _SECTION = _APPLICATION + '/sections/{section}'
 _SUBMIT = _APPLICATION + '/submit'

@@ -129,9 +129,6 @@ class V1Api:
         # /v1/compacts/{compact}
         self.compact_resource = self.compacts_resource.add_resource('{compact}')
 
-        # /v1/compacts/{compact}/applications
-        self.applications_resource = self.compact_resource.add_resource('applications')
-
         # /v1/compacts/{compact}/attestations
         self.attestations_resource = self.compact_resource.add_resource('attestations')
         self.attestations = Attestations(
@@ -182,6 +179,8 @@ class V1Api:
             api_lambda_stack=api_lambda_stack,
         )
 
+        # /v1/compacts/{compact}/provider-users
+        self.provider_users_compact_resource = self.compact_resource.add_resource('provider-users')
         # /v1/staff-users
         self.staff_users_admin_resource = self.compact_resource.add_resource('staff-users')
         self.staff_users_self_resource = self.resource.add_resource('staff-users')
@@ -198,9 +197,10 @@ class V1Api:
             api_model=self.api_model,
             api_lambda_stack=api_lambda_stack,
         )
+        # /v1/compacts/{compact}/provider-users/applications
         # /v1/compacts/{compact}/staff-users/applications
         self.applications = Applications(
-            resource=self.applications_resource,
+            resource=self.provider_users_compact_resource.add_resource('applications'),
             staff_resource=self.staff_users_admin_resource.add_resource('applications'),
             api_model=self.api_model,
             api_lambda_stack=api_lambda_stack,

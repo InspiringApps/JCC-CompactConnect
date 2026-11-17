@@ -17,7 +17,7 @@ from common_lambdas import config as config_module
 from common_lambdas.exceptions import CCAccessDeniedException, CCInvalidRequestException, CCNotFoundException
 from marshmallow import ValidationError
 
-_APPLICATIONS = '/v1/compacts/{compact}/applications'
+_APPLICATIONS = '/v1/compacts/{compact}/provider-users/applications'
 _APPLICATION = _APPLICATIONS + '/{applicationId}'
 _SECTION = _APPLICATION + '/sections/{section}'
 _SUBMIT = _APPLICATION + '/submit'

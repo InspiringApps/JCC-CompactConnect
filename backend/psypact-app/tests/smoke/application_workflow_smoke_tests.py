@@ -140,7 +140,7 @@ class ApplicationWalk:
     def __init__(self, compact: str, staff: dict[str, dict]):
         self.compact = compact
         self.staff = staff
-        self.base = f'{get_api_base_url()}/v1/compacts/{compact}/applications'
+        self.base = f'{get_api_base_url()}/v1/compacts/{compact}/provider-users/applications'
         self.staff_base = f'{get_api_base_url()}/v1/compacts/{compact}/staff-users/applications'
         self.application_id = None
 

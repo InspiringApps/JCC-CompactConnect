@@ -28,14 +28,14 @@ class Applications:
         self.handler = api_lambda_stack.applications_lambdas.applicant_applications_handler
         self.staff_handler = api_lambda_stack.applications_lambdas.staff_applications_handler
 
-        # /v1/compacts/{compact}/applications/{applicationId}
+        # /v1/compacts/{compact}/provider-users/applications/{applicationId}
         self.application_resource = self.resource.add_resource('{applicationId}')
-        # /v1/compacts/{compact}/applications/{applicationId}/sections/{section}
+        # /v1/compacts/{compact}/provider-users/applications/{applicationId}/sections/{section}
         self.sections_resource = self.application_resource.add_resource('sections')
         self.section_resource = self.sections_resource.add_resource('{section}')
-        # /v1/compacts/{compact}/applications/{applicationId}/submit
+        # /v1/compacts/{compact}/provider-users/applications/{applicationId}/submit
         self.submit_resource = self.application_resource.add_resource('submit')
-        # /v1/compacts/{compact}/applications/{applicationId}/resubmit
+        # /v1/compacts/{compact}/provider-users/applications/{applicationId}/resubmit
         self.resubmit_resource = self.application_resource.add_resource('resubmit')
 
         self._add_create()
