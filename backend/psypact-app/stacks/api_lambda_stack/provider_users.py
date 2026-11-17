@@ -60,6 +60,10 @@ class ProviderUsersLambdas:
         self.provider_home_jurisdiction_handler = self._create_provider_home_jurisdiction_handler(
             scope, lambda_environment
         )
+        # The registration route is unwired. Keep this function until the deployed API stack
+        # drops its import of the function ARN. Deleting the export in the same release fails.
+        self.provider_registration_handler = self._create_provider_registration_handler(scope, lambda_environment)
+        api_lambda_stack.log_groups.append(self.provider_registration_handler.log_group)
 
     def _account_recovery_initiate_function(self, scope: Construct, lambda_environment: dict) -> PythonFunction:
         stack = Stack.of(scope)

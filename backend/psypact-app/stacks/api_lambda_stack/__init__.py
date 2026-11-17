@@ -9,8 +9,10 @@ from common_constructs.stack import AppStack
 from constructs import Construct
 
 from stacks import persistent_stack as ps
+from stacks.application_workflow_stack import ApplicationWorkflowStack
 from stacks.provider_users import ProviderUsersStack
 
+from .applications import ApplicationsLambdas
 from .attestations import AttestationsLambdas
 from .compact_configuration_api import CompactConfigurationApiLambdas
 from .credentials import CredentialsLambdas
@@ -31,6 +33,7 @@ class ApiLambdaStack(AppStack):
         environment_context: dict,
         persistent_stack: ps.PersistentStack,
         provider_users_stack: ProviderUsersStack,
+        application_workflow_stack: ApplicationWorkflowStack,
         **kwargs,
     ) -> None:
         super().__init__(
@@ -113,11 +116,22 @@ class ApiLambdaStack(AppStack):
         #  environment.
         self.export_value(self.public_lookup_lambdas.get_provider_handler.function_arn)
         self.export_value(self.public_lookup_lambdas.query_providers_handler.function_arn)
+        # The registration route is unwired, so the API stack no longer references this
+        # function. The deployed API stack still imports the generated export. Keep it
+        # until that import is gone, or CloudFormation rejects the export delete.
+        self.export_value(self.provider_users_lambdas.provider_registration_handler.function_arn)
 
         # Staff user lambdas
         self.staff_users_lambdas = StaffUsersLambdas(
             scope=self,
             persistent_stack=persistent_stack,
+            api_lambda_stack=self,
+        )
+
+        self.applications_lambdas = ApplicationsLambdas(
+            scope=self,
+            persistent_stack=persistent_stack,
+            application_workflow_stack=application_workflow_stack,
             api_lambda_stack=self,
         )
 

@@ -8,6 +8,52 @@ from common_constructs.stack import AppStack
 
 # Importing module level to allow lazy loading for typing
 from common_constructs import cc_api
+from stacks.api_stack.v1_api.schema_gateway import (
+    ACCEPTED,
+    ASSIGN_REVIEWERS,
+    CREATE_APPLICATION,
+    PATCH_APPLICATION,
+    PATCH_APPLICATION_REVIEWS,
+    PROVIDER_APPLICATION,
+    REOPEN,
+    SECTION_MODEL_SCHEMAS,
+    SET_STATUS,
+    STAFF_APPLICATION,
+    STAFF_LIST_ITEM,
+    SUBMISSION,
+    TRANSITION,
+)
+
+_JSON_SCHEMA_TYPES = {
+    'object': JsonSchemaType.OBJECT,
+    'array': JsonSchemaType.ARRAY,
+    'string': JsonSchemaType.STRING,
+    'boolean': JsonSchemaType.BOOLEAN,
+    'integer': JsonSchemaType.INTEGER,
+    'number': JsonSchemaType.NUMBER,
+}
+
+
+def _json_schema(document: dict) -> JsonSchema:
+    """Build an API Gateway schema from the dict produced by the marshmallow walker."""
+    kwargs = {}
+    if 'type' in document:
+        kwargs['type'] = _JSON_SCHEMA_TYPES[document['type']]
+    if 'description' in document:
+        kwargs['description'] = document['description']
+    if 'enum' in document:
+        kwargs['enum'] = document['enum']
+    if 'additionalProperties' in document:
+        kwargs['additional_properties'] = document['additionalProperties']
+    if 'required' in document:
+        kwargs['required'] = document['required']
+    if 'minItems' in document:
+        kwargs['min_items'] = document['minItems']
+    if 'properties' in document:
+        kwargs['properties'] = {name: _json_schema(value) for name, value in document['properties'].items()}
+    if 'items' in document:
+        kwargs['items'] = _json_schema(document['items'])
+    return JsonSchema(**kwargs)
 
 
 class ApiModel:
@@ -2465,3 +2511,181 @@ class ApiModel:
                 ),
             )
         return self.api._v1_patch_license_investigation_request_model
+
+    @property
+    def post_application_request_model(self) -> Model:
+        """POST /applications create request."""
+        return self._application_model(
+            '_v1_post_application_request_model',
+            'V1PostApplicationRequestModel',
+            'Create a practitioner application',
+            CREATE_APPLICATION,
+        )
+
+    @property
+    def patch_application_request_model(self) -> Model:
+        """PATCH the practitioner application. Each property is one section."""
+        return self._application_model(
+            '_v1_patch_application_request_model',
+            'V1PatchApplicationRequestModel',
+            'Patch a practitioner application',
+            PATCH_APPLICATION,
+        )
+
+    @property
+    def post_application_submission_request_model(self) -> Model:
+        """POST submit or resubmit. requestId is optional."""
+        return self._application_model(
+            '_v1_post_application_submission_request_model',
+            'V1PostApplicationSubmissionRequestModel',
+            'Submit or resubmit an application',
+            SUBMISSION,
+        )
+
+    @property
+    def application_response_model(self) -> Model:
+        """Practitioner application. Workflow internals are not part of this model."""
+        self._register_section_models(staff=False)
+        return self._application_model(
+            '_v1_application_response_model',
+            'V1ApplicationResponseModel',
+            'Practitioner application',
+            PROVIDER_APPLICATION,
+        )
+
+    @property
+    def application_list_response_model(self) -> Model:
+        """Page of the caller's applications, each in the practitioner schema."""
+        if not hasattr(self.api, '_v1_application_list_response_model'):
+            self.api._v1_application_list_response_model = self.api.add_model(
+                'V1ApplicationListResponseModel',
+                description='The caller applications',
+                schema=JsonSchema(
+                    type=JsonSchemaType.OBJECT,
+                    additional_properties=False,
+                    required=['items', 'pagination'],
+                    properties={
+                        'items': JsonSchema(type=JsonSchemaType.ARRAY, items=_json_schema(PROVIDER_APPLICATION)),
+                        'pagination': self._pagination_response_schema,
+                    },
+                ),
+            )
+        return self.api._v1_application_list_response_model
+
+    @property
+    def application_accepted_response_model(self) -> Model:
+        """202 body for a create, submit, or resubmit that has not settled yet."""
+        return self._application_model(
+            '_v1_application_accepted_response_model',
+            'V1ApplicationAcceptedResponseModel',
+            'Accepted application request that has not settled yet',
+            ACCEPTED,
+        )
+
+    @property
+    def put_application_reviewers_request_model(self) -> Model:
+        """Assign one or more compact-admin reviewers."""
+        return self._application_model(
+            '_v1_put_application_reviewers_request_model',
+            'V1PutApplicationReviewersRequestModel',
+            'Assign application reviewers',
+            ASSIGN_REVIEWERS,
+        )
+
+    @property
+    def patch_application_reviews_request_model(self) -> Model:
+        """PATCH staff section reviews. Each property is one section review."""
+        return self._application_model(
+            '_v1_patch_application_reviews_request_model',
+            'V1PatchApplicationReviewsRequestModel',
+            'Patch staff section reviews',
+            PATCH_APPLICATION_REVIEWS,
+        )
+
+    @property
+    def post_application_transition_request_model(self) -> Model:
+        """Take one workflow action."""
+        return self._application_model(
+            '_v1_post_application_transition_request_model',
+            'V1PostApplicationTransitionRequestModel',
+            'Transition an application',
+            TRANSITION,
+        )
+
+    @property
+    def post_application_status_request_model(self) -> Model:
+        """Admin override to a target state."""
+        return self._application_model(
+            '_v1_post_application_status_request_model',
+            'V1PostApplicationStatusRequestModel',
+            'Override an application state',
+            SET_STATUS,
+        )
+
+    @property
+    def post_application_reopen_request_model(self) -> Model:
+        """Reopen an application into a new staff-review generation."""
+        return self._application_model(
+            '_v1_post_application_reopen_request_model',
+            'V1PostApplicationReopenRequestModel',
+            'Reopen an application',
+            REOPEN,
+        )
+
+    @property
+    def staff_application_response_model(self) -> Model:
+        """Staff application, including state and reviewer assignment."""
+        self._register_section_models(staff=True)
+        return self._application_model(
+            '_v1_staff_application_response_model',
+            'V1StaffApplicationResponseModel',
+            'Staff view of one application',
+            STAFF_APPLICATION,
+        )
+
+    @property
+    def staff_application_list_response_model(self) -> Model:
+        """Page of application summaries."""
+        if not hasattr(self.api, '_v1_staff_application_list_response_model'):
+            self.api._v1_staff_application_list_response_model = self.api.add_model(
+                'V1StaffApplicationListResponseModel',
+                description='Application summaries',
+                schema=JsonSchema(
+                    type=JsonSchemaType.OBJECT,
+                    additional_properties=False,
+                    required=['items', 'pagination'],
+                    properties={
+                        'items': JsonSchema(type=JsonSchemaType.ARRAY, items=_json_schema(STAFF_LIST_ITEM)),
+                        'pagination': JsonSchema(
+                            type=JsonSchemaType.OBJECT,
+                            additional_properties=False,
+                            properties={
+                                'pageSize': JsonSchema(type=JsonSchemaType.NUMBER),
+                                'prevLastKey': JsonSchema(type=JsonSchemaType.STRING),
+                                'lastKey': JsonSchema(type=JsonSchemaType.STRING),
+                            },
+                        ),
+                    },
+                ),
+            )
+        return self.api._v1_staff_application_list_response_model
+
+    def _application_model(self, attr: str, name: str, description: str, document: dict) -> Model:
+        if not hasattr(self.api, attr):
+            setattr(
+                self.api,
+                attr,
+                self.api.add_model(name, description=description, schema=_json_schema(document)),
+            )
+        return getattr(self.api, attr)
+
+    def _register_section_models(self, *, staff: bool) -> None:
+        """One gateway model per section, generated from the section response schema."""
+        for name, document in SECTION_MODEL_SCHEMAS.items():
+            if staff != name.startswith('Staff'):
+                continue
+            model_name = f'V1{name}SectionResponseModel'
+            attr = f'_v1_{name[0].lower()}{name[1:]}_section_model'
+            audience = 'Staff' if staff else 'Provider'
+            section_name = name.removeprefix('Staff')
+            self._application_model(attr, model_name, f'{audience} {section_name} section', document)

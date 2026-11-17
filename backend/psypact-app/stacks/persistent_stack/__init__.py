@@ -22,6 +22,7 @@ from common_constructs.stack import AppStack
 from constructs import Construct
 
 from stacks.backup_infrastructure_stack import BackupInfrastructureStack
+from stacks.persistent_stack.application_table import ApplicationTable
 from stacks.persistent_stack.bulk_uploads_bucket import BulkUploadsBucket
 from stacks.persistent_stack.compact_configuration_table import CompactConfigurationTable
 from stacks.persistent_stack.compact_configuration_upload import CompactConfigurationUpload
@@ -35,6 +36,28 @@ from stacks.persistent_stack.staff_users import StaffUsers
 from stacks.persistent_stack.transaction_history_table import TransactionHistoryTable
 from stacks.persistent_stack.transaction_reports_bucket import TransactionReportsBucket
 from stacks.persistent_stack.user_email_notifications import UserEmailNotifications
+
+
+def alarm_email_addresses(notifications: dict | None) -> list[str]:
+    """Return alarm recipients from the compact email list and the operations support address.
+
+    The support address is appended when it is not already in the compact list. Missing
+    keys and empty values contribute no recipients, and the original order is kept.
+    """
+    notifications = notifications or {}
+    ordered = []
+    seen = set()
+    for key in ('email', 'ses_operations_support_email'):
+        value = notifications.get(key)
+        if value is None:
+            continue
+        addresses = [value] if isinstance(value, str) else value
+        for address in addresses:
+            if not address or address in seen:
+                continue
+            seen.add(address)
+            ordered.append(address)
+    return ordered
 
 
 # cdk leverages instance attributes to make resource exports accessible to other stacks
@@ -82,7 +105,7 @@ class PersistentStack(AppStack):
             self,
             'AlarmTopic',
             master_key=self.shared_encryption_key,
-            email_subscriptions=notifications.get('email', []),
+            email_subscriptions=alarm_email_addresses(notifications),
             slack_subscriptions=notifications.get('slack', []),
         )
 
@@ -217,6 +240,15 @@ class PersistentStack(AppStack):
         self.provider_table = ProviderTable(
             self,
             'ProviderTable',
+            encryption_key=self.shared_encryption_key,
+            removal_policy=removal_policy,
+            backup_infrastructure_stack=backup_infrastructure_stack,
+            environment_context=self.environment_context,
+        )
+
+        self.application_table = ApplicationTable(
+            self,
+            'ApplicationTable',
             encryption_key=self.shared_encryption_key,
             removal_policy=removal_policy,
             backup_infrastructure_stack=backup_infrastructure_stack,
