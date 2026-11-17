@@ -55,13 +55,8 @@ class TestApplicationsStaffApi(TestApi):
         routes = [
             (applications.staff_resource, 'GET', None, None),
             (applications.staff_application_resource, 'GET', None, None),
+            (applications.staff_application_resource, 'PATCH', 'V1PatchApplicationReviewsRequestModel', None),
             (applications.reviewers_resource, 'PUT', 'V1PutApplicationReviewersRequestModel', None),
-            (
-                applications.section_review_resource,
-                'PUT',
-                'V1PutApplicationSectionReviewRequestModel',
-                ['sectionStatus'],
-            ),
             (
                 applications.transition_resource,
                 'POST',
@@ -134,7 +129,12 @@ class TestApplicationsStaffApi(TestApi):
         self.assertIn('started', accepted['properties']['expectedStatus']['enum'])
         license_status = models['Staff LicenseHistory section']['properties']['licenses']['items']
         self.assertIn('active', license_status['properties']['status']['enum'])
-        self.assertIn('Stored section document', models['Stored section document for the path section']['description'])
+        patch = models['Patch a practitioner application']
+        self.assertIn('firstName', patch['properties']['personalInformation']['properties'])
+        self.assertIn('institution', patch['properties']['education']['properties'])
+        self.assertNotIn('required', patch)
+        reviews = models['Patch staff section reviews']
+        self.assertEqual(['sectionStatus'], reviews['properties']['education']['required'])
 
     def _assert_compact_admin_method(
         self,

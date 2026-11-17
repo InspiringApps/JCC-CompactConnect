@@ -26,7 +26,6 @@ USERS_TABLE = 'users-table'
 _APPLICATIONS = '/v1/compacts/{compact}/staff-users/applications'
 _APPLICATION = _APPLICATIONS + '/{applicationId}'
 _REVIEWERS = _APPLICATION + '/reviewers'
-_SECTION_REVIEW = _APPLICATION + '/sections/{section}/review'
 _TRANSITION = _APPLICATION + '/transition'
 _ADMIN_STATUS = _APPLICATION + '/admin/status'
 _REOPEN = _APPLICATION + '/reopen'
@@ -128,10 +127,10 @@ class TestStaffApplications(TstLambdas):
             ('GET', _APPLICATION, path, None, None),
             ('PUT', _REVIEWERS, path, {'firstReviewerSub': FIRST}, None),
             (
-                'PUT',
-                _SECTION_REVIEW,
-                {**path, 'section': 'personalInformation'},
-                {'sectionStatus': 'approved'},
+                'PATCH',
+                _APPLICATION,
+                path,
+                {'personalInformation': {'sectionStatus': 'approved'}},
                 None,
             ),
             ('POST', _TRANSITION, path, {'action': 'REVIEWERS_ASSIGNED', 'requestId': 'req-deny'}, None),
@@ -258,29 +257,39 @@ class TestStaffApplications(TstLambdas):
 
     def test_section_review_follows_the_state_role(self):
         application_id = self._staff_review()
-        path = {'compact': COMPACT, 'applicationId': application_id, 'section': 'personalInformation'}
-        body = {'sectionStatus': 'approved', 'notesForApplicant': 'Looks complete'}
+        path = {'compact': COMPACT, 'applicationId': application_id}
+        body = {'personalInformation': {'sectionStatus': 'approved', 'notesForApplicant': 'Looks complete'}}
 
-        too_early = self._call('PUT', _SECTION_REVIEW, path, body, sub=FIRST)
+        too_early = self._call('PATCH', _APPLICATION, path, body, sub=FIRST)
         self.assertEqual(400, too_early['statusCode'])
 
         self._assign(application_id, firstReviewerSub=FIRST, secondReviewerSub=SECOND, finalReviewerSub=FIRST)
         self._enter(StateName.FIRST_REVIEW, application_id)
-        wrong_reviewer = self._call('PUT', _SECTION_REVIEW, path, body, sub=SECOND)
-        saved = self._call('PUT', _SECTION_REVIEW, path, body, sub=FIRST)
+        wrong_reviewer = self._call('PATCH', _APPLICATION, path, body, sub=SECOND)
+        saved = self._call('PATCH', _APPLICATION, path, body, sub=FIRST)
 
         self.assertEqual(403, wrong_reviewer['statusCode'])
         self.assertEqual(200, saved['statusCode'], msg=saved['body'])
-        section = json.loads(saved['body'])
-        self.assertIn('calculatedSectionStatusForReviewComparison', section)
-        self._assert_staff(section)
+        application = json.loads(saved['body'])
+        self.assertIn('calculatedSectionStatusForReviewComparison', application['personalInformation'])
+        notes = [review.get('notesForApplicant') for review in application['personalInformation']['reviews']]
+        self.assertIn('Looks complete', notes)
+        self._assert_staff(application)
 
         self._enter(StateName.COMMITTEE_FROM_FIRST, application_id)
-        committee_other = self._call('PUT', _SECTION_REVIEW, path, body, sub=SECOND)
-        committee_sender = self._call('PUT', _SECTION_REVIEW, path, {'sectionStatus': 'rejected'}, sub=FIRST)
+        committee_other = self._call('PATCH', _APPLICATION, path, body, sub=SECOND)
+        committee_sender = self._call(
+            'PATCH',
+            _APPLICATION,
+            path,
+            {'personalInformation': {'sectionStatus': 'rejected'}},
+            sub=FIRST,
+        )
 
         self.assertEqual(403, committee_other['statusCode'])
         self.assertEqual(200, committee_sender['statusCode'], msg=committee_sender['body'])
+        empty = self._call('PATCH', _APPLICATION, path, {'education': {}}, sub=FIRST)
+        self.assertEqual(400, empty['statusCode'])
 
     def test_transition_maps_illegal_actions_authorization_and_conflicts(self):
         application_id = self._create()

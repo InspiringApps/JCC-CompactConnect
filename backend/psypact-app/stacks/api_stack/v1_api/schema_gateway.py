@@ -32,6 +32,8 @@ from cc_common.applicants.schema.api import (  # noqa: E402
     EducationSectionResponseSchema,
     HomeStateSectionResponseSchema,
     LicenseHistoryResponseSchema,
+    PatchApplicationRequestSchema,
+    PatchApplicationReviewsRequestSchema,
     PersonalInformationResponseSchema,
     ProviderAcknowledgementsResponseSchema,
     ProviderConductHistorySectionResponseSchema,
@@ -40,27 +42,18 @@ from cc_common.applicants.schema.api import (  # noqa: E402
     ProviderLicenseHistoryResponseSchema,
     ProviderPersonalInformationResponseSchema,
     ReopenApplicationRequestSchema,
-    SectionReviewRequestSchema,
     SetApplicationStatusRequestSchema,
     StaffApplicationListItemSchema,
     StaffApplicationResponseSchema,
     TransitionRequestSchema,
 )
-from cc_common.applicants.schema.json_schema import (  # noqa: E402
-    marshmallow_json_schema,
-    merged_section_response_schema,
-)
-
-_PATCH_SECTION_DESCRIPTION = (
-    'Stored section document for the {section} path parameter. '
-    'The handler validates the body with the section schema for that section.'
-)
+from cc_common.applicants.schema.json_schema import marshmallow_json_schema  # noqa: E402
 
 CREATE_APPLICATION = marshmallow_json_schema(CreateApplicationRequestSchema)
-PATCH_SECTION = {'type': 'object', 'description': _PATCH_SECTION_DESCRIPTION}
+PATCH_APPLICATION = marshmallow_json_schema(PatchApplicationRequestSchema)
+PATCH_APPLICATION_REVIEWS = marshmallow_json_schema(PatchApplicationReviewsRequestSchema)
 SUBMISSION = marshmallow_json_schema(ApplicantSubmissionRequestSchema)
 ASSIGN_REVIEWERS = marshmallow_json_schema(AssignReviewersRequestSchema)
-SECTION_REVIEW = marshmallow_json_schema(SectionReviewRequestSchema)
 TRANSITION = marshmallow_json_schema(TransitionRequestSchema)
 SET_STATUS = marshmallow_json_schema(SetApplicationStatusRequestSchema)
 REOPEN = marshmallow_json_schema(ReopenApplicationRequestSchema)
@@ -68,22 +61,6 @@ PROVIDER_APPLICATION = marshmallow_json_schema(ApplicationResponseSchema)
 STAFF_APPLICATION = marshmallow_json_schema(StaffApplicationResponseSchema)
 ACCEPTED = marshmallow_json_schema(ApplicationAcceptedResponseSchema)
 STAFF_LIST_ITEM = marshmallow_json_schema(StaffApplicationListItemSchema)
-PROVIDER_SECTION = merged_section_response_schema(
-    ProviderPersonalInformationResponseSchema,
-    ProviderLicenseHistoryResponseSchema,
-    ProviderEducationSectionResponseSchema,
-    ProviderConductHistorySectionResponseSchema,
-    ProviderHomeStateSectionResponseSchema,
-    ProviderAcknowledgementsResponseSchema,
-)
-STAFF_SECTION = merged_section_response_schema(
-    PersonalInformationResponseSchema,
-    LicenseHistoryResponseSchema,
-    EducationSectionResponseSchema,
-    ConductHistorySectionResponseSchema,
-    HomeStateSectionResponseSchema,
-    AcknowledgementsResponseSchema,
-)
 _SECTION_MODELS = (
     ('PersonalInformation', PersonalInformationResponseSchema, ProviderPersonalInformationResponseSchema),
     ('LicenseHistory', LicenseHistoryResponseSchema, ProviderLicenseHistoryResponseSchema),

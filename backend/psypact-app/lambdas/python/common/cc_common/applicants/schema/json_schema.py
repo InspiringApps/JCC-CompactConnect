@@ -8,12 +8,6 @@ from marshmallow import Schema
 from marshmallow.fields import Boolean, Dict, Float, Integer, List, Nested, Raw, String
 from marshmallow.validate import Length, OneOf
 
-_SECTION_RESPONSE_DESCRIPTION = (
-    'Response for one {section}. Properties from every section are included because this path '
-    'uses one model. The application response lists each section separately. The handler validates '
-    'a PATCH body with the stored section schema for the path section.'
-)
-
 
 def marshmallow_json_schema(schema_cls: type[Schema]) -> dict:
     """Return a JSON Schema object for one marshmallow schema."""
@@ -32,19 +26,6 @@ def marshmallow_json_schema(schema_cls: type[Schema]) -> dict:
     if required:
         document['required'] = required
     return document
-
-
-def merged_section_response_schema(*schema_classes: type[Schema]) -> dict:
-    """One object schema for the shared ``{section}`` response."""
-    properties = {}
-    for schema_cls in schema_classes:
-        properties.update(marshmallow_json_schema(schema_cls)['properties'])
-    return {
-        'type': 'object',
-        'additionalProperties': False,
-        'description': _SECTION_RESPONSE_DESCRIPTION,
-        'properties': properties,
-    }
 
 
 def _field_schema(field) -> dict:

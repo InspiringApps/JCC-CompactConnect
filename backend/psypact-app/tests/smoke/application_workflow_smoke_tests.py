@@ -149,8 +149,7 @@ class ApplicationWalk:
         self.application_id = body['id']
         _OWNED.note_created(self.application_id)
         self._wait_for_status('started')
-        for section in SECTIONS:
-            self._call('PATCH', f'/{self.application_id}/sections/{section}', 'applicant', SECTION_BODIES[section])
+        self._call('PATCH', f'/{self.application_id}', 'applicant', SECTION_BODIES)
         logger.info('Created application %s', self.application_id)
         return self.application_id
 
@@ -163,13 +162,8 @@ class ApplicationWalk:
         self._wait_for_status(expected_status)
 
     def approve_sections(self, role: str):
-        for section in SECTIONS:
-            self._call(
-                'PUT',
-                f'/{self.application_id}/sections/{section}/review',
-                role,
-                {'sectionStatus': 'approved'},
-            )
+        body = {section: {'sectionStatus': 'approved'} for section in SECTIONS}
+        self._call('PATCH', f'/{self.application_id}', role, body)
 
     def transition(
         self,
@@ -228,10 +222,10 @@ class ApplicationWalk:
         return self._call('GET', f'/{self.application_id}', 'admin')
 
     def save_section_review(self, role: str, section: str, status: str, note: str | None = None):
-        body = {'sectionStatus': status}
+        review = {'sectionStatus': status}
         if note is not None:
-            body['notesForReviewers'] = note
-        self._call('PUT', f'/{self.application_id}/sections/{section}/review', role, body)
+            review['notesForReviewers'] = note
+        self._call('PATCH', f'/{self.application_id}', role, {section: review})
 
     def current_status(self) -> str | None:
         body = self._call('GET', f'/{self.application_id}', 'applicant')

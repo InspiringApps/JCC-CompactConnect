@@ -92,11 +92,11 @@ class TestApplicationsApi(TestApi):
         self._assert_method(
             api_template,
             api_stack,
-            resource=applications.section_resource,
+            resource=applications.application_resource,
             method='PATCH',
             authorizer_id=authorizer_id,
             integration=integration,
-            model_name='V1PatchApplicationSectionRequestModel',
+            model_name='V1PatchApplicationRequestModel',
         )
         self._assert_method(
             api_template,

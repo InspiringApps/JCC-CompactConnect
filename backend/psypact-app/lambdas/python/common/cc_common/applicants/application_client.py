@@ -166,8 +166,21 @@ def _actor_role(role: ActorRole | str) -> ActorRole:
 
 
 def _merge_section_data(existing: Mapping | None, patch: Mapping | None) -> dict:
+    """Merge an object patch. An empty object replaces the object it names.
+
+    A missing key is left unchanged because this only walks keys that are present.
+    A present scalar, list, or null replaces that field. A present object merges
+    the same way, unless it is empty.
+    """
+    if not patch:
+        return {}
     merged = dict(existing or {})
-    merged.update(dict(patch or {}))
+    for key, value in patch.items():
+        if isinstance(value, dict):
+            current = merged.get(key)
+            merged[key] = _merge_section_data(current if isinstance(current, dict) else None, value)
+        else:
+            merged[key] = value
     return merged
 
 
@@ -1034,26 +1047,51 @@ class ApplicationClient:
         *,
         actor_provider_id: str,
     ) -> ApplicationSnapshot:
-        """Merge fields into one section while the applicant is allowed to edit.
-
-        The section write is conditioned on the ``updated`` value that was read.
-        The application write requires an applicant-editable state, no pending action,
-        no reopen lock, and the applicant's provider id. It bumps ``version``.
-        """
+        """Merge one section. See ``patch_sections``."""
         section_name = section if isinstance(section, SectionName) else SectionName(section)
-        current = self._get_keyed_item(compact, application_id, self.section_sk(section_name))
-        if current is None:
-            raise CCNotFoundException('Application section not found')
+        return self.patch_sections(
+            compact,
+            application_id,
+            {section_name: data},
+            actor_provider_id=actor_provider_id,
+        )
+
+    def patch_sections(
+        self,
+        compact: str,
+        application_id: str,
+        sections: Mapping,
+        *,
+        actor_provider_id: str,
+    ) -> ApplicationSnapshot:
+        """Merge every included section while the applicant is allowed to edit.
+
+        A section key that is absent is not written. An empty object replaces that
+        section. The section writes are conditioned on the ``updated`` values that
+        were read. The application write requires an applicant-editable state, no
+        pending action, no reopen lock, and the applicant's provider id. All of
+        those writes are one transaction, and it bumps ``version`` once.
+        """
+        if not sections:
+            return self.get_snapshot(compact, application_id)
 
         updated = self._timestamp()
-        merged = _merge_section_data(current.get('data'), data)
-        previous_updated = current.get('updated')
-        if previous_updated is None:
-            section_condition = 'attribute_not_exists(updated)'
-            section_values = {':data': merged, ':now': updated}
-        else:
-            section_condition = 'updated = :previousUpdated'
-            section_values = {':data': merged, ':now': updated, ':previousUpdated': previous_updated}
+        section_updates = []
+        for raw_name, data in sections.items():
+            section_name = raw_name if isinstance(raw_name, SectionName) else SectionName(raw_name)
+            current = self._get_keyed_item(compact, application_id, self.section_sk(section_name))
+            if current is None:
+                raise CCNotFoundException('Application section not found')
+            section_updates.append(
+                self._section_data_update(
+                    compact,
+                    application_id,
+                    section_name,
+                    _merge_section_data(current.get('data'), data),
+                    current.get('updated'),
+                    updated,
+                )
+            )
 
         state_placeholders = []
         application_values = {':now': updated, ':one': 1, ':pid': actor_provider_id}
@@ -1065,18 +1103,7 @@ class ApplicationClient:
         try:
             self.config.dynamodb_client.transact_write_items(
                 TransactItems=[
-                    {
-                        'Update': {
-                            'TableName': self.config.application_table_name,
-                            'Key': _serialize_item(
-                                {'pk': self.pk(compact, application_id), 'sk': self.section_sk(section_name)}
-                            ),
-                            'UpdateExpression': 'SET #data = :data, updated = :now',
-                            'ConditionExpression': section_condition,
-                            'ExpressionAttributeNames': {'#data': 'data'},
-                            'ExpressionAttributeValues': _attribute_values(section_values),
-                        }
-                    },
+                    *section_updates,
                     {
                         'Update': {
                             'TableName': self.config.application_table_name,
@@ -1098,6 +1125,32 @@ class ApplicationClient:
                 raise CCConflictException('Section update was rejected') from error
             raise
         return self.get_snapshot(compact, application_id)
+
+    def _section_data_update(
+        self,
+        compact: str,
+        application_id: str,
+        section_name: SectionName,
+        merged: Mapping,
+        previous_updated: str | None,
+        updated: str,
+    ) -> dict:
+        if previous_updated is None:
+            condition = 'attribute_not_exists(updated)'
+            values = {':data': merged, ':now': updated}
+        else:
+            condition = 'updated = :previousUpdated'
+            values = {':data': merged, ':now': updated, ':previousUpdated': previous_updated}
+        return {
+            'Update': {
+                'TableName': self.config.application_table_name,
+                'Key': _serialize_item({'pk': self.pk(compact, application_id), 'sk': self.section_sk(section_name)}),
+                'UpdateExpression': 'SET #data = :data, updated = :now',
+                'ConditionExpression': condition,
+                'ExpressionAttributeNames': {'#data': 'data'},
+                'ExpressionAttributeValues': _attribute_values(values),
+            }
+        }
 
     def assign_reviewers(
         self,
@@ -1230,46 +1283,93 @@ class ApplicationClient:
         section_status: ReviewSectionStatus | str,
         notes: Mapping | None = None,
     ) -> ApplicationSnapshot:
-        """Save the caller's active section review for one role.
-
-        The section condition keeps the write on that assignment. The application condition
-        allows only the review node and committee node for the role, and only that role's
-        current assignee.
-        """
-        actor_role = _actor_role(role)
+        """Save one section review. See ``save_section_reviews``."""
         section_name = section if isinstance(section, SectionName) else SectionName(section)
-        status = section_status.value if isinstance(section_status, ReviewSectionStatus) else str(section_status)
+        payload = {'sectionStatus': section_status}
+        if notes:
+            payload.update(notes)
+        return self.save_section_reviews(
+            compact,
+            application_id,
+            {section_name: payload},
+            role=role,
+            caller_sub=caller_sub,
+        )
+
+    def save_section_reviews(
+        self,
+        compact: str,
+        application_id: str,
+        sections: Mapping,
+        *,
+        role: ActorRole | str,
+        caller_sub: str,
+    ) -> ApplicationSnapshot:
+        """Save the caller's active review for every included section.
+
+        A section key that is absent is not written. Each included section requires
+        ``sectionStatus``. The section conditions keep the writes on that assignment.
+        The application condition allows only the review node and committee node for
+        the role, and only that role's current assignee. All of those writes are one
+        transaction, and it bumps ``version`` once.
+        """
+        if not sections:
+            return self.get_snapshot(compact, application_id)
+
+        actor_role = _actor_role(role)
         application = self.get_application(compact, application_id)
         if application is None:
             raise CCNotFoundException('Application not found')
-        section_item = self._get_keyed_item(compact, application_id, self.section_sk(section_name))
-        if section_item is None:
-            raise CCNotFoundException('Application section not found')
-
         metadata = assigned_reviewer_metadata(application, actor_role.value)
         reviewer_type = _ROLE_REVIEWER_TYPES[actor_role]
-        located = _matching_review(
-            section_item.get('reviews'),
-            reviewer_type=reviewer_type.value,
-            sub=metadata.get('cognitoSub'),
-            assignment_id=metadata.get('assignmentId'),
-        )
-        if located is None:
-            raise CCInvalidRequestException('Active section review is missing')
-        index, _review = located
         assignment_id = metadata.get('assignmentId')
         metadata_field = ASSIGNED_REVIEWER_METADATA_FIELDS[actor_role.value]
         updated = self._timestamp()
         review_node, committee_node = reviewer_edit_states(actor_role)
-        set_parts = [
-            f'reviews[{index}].reviewerSelectedApplicationSectionStatus = :sectionStatus',
-            f'reviews[{index}].reviewCompletionDate = :now',
-        ]
-        section_values = {':sectionStatus': status, ':now': updated, ':assignmentId': assignment_id}
-        for note_field in ('notesForApplicant', 'notesForReviewers'):
-            if notes and note_field in notes and notes[note_field] is not None:
-                set_parts.append(f'reviews[{index}].{note_field} = :{note_field}')
-                section_values[f':{note_field}'] = notes[note_field]
+        section_updates = []
+        for raw_name, payload in sections.items():
+            section_name = raw_name if isinstance(raw_name, SectionName) else SectionName(raw_name)
+            if not isinstance(payload, Mapping):
+                raise CCInvalidRequestException('sectionStatus is required')
+            status = payload.get('sectionStatus')
+            if not status:
+                raise CCInvalidRequestException('sectionStatus is required')
+            status = status.value if isinstance(status, ReviewSectionStatus) else str(status)
+            section_item = self._get_keyed_item(compact, application_id, self.section_sk(section_name))
+            if section_item is None:
+                raise CCNotFoundException('Application section not found')
+            located = _matching_review(
+                section_item.get('reviews'),
+                reviewer_type=reviewer_type.value,
+                sub=metadata.get('cognitoSub'),
+                assignment_id=assignment_id,
+            )
+            if located is None:
+                raise CCInvalidRequestException('Active section review is missing')
+            index, _review = located
+            set_parts = [
+                f'reviews[{index}].reviewerSelectedApplicationSectionStatus = :sectionStatus',
+                f'reviews[{index}].reviewCompletionDate = :now',
+            ]
+            section_values = {':sectionStatus': status, ':now': updated, ':assignmentId': assignment_id}
+            for note_field in ('notesForApplicant', 'notesForReviewers'):
+                if note_field in payload and payload[note_field] is not None:
+                    set_parts.append(f'reviews[{index}].{note_field} = :{note_field}')
+                    section_values[f':{note_field}'] = payload[note_field]
+            section_updates.append(
+                {
+                    'Update': {
+                        'TableName': self.config.application_table_name,
+                        'Key': _serialize_item(
+                            {'pk': self.pk(compact, application_id), 'sk': self.section_sk(section_name)}
+                        ),
+                        'UpdateExpression': f'SET {", ".join(set_parts)}',
+                        'ConditionExpression': f'reviews[{index}].assignmentId = :assignmentId',
+                        'ExpressionAttributeValues': _attribute_values(section_values),
+                    }
+                }
+            )
+
         application_values = {
             ':now': updated,
             ':one': 1,
@@ -1278,21 +1378,10 @@ class ApplicationClient:
             ':reviewNode': review_node.value,
             ':committeeNode': committee_node.value,
         }
-
         try:
             self.config.dynamodb_client.transact_write_items(
                 TransactItems=[
-                    {
-                        'Update': {
-                            'TableName': self.config.application_table_name,
-                            'Key': _serialize_item(
-                                {'pk': self.pk(compact, application_id), 'sk': self.section_sk(section_name)}
-                            ),
-                            'UpdateExpression': f'SET {", ".join(set_parts)}',
-                            'ConditionExpression': f'reviews[{index}].assignmentId = :assignmentId',
-                            'ExpressionAttributeValues': _attribute_values(section_values),
-                        }
-                    },
+                    *section_updates,
                     {
                         'Update': {
                             'TableName': self.config.application_table_name,

@@ -8,6 +8,8 @@ os.environ.setdefault('JURISDICTIONS', '["oh"]')
 from cc_common.applicants.schema.api import (  # noqa: E402
     ApplicationResponseSchema,
     AssignReviewersRequestSchema,
+    PatchApplicationRequestSchema,
+    PatchApplicationReviewsRequestSchema,
     ResponseDocumentSchema,
     SetApplicationStatusRequestSchema,
     StaffApplicationResponseSchema,
@@ -394,6 +396,24 @@ class TestRecordSchemas(TestCase):
         self.assertEqual({'firstReviewerSub': 'sub-1'}, assigned)
         patched = section_patch_schema('personalInformation').load({'firstName': '  Ada  ', 'mainingZip': 'nope'})
         self.assertEqual({'firstName': 'Ada'}, patched)
+        application = PatchApplicationRequestSchema().load(
+            {'personalInformation': {}, 'education': {'institution': '  Example  ', 'extra': True}}
+        )
+        self.assertEqual(
+            {'personalInformation': {}, 'education': {'institution': 'Example'}},
+            application,
+        )
+        with self.assertRaises(ValidationError):
+            PatchApplicationRequestSchema().load({'notASection': {}})
+        with self.assertRaises(ValidationError):
+            PatchApplicationReviewsRequestSchema().load({'education': {}})
+        review = PatchApplicationReviewsRequestSchema().load(
+            {'personalInformation': {'sectionStatus': 'approved', 'notesForApplicant': ' ok '}}
+        )
+        self.assertEqual(
+            {'personalInformation': {'sectionStatus': 'approved', 'notesForApplicant': 'ok'}},
+            review,
+        )
 
 
 class TestResponseAndCalculatedStatus(TestCase):

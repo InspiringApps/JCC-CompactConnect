@@ -108,6 +108,28 @@ class ApplicantSubmissionRequestSchema(StrictRequestSchema):
     requestId = _str()
 
 
+class PatchApplicationRequestSchema(StrictRequestSchema):
+    """Practitioner edit. Each key is one section. An omitted section is not written."""
+
+    personalInformation = Nested(PersonalInformationSchema, required=False, allow_none=False)
+    licenseHistory = Nested(LicenseHistorySchema, required=False, allow_none=False)
+    education = Nested(EducationSchema, required=False, allow_none=False)
+    conductHistory = Nested(ConductHistorySchema, required=False, allow_none=False)
+    homeState = Nested(HomeStateSchema, required=False, allow_none=False)
+    acknowledgements = Nested(AcknowledgementsSchema, required=False, allow_none=False)
+
+
+class PatchApplicationReviewsRequestSchema(StrictRequestSchema):
+    """Staff review edit. Each key is one section review. An omitted section is not reviewed."""
+
+    personalInformation = Nested(SectionReviewRequestSchema, required=False, allow_none=False)
+    licenseHistory = Nested(SectionReviewRequestSchema, required=False, allow_none=False)
+    education = Nested(SectionReviewRequestSchema, required=False, allow_none=False)
+    conductHistory = Nested(SectionReviewRequestSchema, required=False, allow_none=False)
+    homeState = Nested(SectionReviewRequestSchema, required=False, allow_none=False)
+    acknowledgements = Nested(SectionReviewRequestSchema, required=False, allow_none=False)
+
+
 class ResponseDocumentSchema(ApplicationValueSchema):
     """File metadata returned to the UI. ``downloadUri`` is generated at read time."""
 

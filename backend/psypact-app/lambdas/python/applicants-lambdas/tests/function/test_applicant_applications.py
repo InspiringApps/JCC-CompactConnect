@@ -17,7 +17,6 @@ PROVIDER_ID = 'provider-1'
 STATE_MACHINE_ARN = 'arn:aws:states:us-east-1:000000000000:stateMachine:ApplicationWorkflow'
 _APPLICATIONS = '/v1/compacts/{compact}/provider-users/applications'
 _APPLICATION = _APPLICATIONS + '/{applicationId}'
-_SECTION = _APPLICATION + '/sections/{section}'
 _SUBMIT = _APPLICATION + '/submit'
 _RESUBMIT = _APPLICATION + '/resubmit'
 _HIDDEN = ('taskToken', 'taskTokenHash', 'executionArn', 'pendingAction', 'reopenLock', 'stateName')
@@ -142,9 +141,9 @@ class TestApplicantApplications(TstLambdas):
         own = self._create()
         self._call(
             'PATCH',
-            _SECTION,
-            {'compact': COMPACT, 'applicationId': own['id'], 'section': 'personalInformation'},
-            {'firstName': 'Ada'},
+            _APPLICATION,
+            {'compact': COMPACT, 'applicationId': own['id']},
+            {'personalInformation': {'firstName': 'Ada'}},
         )
         self._call(
             'POST',
@@ -209,33 +208,53 @@ class TestApplicantApplications(TstLambdas):
         self.assertEqual(403, other['statusCode'])
         self.assertEqual(404, missing['statusCode'])
 
-    def test_patch_merges_a_section_and_conflicts_return_409(self):
+    def test_patch_merges_included_sections_and_conflicts_return_409(self):
         created = self._create()
         application_id = created['id']
-        path = {'compact': COMPACT, 'applicationId': application_id, 'section': 'personalInformation'}
+        path = {'compact': COMPACT, 'applicationId': application_id}
 
-        first = self._call('PATCH', _SECTION, path, {'firstName': 'Ada'})
-        second = self._call('PATCH', _SECTION, path, {'lastName': 'Lovelace'})
+        first = self._call(
+            'PATCH',
+            _APPLICATION,
+            path,
+            {
+                'personalInformation': {'firstName': 'Ada'},
+                'education': {'institution': 'Example', 'accreditingContact': {'name': 'Ada', 'email': 'a@b'}},
+            },
+        )
+        second = self._call(
+            'PATCH',
+            _APPLICATION,
+            path,
+            {
+                'personalInformation': {'lastName': 'Lovelace'},
+                'education': {'accreditingContact': {'name': 'Grace'}},
+            },
+        )
 
         self.assertEqual(200, first['statusCode'])
         self.assertEqual(200, second['statusCode'])
         merged = json.loads(second['body'])
-        self.assertEqual('Ada', merged['firstName'])
-        self.assertEqual('Lovelace', merged['lastName'])
-        self.assertIn('calculatedSectionStatusForApplicant', merged)
+        self.assertEqual('Ada', merged['personalInformation']['firstName'])
+        self.assertEqual('Lovelace', merged['personalInformation']['lastName'])
+        self.assertEqual('Example', merged['education']['institution'])
+        self.assertEqual('Grace', merged['education']['accreditingContact']['name'])
+        self.assertEqual('a@b', merged['education']['accreditingContact']['email'])
+        self.assertIn('calculatedSectionStatusForApplicant', merged['personalInformation'])
         self._assert_public(merged)
 
+        cleared = self._call('PATCH', _APPLICATION, path, {'personalInformation': {}})
+        self.assertEqual(200, cleared['statusCode'])
+        cleared_body = json.loads(cleared['body'])
+        self.assertNotIn('firstName', cleared_body['personalInformation'])
+        self.assertEqual('Example', cleared_body['education']['institution'])
+
         self._enter(StateName.STAFF_REVIEW, application_id)
-        conflict = self._call('PATCH', _SECTION, path, {'firstName': 'Augusta'})
+        conflict = self._call('PATCH', _APPLICATION, path, {'personalInformation': {'firstName': 'Augusta'}})
 
         self.assertEqual(409, conflict['statusCode'])
         self.assertIn('message', json.loads(conflict['body']))
-        unknown = self._call(
-            'PATCH',
-            _SECTION,
-            {'compact': COMPACT, 'applicationId': application_id, 'section': 'not-a-section'},
-            {'firstName': 'Ada'},
-        )
+        unknown = self._call('PATCH', _APPLICATION, path, {'notASection': {'firstName': 'Ada'}})
         self.assertEqual(400, unknown['statusCode'])
 
     def test_submit_uses_a_generated_request_id_and_returns_the_new_status(self):

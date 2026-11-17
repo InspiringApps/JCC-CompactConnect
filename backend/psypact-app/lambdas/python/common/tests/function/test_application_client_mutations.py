@@ -202,6 +202,57 @@ class TestPatchSection(ApplicationTableCase):
                 actor_provider_id=PROVIDER_ID,
             )
 
+    def test_patch_sections_merge_nested_objects_and_bump_version_once(self):
+        self._create()
+        self._enter(StateName.STARTED)
+        before = int(self._application()['version'])
+        saved = self.client.patch_sections(
+            COMPACT,
+            APPLICATION_ID,
+            {
+                SectionName.EDUCATION: {
+                    'institution': 'Example',
+                    'accreditingContact': {'name': 'Ada', 'email': 'a@b'},
+                },
+                SectionName.PERSONAL_INFORMATION: {'firstName': 'Ada'},
+            },
+            actor_provider_id=PROVIDER_ID,
+        )
+        self.assertEqual(before + 1, int(saved.application['version']))
+        education = saved.sections[SectionName.EDUCATION]['data']
+        self.assertEqual('Example', education['institution'])
+
+        narrowed = self.client.patch_section(
+            COMPACT,
+            APPLICATION_ID,
+            SectionName.EDUCATION,
+            {'accreditingContact': {'name': 'Grace'}},
+            actor_provider_id=PROVIDER_ID,
+        )
+        contact = narrowed.sections[SectionName.EDUCATION]['data']['accreditingContact']
+        self.assertEqual({'name': 'Grace', 'email': 'a@b'}, contact)
+        self.assertEqual('Ada', narrowed.sections[SectionName.PERSONAL_INFORMATION]['data']['firstName'])
+
+        cleared_contact = self.client.patch_section(
+            COMPACT,
+            APPLICATION_ID,
+            SectionName.EDUCATION,
+            {'accreditingContact': {}},
+            actor_provider_id=PROVIDER_ID,
+        )
+        self.assertEqual({}, cleared_contact.sections[SectionName.EDUCATION]['data']['accreditingContact'])
+        self.assertEqual('Example', cleared_contact.sections[SectionName.EDUCATION]['data']['institution'])
+
+        cleared = self.client.patch_section(
+            COMPACT,
+            APPLICATION_ID,
+            SectionName.PERSONAL_INFORMATION,
+            {},
+            actor_provider_id=PROVIDER_ID,
+        )
+        self.assertEqual({}, cleared.sections[SectionName.PERSONAL_INFORMATION]['data'])
+        self.assertEqual('Example', cleared.sections[SectionName.EDUCATION]['data']['institution'])
+
     def _create_over_existing_started(self):
         """Move the existing application back to Started for the next rejection check."""
         self._enter(StateName.STARTED)
@@ -375,6 +426,29 @@ class TestSectionReviews(ApplicationTableCase):
         assigned = self._staff_then_assign(request)
         self._enter(StateName.FIRST_REVIEW)
         return assigned
+
+    def test_several_section_reviews_bump_version_once(self):
+        self._first_review()
+        before = int(self._application()['version'])
+        saved = self.client.save_section_reviews(
+            COMPACT,
+            APPLICATION_ID,
+            {
+                SectionName.PERSONAL_INFORMATION: {'sectionStatus': ReviewSectionStatus.APPROVED},
+                SectionName.EDUCATION: {
+                    'sectionStatus': ReviewSectionStatus.REJECTED,
+                    'notesForApplicant': 'Need a transcript',
+                },
+            },
+            role=ActorRole.FIRST_REVIEWER,
+            caller_sub=FIRST,
+        )
+        self.assertEqual(before + 1, int(saved.application['version']))
+        personal = saved.sections[SectionName.PERSONAL_INFORMATION]['reviews'][0]
+        education = saved.sections[SectionName.EDUCATION]['reviews'][0]
+        self.assertEqual(ReviewSectionStatus.APPROVED.value, personal['reviewerSelectedApplicationSectionStatus'])
+        self.assertEqual(ReviewSectionStatus.REJECTED.value, education['reviewerSelectedApplicationSectionStatus'])
+        self.assertEqual('Need a transcript', education['notesForApplicant'])
 
     def test_sending_reviewer_can_edit_in_committee_and_others_cannot(self):
         self._first_review()

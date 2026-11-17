@@ -30,9 +30,6 @@ class Applications:
 
         # /v1/compacts/{compact}/provider-users/applications/{applicationId}
         self.application_resource = self.resource.add_resource('{applicationId}')
-        # /v1/compacts/{compact}/provider-users/applications/{applicationId}/sections/{section}
-        self.sections_resource = self.application_resource.add_resource('sections')
-        self.section_resource = self.sections_resource.add_resource('{section}')
         # /v1/compacts/{compact}/provider-users/applications/{applicationId}/submit
         self.submit_resource = self.application_resource.add_resource('submit')
         # /v1/compacts/{compact}/provider-users/applications/{applicationId}/resubmit
@@ -41,7 +38,7 @@ class Applications:
         self._add_create()
         self._add_list()
         self._add_get()
-        self._add_patch_section()
+        self._add_patch()
         self._add_submit()
         self._add_resubmit()
         self._add_staff_routes()
@@ -106,14 +103,14 @@ class Applications:
             **self._method_options(),
         )
 
-    def _add_patch_section(self) -> None:
-        self.section_resource.add_method(
+    def _add_patch(self) -> None:
+        self.application_resource.add_method(
             'PATCH',
-            request_models={'application/json': self.api_model.patch_application_section_request_model},
+            request_models={'application/json': self.api_model.patch_application_request_model},
             method_responses=[
                 MethodResponse(
                     status_code='200',
-                    response_models={'application/json': self.api_model.application_section_response_model},
+                    response_models={'application/json': self.api_model.application_response_model},
                 ),
                 MethodResponse(
                     status_code='409',
@@ -133,8 +130,6 @@ class Applications:
         # /v1/compacts/{compact}/staff-users/applications/{applicationId}
         self.staff_application_resource = self.staff_resource.add_resource('{applicationId}')
         self.reviewers_resource = self.staff_application_resource.add_resource('reviewers')
-        staff_sections = self.staff_application_resource.add_resource('sections')
-        self.section_review_resource = staff_sections.add_resource('{section}').add_resource('review')
         self.transition_resource = self.staff_application_resource.add_resource('transition')
         self.admin_resource = self.staff_application_resource.add_resource('admin')
         self.admin_status_resource = self.admin_resource.add_resource('status')
@@ -165,13 +160,13 @@ class Applications:
             'PUT',
             self.api_model.put_application_reviewers_request_model,
         )
-        self.section_review_resource.add_method(
-            'PUT',
-            request_models={'application/json': self.api_model.put_application_section_review_request_model},
+        self.staff_application_resource.add_method(
+            'PATCH',
+            request_models={'application/json': self.api_model.patch_application_reviews_request_model},
             method_responses=[
                 MethodResponse(
                     status_code='200',
-                    response_models={'application/json': self.api_model.staff_application_section_response_model},
+                    response_models={'application/json': self.api_model.staff_application_response_model},
                 ),
                 MethodResponse(
                     status_code='409',

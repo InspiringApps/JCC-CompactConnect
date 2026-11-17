@@ -12,16 +12,14 @@ from stacks.api_stack.v1_api.schema_gateway import (
     ACCEPTED,
     ASSIGN_REVIEWERS,
     CREATE_APPLICATION,
-    PATCH_SECTION,
+    PATCH_APPLICATION,
+    PATCH_APPLICATION_REVIEWS,
     PROVIDER_APPLICATION,
-    PROVIDER_SECTION,
     REOPEN,
     SECTION_MODEL_SCHEMAS,
-    SECTION_REVIEW,
     SET_STATUS,
     STAFF_APPLICATION,
     STAFF_LIST_ITEM,
-    STAFF_SECTION,
     SUBMISSION,
     TRANSITION,
 )
@@ -2525,13 +2523,13 @@ class ApiModel:
         )
 
     @property
-    def patch_application_section_request_model(self) -> Model:
-        """PATCH one application section. The handler validates the section fields."""
+    def patch_application_request_model(self) -> Model:
+        """PATCH the practitioner application. Each property is one section."""
         return self._application_model(
-            '_v1_patch_application_section_request_model',
-            'V1PatchApplicationSectionRequestModel',
-            'Stored section document for the path section',
-            PATCH_SECTION,
+            '_v1_patch_application_request_model',
+            'V1PatchApplicationRequestModel',
+            'Patch a practitioner application',
+            PATCH_APPLICATION,
         )
 
     @property
@@ -2575,16 +2573,6 @@ class ApiModel:
         return self.api._v1_application_list_response_model
 
     @property
-    def application_section_response_model(self) -> Model:
-        """One application section. The path selects which section fields apply."""
-        return self._application_model(
-            '_v1_application_section_response_model',
-            'V1ApplicationSectionResponseModel',
-            'One application section',
-            PROVIDER_SECTION,
-        )
-
-    @property
     def application_accepted_response_model(self) -> Model:
         """202 body for a create, submit, or resubmit that has not settled yet."""
         return self._application_model(
@@ -2605,13 +2593,13 @@ class ApiModel:
         )
 
     @property
-    def put_application_section_review_request_model(self) -> Model:
-        """Save the caller's section review."""
+    def patch_application_reviews_request_model(self) -> Model:
+        """PATCH staff section reviews. Each property is one section review."""
         return self._application_model(
-            '_v1_put_application_section_review_request_model',
-            'V1PutApplicationSectionReviewRequestModel',
-            'Save one section review',
-            SECTION_REVIEW,
+            '_v1_patch_application_reviews_request_model',
+            'V1PatchApplicationReviewsRequestModel',
+            'Patch staff section reviews',
+            PATCH_APPLICATION_REVIEWS,
         )
 
     @property
@@ -2653,16 +2641,6 @@ class ApiModel:
             'V1StaffApplicationResponseModel',
             'Staff view of one application',
             STAFF_APPLICATION,
-        )
-
-    @property
-    def staff_application_section_response_model(self) -> Model:
-        """One application section as returned to compact admins."""
-        return self._application_model(
-            '_v1_staff_application_section_response_model',
-            'V1StaffApplicationSectionResponseModel',
-            'Staff view of one application section',
-            STAFF_SECTION,
         )
 
     @property

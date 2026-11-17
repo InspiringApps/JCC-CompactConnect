@@ -3,12 +3,12 @@
 import json
 from uuid import uuid4
 
-from cc_common.applicants.application_state import Caller, SectionName, WorkflowAction
+from cc_common.applicants.application_state import Caller, WorkflowAction
 from cc_common.applicants.schema.api import (
     ApplicantSubmissionRequestSchema,
     CreateApplicationRequestSchema,
+    PatchApplicationRequestSchema,
     assemble_application_response,
-    section_patch_schema,
 )
 from cc_common.applicants.workflow_lifetime import workflow_lifetime
 from cc_common.psypact_api_handler import api_handler_psypact
@@ -19,7 +19,6 @@ from marshmallow import ValidationError
 
 _APPLICATIONS = '/v1/compacts/{compact}/provider-users/applications'
 _APPLICATION = _APPLICATIONS + '/{applicationId}'
-_SECTION = _APPLICATION + '/sections/{section}'
 _SUBMIT = _APPLICATION + '/submit'
 _RESUBMIT = _APPLICATION + '/resubmit'
 
@@ -157,20 +156,17 @@ def _get(compact: str, provider_id: str, event) -> dict:
 
 def _patch(event, compact: str, provider_id: str) -> dict:
     application_id = _path(event, 'applicationId')
-    try:
-        section = SectionName(_path(event, 'section'))
-    except ValueError as error:
-        raise CCInvalidRequestException('Unknown section') from error
     _require_owner(compact, application_id, provider_id)
-    data = _load(section_patch_schema(section.value), event)
-    snapshot = _config().application_client.patch_section(
+    loaded = _load(PatchApplicationRequestSchema, event)
+    if not loaded:
+        return _public(compact, application_id)
+    snapshot = _config().application_client.patch_sections(
         compact,
         application_id,
-        section,
-        data,
+        loaded,
         actor_provider_id=provider_id,
     )
-    return _from_snapshot(snapshot)[section.value]
+    return _from_snapshot(snapshot)
 
 
 def _transition(event, compact: str, provider_id: str, action: WorkflowAction) -> dict:
@@ -199,7 +195,7 @@ def applicant_applications(event, context):
         return _list(event, compact, provider_id)
     if method == 'GET' and resource == _APPLICATION:
         return _get(compact, provider_id, event)
-    if method == 'PATCH' and resource == _SECTION:
+    if method == 'PATCH' and resource == _APPLICATION:
         return _patch(event, compact, provider_id)
     if method == 'POST' and resource == _SUBMIT:
         return _transition(event, compact, provider_id, WorkflowAction.SUBMIT)

@@ -13,14 +13,13 @@ from cc_common.applicants.application_state import (
     STATE_DEFINITIONS,
     ApplicationStatus,
     Caller,
-    SectionName,
     StateName,
     WorkflowAction,
 )
 from cc_common.applicants.schema.api import (
     AssignReviewersRequestSchema,
+    PatchApplicationReviewsRequestSchema,
     ReopenApplicationRequestSchema,
-    SectionReviewRequestSchema,
     SetApplicationStatusRequestSchema,
     StaffApplicationResponseSchema,
     TransitionRequestSchema,
@@ -39,7 +38,6 @@ from marshmallow import ValidationError
 _APPLICATIONS = '/v1/compacts/{compact}/staff-users/applications'
 _APPLICATION = _APPLICATIONS + '/{applicationId}'
 _REVIEWERS = _APPLICATION + '/reviewers'
-_SECTION_REVIEW = _APPLICATION + '/sections/{section}/review'
 _TRANSITION = _APPLICATION + '/transition'
 _ADMIN_STATUS = _APPLICATION + '/admin/status'
 _REOPEN = _APPLICATION + '/reopen'
@@ -218,16 +216,12 @@ def _assign_reviewers(event, compact: str, caller: Caller) -> dict:
     return _from_snapshot(result.snapshot)
 
 
-def _section_review(event, compact: str, caller: Caller) -> dict:
+def _patch_reviews(event, compact: str, caller: Caller) -> dict:
     application_id = _path(event, 'applicationId')
-    try:
-        section = SectionName(_path(event, 'section'))
-    except ValueError as error:
-        raise CCInvalidRequestException('Unknown section') from error
-    loaded = _load(SectionReviewRequestSchema, event)
-    if not loaded.get('sectionStatus'):
-        raise CCInvalidRequestException('sectionStatus is required')
+    loaded = _load(PatchApplicationReviewsRequestSchema, event)
     application = _require_application(compact, application_id)
+    if not loaded:
+        return _read(compact, application_id)
     try:
         state_name = StateName(application.get('stateName'))
     except ValueError as error:
@@ -237,21 +231,14 @@ def _section_review(event, compact: str, caller: Caller) -> dict:
         raise CCInvalidRequestException('Section review is not allowed from this state')
     if actor_sub_for_state(application, state_name) != caller.sub:
         raise CCAccessDeniedException('Forbidden access attempt!')
-    notes = {
-        field_name: loaded[field_name]
-        for field_name in ('notesForApplicant', 'notesForReviewers')
-        if loaded.get(field_name) is not None
-    }
-    snapshot = _config().application_client.save_section_review(
+    snapshot = _config().application_client.save_section_reviews(
         compact,
         application_id,
-        section,
-        role,
-        caller.sub,
-        loaded['sectionStatus'],
-        notes or None,
+        loaded,
+        role=role,
+        caller_sub=caller.sub,
     )
-    return _from_snapshot(snapshot)[section.value]
+    return _from_snapshot(snapshot)
 
 
 def _transition(event, compact: str, caller: Caller) -> dict:
@@ -310,8 +297,8 @@ def staff_applications(event, context):
         return _read(compact, _path(event, 'applicationId'))
     if method == 'PUT' and resource == _REVIEWERS:
         return _assign_reviewers(event, compact, caller)
-    if method == 'PUT' and resource == _SECTION_REVIEW:
-        return _section_review(event, compact, caller)
+    if method == 'PATCH' and resource == _APPLICATION:
+        return _patch_reviews(event, compact, caller)
     if method == 'POST' and resource == _TRANSITION:
         return _transition(event, compact, caller)
     if method == 'POST' and resource == _ADMIN_STATUS:

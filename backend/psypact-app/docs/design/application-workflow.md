@@ -111,7 +111,7 @@ Practitioner:
 - `POST /provider-users/applications` creates an application.
 - `GET /provider-users/applications` lists the caller's applications from `applicantGSI`. `pageSize` and `lastKey` paginate. Each item is the practitioner application, including its sections.
 - `GET /provider-users/applications/{applicationId}` reads the caller's application.
-- `PATCH /provider-users/applications/{applicationId}/sections/{section}` updates one section.
+- `PATCH /provider-users/applications/{applicationId}` updates any included sections. A missing section is left unchanged. An included empty object replaces that section. Fields inside a section follow the same rule.
 - `POST /provider-users/applications/{applicationId}/submit` sends `SUBMIT`.
 - `POST /provider-users/applications/{applicationId}/resubmit` sends `RESUBMIT`.
 
@@ -119,8 +119,8 @@ Staff:
 
 - `GET /staff-users/applications` lists summaries. `status` queries `statusGSI`. `mine=true` queries `actorGSI` for the caller. `pageSize` and `lastKey` paginate.
 - `GET /staff-users/applications/{applicationId}` reads one application, including reviewer identity.
+- `PATCH /staff-users/applications/{applicationId}` saves the included section reviews for the role implied by the current `stateName`. Each included section requires `sectionStatus`. An omitted section is not reviewed.
 - `PUT /staff-users/applications/{applicationId}/reviewers` assigns compact-admin reviewers. When the application is in `StaffReview` and all three reviewers are set, the handler signals `REVIEWERS_ASSIGNED` once.
-- `PUT /staff-users/applications/{applicationId}/sections/{section}/review` saves the section review for the role implied by the current `stateName`.
 - `POST /staff-users/applications/{applicationId}/transition` takes one workflow action, including `ADMIN_DEACTIVATE`.
 - `POST /staff-users/applications/{applicationId}/admin/status` overrides `stateName`.
 - `POST /staff-users/applications/{applicationId}/reopen` starts a new staff-review generation.
