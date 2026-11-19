@@ -668,6 +668,7 @@ class ApiModel:
                 'licenses',
                 'privileges',
                 'militaryAffiliations',
+                'authorizations',
             ],
             properties={
                 'licenses': JsonSchema(
@@ -1053,6 +1054,21 @@ class ApiModel:
                                     },
                                 ),
                             ),
+                        },
+                    ),
+                ),
+                'authorizations': JsonSchema(
+                    type=JsonSchemaType.ARRAY,
+                    items=JsonSchema(
+                        type=JsonSchemaType.OBJECT,
+                        additional_properties=False,
+                        required=['authorizationType', 'dateOfExpiration', 'isActive'],
+                        properties={
+                            'authorizationType': JsonSchema(type=JsonSchemaType.STRING, enum=['APIT', 'TAP']),
+                            'dateOfExpiration': JsonSchema(
+                                type=JsonSchemaType.STRING, format='date', pattern=cc_api.YMD_FORMAT
+                            ),
+                            'isActive': JsonSchema(type=JsonSchemaType.BOOLEAN),
                         },
                     ),
                 ),

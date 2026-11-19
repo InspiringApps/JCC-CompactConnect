@@ -22,7 +22,6 @@ from marshmallow import ValidationError
 from cc_common.config import config, logger, metrics
 from cc_common.data_model.schema.base_record import BaseRecordSchema
 from cc_common.data_model.schema.common import CCPermissionsAction
-from cc_common.data_model.schema.provider.api import ProviderGeneralResponseSchema, ProviderReadPrivateResponseSchema
 from cc_common.exceptions import (
     CCAccessDeniedException,
     CCInternalException,
@@ -851,7 +850,7 @@ def sanitize_provider_data_based_on_caller_scopes(compact: str, provider: dict, 
     if caller_is_admin or _user_has_read_private_access_for_provider(
         compact=compact, provider_information=provider, scopes=scopes
     ):
-        provider_read_private_schema = ProviderReadPrivateResponseSchema()
+        provider_read_private_schema = _provider_detail_response_schema(read_private=True)
         # we filter the record to ensure that we are only returning the desired fields
         return provider_read_private_schema.load(provider)
 
@@ -859,9 +858,22 @@ def sanitize_provider_data_based_on_caller_scopes(compact: str, provider: dict, 
         'Caller does not have readPrivate at compact or jurisdiction level, removing private information',
         provider_id=provider['providerId'],
     )
-    provider_read_general_schema = ProviderGeneralResponseSchema()
+    provider_read_general_schema = _provider_detail_response_schema(read_private=False)
     # we filter the record to ensure that the schema is applied to the record to remove private fields
     return provider_read_general_schema.load(provider)
+
+
+def _provider_detail_response_schema(*, read_private: bool):
+    """Return the provider detail schema for this caller's read scope.
+
+    Resolved at call time so a test can bind another schema. Nested license and privilege
+    records stay on the schemas this response already returns.
+    """
+    from cc_common.data_model import psypact_privilege_schema
+
+    if read_private:
+        return psypact_privilege_schema.PsypactProviderDetailReadPrivateResponseSchema()
+    return psypact_privilege_schema.PsypactProviderDetailGeneralResponseSchema()
 
 
 def load_records_into_schemas(records: list[dict]):

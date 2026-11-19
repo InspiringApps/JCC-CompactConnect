@@ -99,6 +99,27 @@ class PsypactProviderUserRecords(ProviderUserRecords):
             record for record in self._authorization_records if filter_condition is None or filter_condition(record)
         ]
 
+    def approved_authorizations(self) -> list[dict]:
+        """Approved APIT and TAP authorizations for the provider detail response.
+
+        ``isActive`` is the stored approval flag. An expired date does not clear it.
+        ``renewalStatus`` stays off this response.
+        """
+        approved = []
+        for authorization in self._authorization_records:
+            if not authorization.isActive:
+                continue
+            expiration = _as_date(authorization.dateOfExpiration)
+            approved.append(
+                {
+                    'authorizationType': authorization.authorizationType,
+                    'dateOfExpiration': None if expiration is None else expiration.isoformat(),
+                    'isActive': True,
+                }
+            )
+        approved.sort(key=lambda item: item['authorizationType'])
+        return approved
+
     def get_military_affiliation_records(
         self, filter_condition: Callable[[MilitaryAffiliationData], bool] | None = None
     ) -> list[MilitaryAffiliationData]:

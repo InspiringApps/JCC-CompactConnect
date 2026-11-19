@@ -18,4 +18,6 @@ def get_provider_information(compact: str, provider_id: str) -> dict:
     provider_user_records = config.data_client.get_provider_user_records(
         compact=compact, provider_id=provider_id, include_update_tier=UpdateTierEnum.TIER_ONE
     )
-    return provider_user_records.generate_api_response_object()
+    response = provider_user_records.generate_api_response_object()
+    response['authorizations'] = provider_user_records.approved_authorizations()
+    return response
