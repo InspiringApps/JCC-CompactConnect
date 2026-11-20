@@ -45,6 +45,8 @@ class PythonFunction(CdkPythonFunction):
 
         defaults = {
             'timeout': Duration.seconds(28),
+            # 128 MB leaves the first import slower than the smoke client and Cognito's pre-token limit.
+            'memory_size': 1024,
         }
         defaults.update(kwargs)
 
