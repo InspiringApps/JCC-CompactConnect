@@ -43,7 +43,7 @@ Checking Flags in Lambda:
 There is a common feature flag client python module that can be used to check if a flag is enabled in StatSig
 
 ```python
-from cc_common.feature_flag_client import is_feature_enabled, FeatureFlagContext
+from common_lambdas.feature_flag_client import is_feature_enabled, FeatureFlagContext
 
 # Simple check
 if is_feature_enabled('my-feature-flag-name'):

@@ -2,8 +2,8 @@ from datetime import UTC, datetime
 
 from cc_common.config import config, logger
 from cc_common.data_model.schema.license.ingest import SanitizedLicenseIngestDataEventSchema
-from cc_common.event_state_client import EventType
 from cc_common.utils import sqs_handler
+from common_lambdas.event_state_client import EventType
 
 
 @sqs_handler

@@ -2,9 +2,9 @@
 from collections import UserDict
 from decimal import Decimal
 
-from cc_common.data_model.schema.common import CCDataClass
-from cc_common.data_model.schema.compact.common import CompactFeeType, TransactionFeeChargeType
 from cc_common.data_model.schema.compact.record import CompactRecordSchema
+from common_lambdas.data_model.schema.common import CCDataClass
+from common_lambdas.data_model.schema.compact.common import CompactFeeType, TransactionFeeChargeType
 
 
 class CompactCommissionFee(UserDict):

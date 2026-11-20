@@ -14,8 +14,8 @@ returns batchItemFailures directly for partial success handling.
 
 from boto3.dynamodb.types import TypeDeserializer
 from cc_common.config import config, logger
-from cc_common.exceptions import CCInternalException, CCNotFoundException
 from cc_common.utils import sqs_batch_handler
+from common_lambdas.exceptions import CCInternalException, CCNotFoundException
 from marshmallow import ValidationError
 from opensearch_client import OpenSearchClient
 from utils import generate_provider_opensearch_document

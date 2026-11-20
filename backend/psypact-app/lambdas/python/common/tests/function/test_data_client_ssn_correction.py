@@ -4,7 +4,7 @@ from datetime import date, datetime
 from unittest.mock import patch
 
 from boto3.dynamodb.conditions import Key
-from cc_common.exceptions import CCInternalException, CCNotFoundException
+from common_lambdas.exceptions import CCInternalException, CCNotFoundException
 from common_test.test_constants import *
 from moto import mock_aws
 

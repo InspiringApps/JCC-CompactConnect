@@ -1,17 +1,16 @@
 # ruff: noqa: N801, N815, ARG002  invalid-name unused-argument
-from marshmallow import ValidationError, pre_load, validates_schema
-from marshmallow.fields import UUID, AwareDateTime, Date, String
-from marshmallow.validate import Length
-
-from cc_common.data_model.schema.base_record import ForgivingSchema
-from cc_common.data_model.schema.common import ActiveInactiveStatus, CompactEligibilityStatus
-from cc_common.data_model.schema.fields import (
+from cc_common.data_model.schema.license.common import LicenseCommonSchema
+from common_lambdas.data_model.schema.base_record import ForgivingSchema
+from common_lambdas.data_model.schema.common import ActiveInactiveStatus, CompactEligibilityStatus
+from common_lambdas.data_model.schema.fields import (
     ActiveInactive,
     Compact,
     CompactEligibility,
     Jurisdiction,
 )
-from cc_common.data_model.schema.license.common import LicenseCommonSchema
+from marshmallow import ValidationError, pre_load, validates_schema
+from marshmallow.fields import UUID, AwareDateTime, Date, String
+from marshmallow.validate import Length
 
 
 class LicenseIngestSchema(LicenseCommonSchema):

@@ -1,11 +1,7 @@
 # ruff: noqa: N801, N815, ARG002 invalid-name unused-kwargs
-from marshmallow import pre_dump, validates_schema
-from marshmallow.fields import Boolean, List, Nested, String
-from marshmallow.validate import Length, OneOf
-
 from cc_common.config import config
-from cc_common.data_model.schema.base_record import BaseRecordSchema
-from cc_common.data_model.schema.compact.common import (
+from common_lambdas.data_model.schema.base_record import BaseRecordSchema
+from common_lambdas.data_model.schema.compact.common import (
     COMPACT_TYPE,
     CompactCommissionFeeSchema,
     ConfiguredStateSchema,
@@ -13,6 +9,9 @@ from cc_common.data_model.schema.compact.common import (
     TransactionFeeConfigurationSchema,
     validate_no_duplicates_in_configured_states,
 )
+from marshmallow import pre_dump, validates_schema
+from marshmallow.fields import Boolean, List, Nested, String
+from marshmallow.validate import Length, OneOf
 
 
 @BaseRecordSchema.register_schema(COMPACT_TYPE)

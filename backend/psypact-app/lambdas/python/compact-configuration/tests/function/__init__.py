@@ -32,7 +32,7 @@ class TstFunction(TstLambdas):
         self.create_compact_configuration_table()
 
     def create_compact_configuration_table(self):
-        from cc_common.data_model.schema.attestation import AttestationRecordSchema
+        from common_lambdas.data_model.schema.attestation import AttestationRecordSchema
 
         self._compact_configuration_table = boto3.resource('dynamodb').create_table(
             AttributeDefinitions=[

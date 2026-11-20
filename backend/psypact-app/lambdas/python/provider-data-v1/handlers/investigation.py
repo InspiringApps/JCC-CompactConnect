@@ -3,17 +3,17 @@ from uuid import UUID, uuid4
 
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from cc_common.config import config, logger
-from cc_common.data_model.schema.common import (
+from cc_common.utils import api_handler, authorize_state_level_only_action, to_uuid
+from common_lambdas.data_model.schema.common import (
     CCPermissionsAction,
     InvestigationAgainstEnum,
 )
-from cc_common.data_model.schema.investigation import InvestigationData
-from cc_common.data_model.schema.investigation.api import (
+from common_lambdas.data_model.schema.investigation import InvestigationData
+from common_lambdas.data_model.schema.investigation.api import (
     InvestigationPatchRequestSchema,
 )
-from cc_common.exceptions import CCInvalidRequestException
-from cc_common.license_util import LicenseUtility
-from cc_common.utils import api_handler, authorize_state_level_only_action, to_uuid
+from common_lambdas.exceptions import CCInvalidRequestException
+from common_lambdas.license_util import LicenseUtility
 from marshmallow import ValidationError
 
 from .encumbrance import _create_license_encumbrance_internal, _create_privilege_encumbrance_internal

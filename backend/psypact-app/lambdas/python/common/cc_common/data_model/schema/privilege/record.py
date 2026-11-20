@@ -1,13 +1,9 @@
 # ruff: noqa: N801, N815, ARG002  invalid-name unused-argument
 from datetime import date
 
-from marshmallow import Schema, ValidationError, post_dump, post_load, pre_dump, pre_load, validates_schema
-from marshmallow.fields import UUID, AwareDateTime, Date, List, Nested, String
-from marshmallow.validate import Length
-
 from cc_common.config import config
-from cc_common.data_model.schema.base_record import BaseRecordSchema, ForgivingSchema
-from cc_common.data_model.schema.common import (
+from common_lambdas.data_model.schema.base_record import BaseRecordSchema, ForgivingSchema
+from common_lambdas.data_model.schema.common import (
     ActiveInactiveStatus,
     ChangeHashMixin,
     PrivilegeEncumberedStatusEnum,
@@ -15,7 +11,7 @@ from cc_common.data_model.schema.common import (
     ValidatesLicenseTypeMixin,
     ensure_value_is_datetime,
 )
-from cc_common.data_model.schema.fields import (
+from common_lambdas.data_model.schema.fields import (
     ActiveInactive,
     ClinicalPrivilegeActionCategoryField,
     Compact,
@@ -26,8 +22,11 @@ from cc_common.data_model.schema.fields import (
     PrivilegeEncumberedStatusField,
     UpdateType,
 )
-from cc_common.data_model.schema.investigation.record import InvestigationDetailsSchema
-from cc_common.data_model.update_tier_enum import UpdateTierEnum
+from common_lambdas.data_model.schema.investigation.record import InvestigationDetailsSchema
+from common_lambdas.data_model.update_tier_enum import UpdateTierEnum
+from marshmallow import Schema, ValidationError, post_dump, post_load, pre_dump, pre_load, validates_schema
+from marshmallow.fields import UUID, AwareDateTime, Date, List, Nested, String
+from marshmallow.validate import Length
 
 
 class AttestationVersionRecordSchema(Schema):

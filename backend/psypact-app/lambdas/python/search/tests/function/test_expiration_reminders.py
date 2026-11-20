@@ -458,7 +458,7 @@ class TestProcessExpirationReminders(TstLambdas):
         self.assertIn('Unknown jurisdiction', failure_msg)
 
     def test_handler_validates_days_before_value(self):
-        from cc_common.exceptions import CCInvalidRequestException
+        from common_lambdas.exceptions import CCInvalidRequestException
         from handlers.expiration_reminders import process_expiration_reminders
 
         with self.assertRaises(CCInvalidRequestException) as ctx:
@@ -473,7 +473,7 @@ class TestProcessExpirationReminders(TstLambdas):
         self.assertIn('daysBefore', str(ctx.exception))
 
     def test_handler_requires_days_before_field(self):
-        from cc_common.exceptions import CCInvalidRequestException
+        from common_lambdas.exceptions import CCInvalidRequestException
         from handlers.expiration_reminders import process_expiration_reminders
 
         with self.assertRaises(CCInvalidRequestException) as ctx:
@@ -481,7 +481,7 @@ class TestProcessExpirationReminders(TstLambdas):
         self.assertIn('daysBefore', str(ctx.exception))
 
     def test_handler_requires_compact_field(self):
-        from cc_common.exceptions import CCInvalidRequestException
+        from common_lambdas.exceptions import CCInvalidRequestException
         from handlers.expiration_reminders import process_expiration_reminders
 
         with self.assertRaises(CCInvalidRequestException) as ctx:
@@ -489,7 +489,7 @@ class TestProcessExpirationReminders(TstLambdas):
         self.assertIn('compact', str(ctx.exception))
 
     def test_handler_validates_compact_value(self):
-        from cc_common.exceptions import CCInvalidRequestException
+        from common_lambdas.exceptions import CCInvalidRequestException
         from handlers.expiration_reminders import process_expiration_reminders
 
         with self.assertRaises(CCInvalidRequestException) as ctx:

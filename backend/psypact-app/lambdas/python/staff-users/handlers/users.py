@@ -3,12 +3,6 @@ import json
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from botocore.exceptions import ClientError
 from cc_common.config import config, logger, metrics
-from cc_common.exceptions import (
-    CCAccessDeniedException,
-    CCInternalException,
-    CCInvalidRequestException,
-    CCNotFoundException,
-)
 from cc_common.utils import (
     api_handler,
     authorize_compact,
@@ -16,7 +10,12 @@ from cc_common.utils import (
     get_allowed_jurisdictions,
     get_event_scopes,
 )
-
+from common_lambdas.exceptions import (
+    CCAccessDeniedException,
+    CCInternalException,
+    CCInvalidRequestException,
+    CCNotFoundException,
+)
 from handlers import user_api_schema
 
 

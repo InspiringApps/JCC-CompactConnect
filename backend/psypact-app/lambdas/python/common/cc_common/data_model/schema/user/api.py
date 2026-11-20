@@ -1,12 +1,11 @@
 # ruff: noqa: N801, N815  invalid-name
+from cc_common.config import config
+from common_lambdas.data_model.schema.base_record import ForgivingSchema
+from common_lambdas.data_model.schema.common import StaffUserStatus
+from common_lambdas.data_model.schema.fields import Compact
 from marshmallow import Schema, post_dump, pre_load
 from marshmallow.fields import Boolean, Dict, Nested, Raw, String
 from marshmallow.validate import Length, OneOf
-
-from cc_common.config import config
-from cc_common.data_model.schema.base_record import ForgivingSchema
-from cc_common.data_model.schema.common import StaffUserStatus
-from cc_common.data_model.schema.fields import Compact
 
 
 class UserAttributesAPISchema(Schema):

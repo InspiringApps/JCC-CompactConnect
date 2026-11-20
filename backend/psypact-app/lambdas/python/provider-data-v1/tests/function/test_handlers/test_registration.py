@@ -141,7 +141,7 @@ class TestProviderRegistration(TstFunction):
         )
 
         with patch(
-            'cc_common.email_service_client.EmailServiceClient.send_provider_multiple_registration_attempt_email'
+            'common_lambdas.email_service_client.EmailServiceClient.send_provider_multiple_registration_attempt_email'
         ) as mock_email:
             response = self.register_provider(self._event(), self.mock_context)
 

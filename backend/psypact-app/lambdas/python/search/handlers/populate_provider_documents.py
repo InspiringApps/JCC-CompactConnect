@@ -37,7 +37,7 @@ synchronize all the provider documents.
 
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from cc_common.config import config, logger
-from cc_common.exceptions import CCInternalException
+from common_lambdas.exceptions import CCInternalException
 from marshmallow import ValidationError
 from opensearch_client import OpenSearchClient
 from utils import generate_provider_opensearch_document

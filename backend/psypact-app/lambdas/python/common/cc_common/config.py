@@ -8,8 +8,7 @@ import boto3
 from aws_lambda_powertools import Metrics
 from aws_lambda_powertools.logging import Logger
 from botocore.config import Config as BotoConfig
-
-from cc_common.email_service_client import EmailServiceClient
+from common_lambdas.email_service_client import EmailServiceClient
 
 logging.basicConfig()
 logger = Logger()
@@ -60,13 +59,13 @@ class _Config:
 
     @cached_property
     def compact_configuration_client(self):
-        from cc_common.data_model.compact_configuration_client import CompactConfigurationClient
+        from common_lambdas.data_model.compact_configuration_client import CompactConfigurationClient
 
         return CompactConfigurationClient(self)
 
     @cached_property
     def user_client(self):
-        from cc_common.data_model.user_client import UserClient
+        from common_lambdas.data_model.user_client import UserClient
 
         return UserClient(self)
 
@@ -306,7 +305,7 @@ class _Config:
 
     @cached_property
     def event_state_client(self):
-        from cc_common.event_state_client import EventStateClient
+        from common_lambdas.event_state_client import EventStateClient
 
         return EventStateClient(self)
 
@@ -332,7 +331,7 @@ class _Config:
 
     @cached_property
     def event_bus_client(self):
-        from cc_common.event_bus_client import EventBusClient
+        from common_lambdas.event_bus_client import EventBusClient
 
         return EventBusClient()
 

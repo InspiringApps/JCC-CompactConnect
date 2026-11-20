@@ -33,8 +33,8 @@ os.environ['JURISDICTIONS'] = json.dumps(JURISDICTIONS)
 os.environ['ENVIRONMENT_NAME'] = 'test'
 
 # We have to import this after we've mucked with our path and environment
-from cc_common.data_model.schema.common import StaffUserStatus  # noqa: E402
-from cc_common.data_model.schema.user.record import UserRecordSchema  # noqa: E402
+from common_lambdas.data_model.schema.common import StaffUserStatus  # noqa: E402
+from common_lambdas.data_model.schema.user.record import UserRecordSchema  # noqa: E402
 
 USER_POOL_ID = os.environ['USER_POOL_ID']
 USER_TABLE_NAME = os.environ['USER_TABLE_NAME']

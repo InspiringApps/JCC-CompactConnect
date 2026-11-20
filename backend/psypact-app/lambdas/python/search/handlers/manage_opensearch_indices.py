@@ -1,7 +1,7 @@
 import time
 
 from cc_common.config import config, logger
-from cc_common.exceptions import CCInternalException
+from common_lambdas.exceptions import CCInternalException
 from custom_resource_handler import CustomResourceHandler, CustomResourceResponse
 from opensearch_client import OpenSearchClient
 

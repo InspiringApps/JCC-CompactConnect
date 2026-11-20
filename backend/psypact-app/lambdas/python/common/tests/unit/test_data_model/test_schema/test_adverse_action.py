@@ -13,7 +13,7 @@ class TestAdverseActionRecordSchema(TstLambdas):
 
     def test_serde(self):
         """Test round-trip deserialization/serialization"""
-        from cc_common.data_model.schema.adverse_action.record import AdverseActionRecordSchema
+        from common_lambdas.data_model.schema.adverse_action.record import AdverseActionRecordSchema
 
         expected_adverse_action = (
             self.test_data_generator.generate_default_adverse_action().serialize_to_database_record()
@@ -31,7 +31,7 @@ class TestAdverseActionRecordSchema(TstLambdas):
         self.assertEqual(expected_adverse_action, adverse_action_data)
 
     def test_invalid(self):
-        from cc_common.data_model.schema.adverse_action.record import AdverseActionRecordSchema
+        from common_lambdas.data_model.schema.adverse_action.record import AdverseActionRecordSchema
 
         adverse_action_data = self.test_data_generator.generate_default_adverse_action().to_dict()
         adverse_action_data.pop('providerId')
@@ -40,8 +40,8 @@ class TestAdverseActionRecordSchema(TstLambdas):
             AdverseActionRecordSchema().load(adverse_action_data)
 
     def test_invalid_action_against(self):
-        from cc_common.data_model.schema.adverse_action import AdverseActionData
-        from cc_common.data_model.schema.common import CompactEligibilityStatus
+        from common_lambdas.data_model.schema.adverse_action import AdverseActionData
+        from common_lambdas.data_model.schema.common import CompactEligibilityStatus
 
         adverse_action_data = self.test_data_generator.generate_default_adverse_action()
 
@@ -52,7 +52,7 @@ class TestAdverseActionRecordSchema(TstLambdas):
             AdverseActionData.from_database_record(adverse_action_data.serialize_to_database_record())
 
     def test_invalid_license_type(self):
-        from cc_common.data_model.schema.adverse_action import AdverseActionData
+        from common_lambdas.data_model.schema.adverse_action import AdverseActionData
 
         adverse_action_data = self.test_data_generator.generate_default_adverse_action()
 
@@ -64,7 +64,7 @@ class TestAdverseActionRecordSchema(TstLambdas):
             AdverseActionData.from_database_record(adverse_action_data.serialize_to_database_record())
 
     def test_invalid_license_type_abbreviation(self):
-        from cc_common.data_model.schema.adverse_action import AdverseActionData
+        from common_lambdas.data_model.schema.adverse_action import AdverseActionData
 
         adverse_action_data = self.test_data_generator.generate_default_adverse_action()
 
@@ -83,7 +83,7 @@ class TestAdverseActionDataClass(TstLambdas):
         self.test_data_generator = TestDataGenerator
 
     def test_adverse_action_data_class_getters_return_expected_values(self):
-        from cc_common.data_model.schema.adverse_action import AdverseActionData
+        from common_lambdas.data_model.schema.adverse_action import AdverseActionData
 
         adverse_action_data = self.test_data_generator.generate_default_adverse_action().serialize_to_database_record()
 

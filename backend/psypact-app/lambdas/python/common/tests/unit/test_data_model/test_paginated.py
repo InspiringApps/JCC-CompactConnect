@@ -331,7 +331,7 @@ class TestPaginated(TstLambdas):
 
     def test_invalid_key(self):
         from cc_common.data_model.query_paginator import paginated_query
-        from cc_common.exceptions import CCInvalidRequestException
+        from common_lambdas.exceptions import CCInvalidRequestException
 
         @paginated_query(set_query_limit_to_match_page_size=True)
         def get_something(*args, **kwargs):  # noqa: ARG001 unused-argument
@@ -342,7 +342,7 @@ class TestPaginated(TstLambdas):
 
     def test_db_invalid_key(self):
         from cc_common.data_model.query_paginator import paginated_query
-        from cc_common.exceptions import CCInvalidRequestException
+        from common_lambdas.exceptions import CCInvalidRequestException
 
         @paginated_query(set_query_limit_to_match_page_size=True)
         def throw_an_error(*args, **kwargs):

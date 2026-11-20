@@ -3,20 +3,20 @@ import io
 
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from cc_common.config import config, logger
-from cc_common.data_model.schema.common import CCPermissionsAction
 from cc_common.data_model.schema.provider.api import (
     ExportPrivilegesRequestSchema,
     ProviderGeneralResponseSchema,
     SearchProvidersRequestSchema,
     StatePrivilegeGeneralResponseSchema,
 )
-from cc_common.exceptions import (
+from cc_common.utils import api_handler, authorize_compact_level_only_action
+from common_lambdas.data_model.schema.common import CCPermissionsAction
+from common_lambdas.exceptions import (
     CCInternalException,
     CCInvalidRequestCustomResponseException,
     CCInvalidRequestException,
     CCNotFoundException,
 )
-from cc_common.utils import api_handler, authorize_compact_level_only_action
 from marshmallow import ValidationError
 from opensearch_client import OpenSearchClient
 

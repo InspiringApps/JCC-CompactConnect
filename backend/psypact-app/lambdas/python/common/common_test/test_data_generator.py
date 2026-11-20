@@ -6,16 +6,16 @@ from decimal import Decimal
 
 from boto3.dynamodb.conditions import Key
 from cc_common.data_model.provider_record_util import ProviderUserRecords
-from cc_common.data_model.schema.adverse_action import AdverseActionData
-from cc_common.data_model.schema.common import CCDataClass
 from cc_common.data_model.schema.compact import CompactConfigurationData
-from cc_common.data_model.schema.investigation import InvestigationData
 from cc_common.data_model.schema.jurisdiction import JurisdictionConfigurationData
 from cc_common.data_model.schema.license import LicenseData, LicenseUpdateData
-from cc_common.data_model.schema.military_affiliation import MilitaryAffiliationData
 from cc_common.data_model.schema.privilege import PrivilegeData, PrivilegeUpdateData
 from cc_common.data_model.schema.provider import ProviderData, ProviderUpdateData
 from cc_common.utils import ResponseEncoder
+from common_lambdas.data_model.schema.adverse_action import AdverseActionData
+from common_lambdas.data_model.schema.common import CCDataClass
+from common_lambdas.data_model.schema.investigation import InvestigationData
+from common_lambdas.data_model.schema.military_affiliation import MilitaryAffiliationData
 
 from common_test.test_constants import *
 
@@ -745,7 +745,7 @@ class TestDataGenerator:
     @staticmethod
     def generate_default_transaction(value_overrides: dict | None = None):
         """Generate a default transaction"""
-        from cc_common.data_model.schema.transaction import TransactionData
+        from common_lambdas.data_model.schema.transaction import TransactionData
 
         # We'll fill in any missing batch values with defaults
         default_batch = deepcopy(DEFAULT_COMPACT_TRANSACTION_BATCH)

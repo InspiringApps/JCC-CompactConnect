@@ -9,8 +9,12 @@ from enum import StrEnum
 from uuid import UUID
 
 from cc_common.config import config, logger
-from cc_common.data_model.schema.adverse_action import AdverseActionData
-from cc_common.data_model.schema.common import (
+from cc_common.data_model.schema.license import LicenseData, LicenseUpdateData
+from cc_common.data_model.schema.privilege import PrivilegeData, PrivilegeUpdateData
+from cc_common.data_model.schema.privilege.api import PrivilegeHistoryResponseSchema
+from cc_common.data_model.schema.provider import ProviderData, ProviderUpdateData
+from common_lambdas.data_model.schema.adverse_action import AdverseActionData
+from common_lambdas.data_model.schema.common import (
     ActiveInactiveStatus,
     AdverseActionAgainstEnum,
     CCDataClass,
@@ -19,13 +23,9 @@ from cc_common.data_model.schema.common import (
     PrivilegeEncumberedStatusEnum,
     UpdateCategory,
 )
-from cc_common.data_model.schema.investigation import InvestigationData
-from cc_common.data_model.schema.license import LicenseData, LicenseUpdateData
-from cc_common.data_model.schema.military_affiliation import MilitaryAffiliationData
-from cc_common.data_model.schema.privilege import PrivilegeData, PrivilegeUpdateData
-from cc_common.data_model.schema.privilege.api import PrivilegeHistoryResponseSchema
-from cc_common.data_model.schema.provider import ProviderData, ProviderUpdateData
-from cc_common.exceptions import CCInternalException, CCNotFoundException
+from common_lambdas.data_model.schema.investigation import InvestigationData
+from common_lambdas.data_model.schema.military_affiliation import MilitaryAffiliationData
+from common_lambdas.exceptions import CCInternalException, CCNotFoundException
 
 
 class ProviderRecordType(StrEnum):

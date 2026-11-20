@@ -1,7 +1,6 @@
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from cc_common.config import config, logger
 from cc_common.data_model.compact_configuration_utils import CompactConfigUtility
-from cc_common.data_model.schema.common import CCPermissionsAction
 from cc_common.data_model.schema.compact import CompactConfigurationData
 from cc_common.data_model.schema.compact.api import (
     CompactConfigurationResponseSchema,
@@ -14,9 +13,10 @@ from cc_common.data_model.schema.jurisdiction.api import (
     CompactJurisdictionsStaffUsersResponseSchema,
     PutCompactJurisdictionConfigurationRequestSchema,
 )
-from cc_common.exceptions import CCInvalidRequestException, CCNotFoundException
-from cc_common.license_util import LicenseUtility
 from cc_common.utils import api_handler, authorize_compact_level_only_action, authorize_state_level_only_action
+from common_lambdas.data_model.schema.common import CCPermissionsAction
+from common_lambdas.exceptions import CCInvalidRequestException, CCNotFoundException
+from common_lambdas.license_util import LicenseUtility
 from marshmallow import ValidationError
 
 

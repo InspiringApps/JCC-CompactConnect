@@ -109,8 +109,8 @@ class TstFunction(TstLambdas):
 
     def _create_compact_board_user(self, compact: str, jurisdiction: str):
         """Create a board-staff style user for the provided compact and jurisdiction."""
-        from cc_common.data_model.schema.common import StaffUserStatus
-        from cc_common.data_model.schema.user.record import UserRecordSchema
+        from common_lambdas.data_model.schema.common import StaffUserStatus
+        from common_lambdas.data_model.schema.user.record import UserRecordSchema
 
         schema = UserRecordSchema()
 
@@ -137,8 +137,8 @@ class TstFunction(TstLambdas):
 
     def _create_compact_staff_user(self, compacts: list[str]):
         """Create a compact-staff style user for each jurisdiction in the provided compact."""
-        from cc_common.data_model.schema.common import StaffUserStatus
-        from cc_common.data_model.schema.user.record import UserRecordSchema
+        from common_lambdas.data_model.schema.common import StaffUserStatus
+        from common_lambdas.data_model.schema.user.record import UserRecordSchema
 
         schema = UserRecordSchema()
 
@@ -165,8 +165,8 @@ class TstFunction(TstLambdas):
 
     def _create_board_staff_users(self, compacts: list[str]):
         """Create a board-staff style user for each jurisdiction in the provided compact."""
-        from cc_common.data_model.schema.common import StaffUserStatus
-        from cc_common.data_model.schema.user.record import UserRecordSchema
+        from common_lambdas.data_model.schema.common import StaffUserStatus
+        from common_lambdas.data_model.schema.user.record import UserRecordSchema
 
         schema = UserRecordSchema()
 

@@ -9,7 +9,6 @@ from aws_lambda_powertools.metrics import MetricUnit
 from boto3.dynamodb.conditions import Attr, Key
 from boto3.dynamodb.types import TypeDeserializer, TypeSerializer
 from botocore.exceptions import ClientError
-
 from cc_common.config import _Config, config, logger, metrics
 from cc_common.data_model.provider_record_util import (
     ProviderRecordType,
@@ -17,9 +16,14 @@ from cc_common.data_model.provider_record_util import (
     ProviderUserRecords,
 )
 from cc_common.data_model.query_paginator import paginated_query
-from cc_common.data_model.schema.adverse_action import AdverseActionData
-from cc_common.data_model.schema.base_record import SSNIndexRecordSchema
-from cc_common.data_model.schema.common import (
+from cc_common.data_model.schema.license import LicenseData, LicenseUpdateData
+from cc_common.data_model.schema.privilege import PrivilegeData, PrivilegeUpdateData
+from cc_common.data_model.schema.privilege.record import PrivilegeUpdateRecordSchema
+from cc_common.data_model.schema.provider import ProviderData, ProviderUpdateData
+from cc_common.utils import logger_inject_kwargs
+from common_lambdas.data_model.schema.adverse_action import AdverseActionData
+from common_lambdas.data_model.schema.base_record import SSNIndexRecordSchema
+from common_lambdas.data_model.schema.common import (
     ActiveInactiveStatus,
     CCDataClass,
     CompactEligibilityStatus,
@@ -32,27 +36,22 @@ from cc_common.data_model.schema.common import (
     PrivilegeEncumberedStatusEnum,
     UpdateCategory,
 )
-from cc_common.data_model.schema.investigation import InvestigationData
-from cc_common.data_model.schema.license import LicenseData, LicenseUpdateData
-from cc_common.data_model.schema.military_affiliation import MilitaryAffiliationData
-from cc_common.data_model.schema.military_affiliation.common import (
+from common_lambdas.data_model.schema.investigation import InvestigationData
+from common_lambdas.data_model.schema.military_affiliation import MilitaryAffiliationData
+from common_lambdas.data_model.schema.military_affiliation.common import (
     MilitaryAffiliationStatus,
     MilitaryAffiliationType,
 )
-from cc_common.data_model.schema.military_affiliation.record import MilitaryAffiliationRecordSchema
-from cc_common.data_model.schema.privilege import PrivilegeData, PrivilegeUpdateData
-from cc_common.data_model.schema.privilege.record import PrivilegeUpdateRecordSchema
-from cc_common.data_model.schema.provider import ProviderData, ProviderUpdateData
-from cc_common.data_model.update_tier_enum import UpdateTierEnum
-from cc_common.exceptions import (
+from common_lambdas.data_model.schema.military_affiliation.record import MilitaryAffiliationRecordSchema
+from common_lambdas.data_model.update_tier_enum import UpdateTierEnum
+from common_lambdas.exceptions import (
     CCAmbiguousLicenseNumberException,
     CCAwsServiceException,
     CCInternalException,
     CCInvalidRequestException,
     CCNotFoundException,
 )
-from cc_common.license_util import LicenseUtility
-from cc_common.utils import logger_inject_kwargs
+from common_lambdas.license_util import LicenseUtility
 
 # DynamoDB's hard limit on the number of items in a single TransactWriteItems call.
 MAX_DYNAMODB_TRANSACTION_ITEMS = 100

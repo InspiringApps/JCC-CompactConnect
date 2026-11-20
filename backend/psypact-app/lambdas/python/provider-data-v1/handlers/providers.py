@@ -3,17 +3,10 @@ from datetime import timedelta
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from botocore.exceptions import ClientError
 from cc_common.config import config, logger, metrics
-from cc_common.data_model.schema.common import CCPermissionsAction
 from cc_common.data_model.schema.provider.api import (
     ProviderGeneralResponseSchema,
     ProviderSSNResponseSchema,
     QueryProvidersRequestSchema,
-)
-from cc_common.exceptions import (
-    CCAccessDeniedException,
-    CCAwsServiceException,
-    CCInvalidRequestException,
-    CCRateLimitingException,
 )
 from cc_common.utils import (
     api_handler,
@@ -21,6 +14,13 @@ from cc_common.utils import (
     get_event_scopes,
     sanitize_provider_data_based_on_caller_scopes,
     user_has_read_ssn_access_for_provider,
+)
+from common_lambdas.data_model.schema.common import CCPermissionsAction
+from common_lambdas.exceptions import (
+    CCAccessDeniedException,
+    CCAwsServiceException,
+    CCInvalidRequestException,
+    CCRateLimitingException,
 )
 from marshmallow import ValidationError
 

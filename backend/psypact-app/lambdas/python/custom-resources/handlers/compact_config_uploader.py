@@ -4,8 +4,8 @@ import json
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from cc_common.config import config, logger
 from cc_common.data_model.compact_configuration_utils import CompactConfigUtility
-from cc_common.data_model.schema.attestation import AttestationRecordSchema
-from cc_common.exceptions import CCNotFoundException
+from common_lambdas.data_model.schema.attestation import AttestationRecordSchema
+from common_lambdas.exceptions import CCNotFoundException
 
 
 def on_event(event: dict, context: LambdaContext):  # noqa: ARG001 unused-argument

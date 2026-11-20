@@ -4,8 +4,8 @@ from unittest.mock import ANY, patch
 from uuid import UUID, uuid4
 
 from boto3.dynamodb.conditions import Key
-from cc_common.data_model.update_tier_enum import UpdateTierEnum
-from cc_common.exceptions import CCAwsServiceException, CCInvalidRequestException
+from common_lambdas.data_model.update_tier_enum import UpdateTierEnum
+from common_lambdas.exceptions import CCAwsServiceException, CCInvalidRequestException
 from common_test.test_constants import DEFAULT_LICENSE_JURISDICTION, DEFAULT_PROVIDER_ID
 from moto import mock_aws
 
@@ -456,7 +456,7 @@ class TestDataClient(TstFunction):
 
     def test_data_client_create_privilege_record_invalid_license_type(self):
         from cc_common.data_model.data_client import DataClient
-        from cc_common.exceptions import CCInvalidRequestException
+        from common_lambdas.exceptions import CCInvalidRequestException
 
         test_data_client = DataClient(self.config)
 
@@ -477,8 +477,8 @@ class TestDataClient(TstFunction):
         """Test that we can process privilege purchases with more than 100 transaction items."""
         from cc_common.data_model.data_client import DataClient
         from cc_common.data_model.provider_record_util import ProviderUserRecords
-        from cc_common.data_model.schema.common import ActiveInactiveStatus
         from cc_common.data_model.schema.privilege import PrivilegeData
+        from common_lambdas.data_model.schema.common import ActiveInactiveStatus
 
         test_data_client = DataClient(self.config)
         provider_uuid = str(uuid4())
@@ -567,8 +567,8 @@ class TestDataClient(TstFunction):
         """Test that we properly roll back when a large privilege purchase fails."""
         from botocore.exceptions import ClientError
         from cc_common.data_model.data_client import DataClient
-        from cc_common.data_model.schema.common import ActiveInactiveStatus
         from cc_common.data_model.schema.privilege import PrivilegeData
+        from common_lambdas.data_model.schema.common import ActiveInactiveStatus
 
         test_data_client = DataClient(self.config)
         provider_uuid = str(uuid4())
@@ -725,7 +725,7 @@ class TestDataClient(TstFunction):
     def test_get_ssn_by_provider_id_raises_exception_if_provider_id_does_not_exist(self):
         """Test that get_ssn_by_provider_id returns the SSN if the provider ID exists"""
         from cc_common.data_model.data_client import DataClient
-        from cc_common.exceptions import CCNotFoundException
+        from common_lambdas.exceptions import CCNotFoundException
 
         client = DataClient(self.config)
 
@@ -736,7 +736,7 @@ class TestDataClient(TstFunction):
     def test_get_ssn_by_provider_id_raises_exception_multiple_records_found(self):
         """Test that get_ssn_by_provider_id returns the SSN if the provider ID exists"""
         from cc_common.data_model.data_client import DataClient
-        from cc_common.exceptions import CCInternalException
+        from common_lambdas.exceptions import CCInternalException
 
         client = DataClient(self.config)
 
@@ -885,7 +885,7 @@ class TestDataClient(TstFunction):
 
     def test_deactivate_privilege_raises_if_privilege_not_found(self):
         from cc_common.data_model.data_client import DataClient
-        from cc_common.exceptions import CCNotFoundException
+        from common_lambdas.exceptions import CCNotFoundException
 
         test_data_client = DataClient(self.config)
 
@@ -1206,7 +1206,7 @@ class TestDataClient(TstFunction):
     def test_create_license_investigation_success(self):
         """Test successful creation of license investigation"""
         from cc_common.data_model.data_client import DataClient
-        from cc_common.data_model.schema.investigation import InvestigationData
+        from common_lambdas.data_model.schema.investigation import InvestigationData
 
         # Load test data
         provider_id = self._load_provider_data()
@@ -1326,8 +1326,8 @@ class TestDataClient(TstFunction):
     def test_create_privilege_investigation_privilege_not_found(self):
         """Test creation of privilege investigation when privilege doesn't exist"""
         from cc_common.data_model.data_client import DataClient
-        from cc_common.data_model.schema.investigation import InvestigationData
-        from cc_common.exceptions import CCNotFoundException
+        from common_lambdas.data_model.schema.investigation import InvestigationData
+        from common_lambdas.exceptions import CCNotFoundException
 
         # Load test data, privilege in Nebraska, license in Ohio
         provider_id = self._load_provider_data()
@@ -1358,8 +1358,8 @@ class TestDataClient(TstFunction):
     def test_create_license_investigation_license_not_found(self):
         """Test creation of license investigation when license doesn't exist"""
         from cc_common.data_model.data_client import DataClient
-        from cc_common.data_model.schema.investigation import InvestigationData
-        from cc_common.exceptions import CCNotFoundException
+        from common_lambdas.data_model.schema.investigation import InvestigationData
+        from common_lambdas.exceptions import CCNotFoundException
 
         # Load test data, privilege in Nebraska, license in Ohio
         provider_id = self._load_provider_data()
@@ -1390,8 +1390,8 @@ class TestDataClient(TstFunction):
     def test_close_privilege_investigation_success(self):
         """Test successful closing of privilege investigation"""
         from cc_common.data_model.data_client import DataClient
-        from cc_common.data_model.schema.common import InvestigationAgainstEnum
-        from cc_common.data_model.schema.investigation import InvestigationData
+        from common_lambdas.data_model.schema.common import InvestigationAgainstEnum
+        from common_lambdas.data_model.schema.investigation import InvestigationData
 
         # Load test data
         provider_id = self._load_provider_data()
@@ -1517,8 +1517,8 @@ class TestDataClient(TstFunction):
     def test_close_license_investigation_success(self):
         """Test successful closing of license investigation"""
         from cc_common.data_model.data_client import DataClient
-        from cc_common.data_model.schema.common import InvestigationAgainstEnum
-        from cc_common.data_model.schema.investigation import InvestigationData
+        from common_lambdas.data_model.schema.common import InvestigationAgainstEnum
+        from common_lambdas.data_model.schema.investigation import InvestigationData
 
         # Load test data
         provider_id = self._load_provider_data()
@@ -1659,8 +1659,8 @@ class TestDataClient(TstFunction):
     def test_close_privilege_investigation_not_found(self):
         """Test closing privilege investigation when investigation doesn't exist"""
         from cc_common.data_model.data_client import DataClient
-        from cc_common.data_model.schema.common import InvestigationAgainstEnum
-        from cc_common.exceptions import CCNotFoundException
+        from common_lambdas.data_model.schema.common import InvestigationAgainstEnum
+        from common_lambdas.exceptions import CCNotFoundException
 
         # Load test data
         provider_id = self._load_provider_data()
@@ -1685,8 +1685,8 @@ class TestDataClient(TstFunction):
     def test_close_license_investigation_not_found(self):
         """Test closing license investigation when investigation doesn't exist"""
         from cc_common.data_model.data_client import DataClient
-        from cc_common.data_model.schema.common import InvestigationAgainstEnum
-        from cc_common.exceptions import CCNotFoundException
+        from common_lambdas.data_model.schema.common import InvestigationAgainstEnum
+        from common_lambdas.exceptions import CCNotFoundException
 
         # Load test data
         provider_id = self._load_provider_data()
@@ -1711,9 +1711,9 @@ class TestDataClient(TstFunction):
     def test_close_privilege_investigation_already_closed(self):
         """Test closing privilege investigation when investigation was already closed"""
         from cc_common.data_model.data_client import DataClient
-        from cc_common.data_model.schema.common import InvestigationAgainstEnum
-        from cc_common.data_model.schema.investigation import InvestigationData
-        from cc_common.exceptions import CCNotFoundException
+        from common_lambdas.data_model.schema.common import InvestigationAgainstEnum
+        from common_lambdas.data_model.schema.investigation import InvestigationData
+        from common_lambdas.exceptions import CCNotFoundException
 
         # Load test data
         provider_id = self._load_provider_data()
@@ -1766,9 +1766,9 @@ class TestDataClient(TstFunction):
     def test_close_license_investigation_already_closed(self):
         """Test closing license investigation when investigation was already closed"""
         from cc_common.data_model.data_client import DataClient
-        from cc_common.data_model.schema.common import InvestigationAgainstEnum
-        from cc_common.data_model.schema.investigation import InvestigationData
-        from cc_common.exceptions import CCNotFoundException
+        from common_lambdas.data_model.schema.common import InvestigationAgainstEnum
+        from common_lambdas.data_model.schema.investigation import InvestigationData
+        from common_lambdas.exceptions import CCNotFoundException
 
         # Load test data
         provider_id = self._load_provider_data()
@@ -1821,8 +1821,8 @@ class TestDataClient(TstFunction):
     def test_close_privilege_investigation_with_encumbrance(self):
         """Test closing privilege investigation with encumbrance creation"""
         from cc_common.data_model.data_client import DataClient
-        from cc_common.data_model.schema.common import InvestigationAgainstEnum
-        from cc_common.data_model.schema.investigation import InvestigationData
+        from common_lambdas.data_model.schema.common import InvestigationAgainstEnum
+        from common_lambdas.data_model.schema.investigation import InvestigationData
 
         # Load test data
         provider_id = self._load_provider_data()
@@ -1897,8 +1897,8 @@ class TestDataClient(TstFunction):
     def test_close_license_investigation_with_encumbrance(self):
         """Test closing license investigation with encumbrance creation"""
         from cc_common.data_model.data_client import DataClient
-        from cc_common.data_model.schema.common import InvestigationAgainstEnum
-        from cc_common.data_model.schema.investigation import InvestigationData
+        from common_lambdas.data_model.schema.common import InvestigationAgainstEnum
+        from common_lambdas.data_model.schema.investigation import InvestigationData
 
         # Load test data
         provider_id = self._load_provider_data()

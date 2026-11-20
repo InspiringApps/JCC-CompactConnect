@@ -208,8 +208,8 @@ class TestPrivilegeUpdateRecordSchema(TstLambdas):
         )
 
     def test_valid_if_deactivation_details_present_when_update_type_is_deactivation(self):
-        from cc_common.data_model.schema.common import UpdateCategory
         from cc_common.data_model.schema.privilege.record import PrivilegeUpdateRecordSchema
+        from common_lambdas.data_model.schema.common import UpdateCategory
 
         with open('tests/resources/dynamo/privilege-update.json') as f:
             privilege_data = json.load(f)

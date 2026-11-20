@@ -284,7 +284,7 @@ class TestPopulateProviderDocuments(TstFunction):
         2. The response includes resumeFrom with the batch_start_key for retry
         3. The developer can use this info to retry from the exact point of failure
         """
-        from cc_common.exceptions import CCInternalException
+        from common_lambdas.exceptions import CCInternalException
         from handlers.populate_provider_documents import TIME_THRESHOLD_MS, populate_provider_documents
 
         # Set up the mock opensearch client to raise CCInternalException on second compact

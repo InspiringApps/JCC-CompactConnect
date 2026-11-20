@@ -692,7 +692,7 @@ class TestOpenSearchIndexManager(TstFunction):
     @patch('handlers.manage_opensearch_indices.OpenSearchClient')
     def test_on_create_retries_when_domain_not_immediately_responsive(self, mock_opensearch_client, mock_sleep):
         """Test that on_create retries connecting to the domain when it's not immediately responsive."""
-        from cc_common.exceptions import CCInternalException
+        from common_lambdas.exceptions import CCInternalException
         from handlers.manage_opensearch_indices import on_event
 
         # First two calls fail, third succeeds
@@ -730,7 +730,7 @@ class TestOpenSearchIndexManager(TstFunction):
     @patch('handlers.manage_opensearch_indices.OpenSearchClient')
     def test_on_create_raises_after_max_retries(self, mock_opensearch_client, mock_sleep):  # noqa ARG002 unused-argument
         """Test that on_create raises CCInternalException after max retries are exhausted."""
-        from cc_common.exceptions import CCInternalException
+        from common_lambdas.exceptions import CCInternalException
         from handlers.manage_opensearch_indices import (
             DOMAIN_READINESS_MAX_ATTEMPTS,
             on_event,

@@ -1,13 +1,14 @@
 ---
 description: Put a feature in the compact app that owns it. Edit backend/common-python only when every compact needs it, it cannot be extended, or only part of another compact's file can be copied.
-alwaysApply: true
+globs: backend/compact-connect/**,backend/compact-connect-ui-app/**,backend/cosmetology-app/**,backend/psypact-app/**,backend/social-work-app/**
+alwaysApply: false
 ---
 
 # Where compact changes go
 
 `backend/common-python` is the shared lambda runtime. Files that start with `# Copied from` must stay identical to their source in `backend/cosmetology-app` or `backend/compact-connect`. Editing one forces the same edit into that other app.
 
-Put a feature in the app that owns it: `backend/psypact-app`, `backend/cosmetology-app`, `backend/compact-connect`, or `backend/social-work-app`. Do not edit `backend/common-python` unless one of these is true:
+Put a feature in the app that owns it. Do not edit `backend/common-python` unless one of these is true:
 
 1. The behavior cannot be added any other way. There is no subclass, wrapper, or override in the owning app that can supply it.
 2. The feature is explicitly meant for every compact. Update the copied source in the same change so copy-sync still matches.
@@ -20,14 +21,22 @@ Do not edit a second compact's app to carry a field that only one compact uses.
 Extend a shared schema from the owning app. Do not add the field to the copied class, and do not add a new schema module under `backend/common-python` for one compact. Compact-only config, clients, records, and handlers live in that compact's app and run before a shared handler is imported.
 
 ```python
-# In the owning app, for example backend/psypact-app/.../psypact_privilege_schema.py
-class PsypactPrivilegeGeneralResponseSchema(PrivilegeGeneralResponseSchema):
-    privilegeAuthorizationType = String(
-        required=False, allow_none=False, validate=OneOf(['APIT', 'TAP'])
-    )
+# In the owning app
+class AppPrivilegeGeneralResponseSchema(PrivilegeGeneralResponseSchema):
+    compactOnlyField = String(required=False, allow_none=False)
 ```
 
 A field used by one compact belongs on that subclass.
+
+## Import `common_lambdas`
+
+`backend/common-python/common_lambdas` is the shared package. A compact app imports it as `common_lambdas`. CDK copies that package into the Lambda layer. The copy is gitignored. The app's install step binds that app's config and response schemas onto `common_lambdas` before a shared handler is imported. It does not copy files.
+
+An app either owns a copied source or consumes `common_lambdas`.
+
+- If the file in this app is the `# Copied from` source, edit it here and keep the `common-python` copy identical.
+- If this app imports `common_lambdas`, do not keep a second copy of a matching module. A second copy is a different module, so exception classes and schemas would no longer be the same objects. If an app file matches `common_lambdas` after rewriting the app package name to `common_lambdas` and ignoring a `# Copied from` header, delete the copy and import `common_lambdas`.
+- A file that matches another compact's source but not `common_lambdas` is a different lineage. Do not import the same-named module from that other lineage. Extend the shared class, or import the JCC module `common-python` already has.
 
 ## Partial copies
 

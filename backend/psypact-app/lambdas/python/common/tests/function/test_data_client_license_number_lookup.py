@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock
 
-from cc_common.exceptions import CCAmbiguousLicenseNumberException
+from common_lambdas.exceptions import CCAmbiguousLicenseNumberException
 from common_test.test_constants import (
     DEFAULT_COMPACT,
     DEFAULT_LICENSE_JURISDICTION,

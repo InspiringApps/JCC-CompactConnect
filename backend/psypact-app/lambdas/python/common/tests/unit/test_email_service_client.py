@@ -12,7 +12,7 @@ TEST_JURISDICTION = 'oh'
 
 class TestEmailServiceClient(TstLambdas):
     def _generate_test_model(self, mock_lambda_client):
-        from cc_common.email_service_client import EmailServiceClient
+        from common_lambdas.email_service_client import EmailServiceClient
 
         mock_lambda_client.invoke.return_value = {
             'StatusCode': 200,
@@ -249,7 +249,7 @@ class TestEmailServiceClient(TstLambdas):
         )
 
     def test_privilege_expiration_reminder_should_invoke_lambda_client_with_expected_parameters(self):
-        from cc_common.email_service_client import PrivilegeExpirationReminderTemplateVariables
+        from common_lambdas.email_service_client import PrivilegeExpirationReminderTemplateVariables
 
         mock_lambda_client = MagicMock()
         test_model = self._generate_test_model(mock_lambda_client)

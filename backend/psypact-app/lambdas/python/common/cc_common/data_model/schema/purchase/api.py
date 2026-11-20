@@ -1,12 +1,11 @@
 # ruff: noqa: N801, N815 invalid-name
+from cc_common.data_model.schema.compact.api import CompactOptionsResponseSchema
+from cc_common.data_model.schema.jurisdiction.api import JurisdictionOptionsResponseSchema
+from common_lambdas.data_model.schema.base_record import ForgivingSchema
+from common_lambdas.data_model.schema.compact.common import COMPACT_TYPE
+from common_lambdas.data_model.schema.jurisdiction.common import JURISDICTION_TYPE
 from marshmallow import ValidationError, validates_schema
 from marshmallow.fields import Dict, List, String
-
-from cc_common.data_model.schema.base_record import ForgivingSchema
-from cc_common.data_model.schema.compact.api import CompactOptionsResponseSchema
-from cc_common.data_model.schema.compact.common import COMPACT_TYPE
-from cc_common.data_model.schema.jurisdiction.api import JurisdictionOptionsResponseSchema
-from cc_common.data_model.schema.jurisdiction.common import JURISDICTION_TYPE
 
 
 class PurchasePrivilegeOptionsResponseSchema(ForgivingSchema):

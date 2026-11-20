@@ -4,7 +4,7 @@ from unittest.mock import patch
 from uuid import uuid4
 
 from boto3.dynamodb.conditions import Key
-from cc_common.exceptions import CCInternalException
+from common_lambdas.exceptions import CCInternalException
 from common_test.test_constants import (
     DEFAULT_AA_SUBMITTING_USER_ID,
     DEFAULT_DATE_OF_UPDATE_TIMESTAMP,
@@ -41,7 +41,7 @@ TEST_ENCUMBRANCE_EFFECTIVE_DATETIME = '2023-01-15T12:00:00-04:00'
 
 
 def _generate_test_body():
-    from cc_common.data_model.schema.common import ClinicalPrivilegeActionCategory, EncumbranceType
+    from common_lambdas.data_model.schema.common import ClinicalPrivilegeActionCategory, EncumbranceType
 
     return {
         'encumbranceEffectiveDate': TEST_ENCUMBRANCE_EFFECTIVE_DATE,
@@ -103,7 +103,7 @@ class TestPostPrivilegeEncumbrance(TstFunction):
         )
 
     def test_privilege_encumbrance_handler_adds_adverse_action_record_in_provider_data_table(self):
-        from cc_common.data_model.schema.adverse_action import AdverseActionData
+        from common_lambdas.data_model.schema.adverse_action import AdverseActionData
         from handlers.encumbrance import encumbrance_handler
 
         event, test_privilege_record = self._when_testing_privilege_encumbrance()
@@ -175,8 +175,8 @@ class TestPostPrivilegeEncumbrance(TstFunction):
         self.assertEqual({'encumberedStatus': 'encumbered'}, loaded_privilege_update_data.updatedValues)
 
     def test_privilege_encumbrance_handler_sets_privilege_record_to_inactive_in_provider_data_table(self):
-        from cc_common.data_model.schema.common import PrivilegeEncumberedStatusEnum
         from cc_common.data_model.schema.privilege import PrivilegeData
+        from common_lambdas.data_model.schema.common import PrivilegeEncumberedStatusEnum
         from handlers.encumbrance import encumbrance_handler
 
         event, test_privilege_record = self._when_testing_privilege_encumbrance()
@@ -208,8 +208,8 @@ class TestPostPrivilegeEncumbrance(TstFunction):
         )
 
     def test_privilege_encumbrance_handler_sets_provider_record_to_encumbered_in_provider_data_table(self):
-        from cc_common.data_model.schema.common import LicenseEncumberedStatusEnum
         from cc_common.data_model.schema.provider import ProviderData
+        from common_lambdas.data_model.schema.common import LicenseEncumberedStatusEnum
         from handlers.encumbrance import encumbrance_handler
 
         event, test_privilege_record = self._when_testing_privilege_encumbrance()
@@ -271,7 +271,7 @@ class TestPostPrivilegeEncumbrance(TstFunction):
             response_body,
         )
 
-    @patch('cc_common.event_bus_client.EventBusClient._publish_event')
+    @patch('common_lambdas.event_bus_client.EventBusClient._publish_event')
     def test_privilege_encumbrance_handler_publishes_event(self, mock_publish_event):
         """Test that privilege encumbrance handler publishes the correct event."""
         from handlers.encumbrance import encumbrance_handler
@@ -292,7 +292,7 @@ class TestPostPrivilegeEncumbrance(TstFunction):
         self.assertEqual(test_privilege_record.licenseTypeAbbreviation, call_args['detail']['licenseTypeAbbreviation'])
         self.assertEqual(DEFAULT_DATE_OF_UPDATE_TIMESTAMP, call_args['detail']['eventTime'])
 
-    @patch('cc_common.event_bus_client.EventBusClient._publish_event')
+    @patch('common_lambdas.event_bus_client.EventBusClient._publish_event')
     def test_privilege_encumbrance_handler_handles_event_publishing_failure(self, mock_publish_event):
         """Test that privilege encumbrance handler fails when event publishing fails."""
         from handlers.encumbrance import encumbrance_handler
@@ -379,7 +379,7 @@ class TestPostLicenseEncumbrance(TstFunction):
         )
 
     def test_license_encumbrance_handler_adds_adverse_action_record_in_provider_data_table(self):
-        from cc_common.data_model.schema.adverse_action import AdverseActionData
+        from common_lambdas.data_model.schema.adverse_action import AdverseActionData
         from handlers.encumbrance import encumbrance_handler
 
         event, test_license_record = self._when_testing_valid_license_encumbrance()
@@ -445,8 +445,8 @@ class TestPostLicenseEncumbrance(TstFunction):
         )
 
     def test_license_encumbrance_handler_sets_license_record_to_encumbered_in_provider_data_table(self):
-        from cc_common.data_model.schema.common import LicenseEncumberedStatusEnum
         from cc_common.data_model.schema.license import LicenseData
+        from common_lambdas.data_model.schema.common import LicenseEncumberedStatusEnum
         from handlers.encumbrance import encumbrance_handler
 
         event, test_license_record = self._when_testing_valid_license_encumbrance()
@@ -477,8 +477,8 @@ class TestPostLicenseEncumbrance(TstFunction):
         )
 
     def test_license_encumbrance_handler_sets_provider_record_to_encumbered_in_provider_data_table(self):
-        from cc_common.data_model.schema.common import LicenseEncumberedStatusEnum
         from cc_common.data_model.schema.provider import ProviderData
+        from common_lambdas.data_model.schema.common import LicenseEncumberedStatusEnum
         from handlers.encumbrance import encumbrance_handler
 
         event, test_license_record = self._when_testing_valid_license_encumbrance()
@@ -736,7 +736,7 @@ class TestPatchPrivilegeEncumbranceLifting(TstFunction):
         self.assertIn('Privilege record not found', str(context.exception))
 
     def test_should_update_encumbrance_status_on_privilege_record_if_last_encumbrance_lifted(self):
-        from cc_common.data_model.schema.common import PrivilegeEncumberedStatusEnum
+        from common_lambdas.data_model.schema.common import PrivilegeEncumberedStatusEnum
         from handlers.encumbrance import encumbrance_handler
 
         privilege_record, adverse_action = self._setup_privilege_with_adverse_action(
@@ -787,7 +787,7 @@ class TestPatchPrivilegeEncumbranceLifting(TstFunction):
 
     def test_should_update_provider_record_to_unencumbered_when_last_privilege_encumbrance_is_lifted(self):
         from cc_common.data_model.provider_record_util import ProviderUserRecords
-        from cc_common.data_model.schema.common import LicenseEncumberedStatusEnum
+        from common_lambdas.data_model.schema.common import LicenseEncumberedStatusEnum
         from handlers.encumbrance import encumbrance_handler
 
         privilege_record, adverse_action = self._setup_privilege_with_adverse_action(
@@ -808,7 +808,7 @@ class TestPatchPrivilegeEncumbranceLifting(TstFunction):
 
     def test_should_not_update_provider_record_when_other_privilege_encumbrances_exist(self):
         from cc_common.data_model.provider_record_util import ProviderUserRecords
-        from cc_common.data_model.schema.common import LicenseEncumberedStatusEnum
+        from common_lambdas.data_model.schema.common import LicenseEncumberedStatusEnum
         from handlers.encumbrance import encumbrance_handler
 
         # Set up first privilege with adverse action
@@ -842,7 +842,7 @@ class TestPatchPrivilegeEncumbranceLifting(TstFunction):
 
     def test_should_not_update_provider_record_when_encumbered_license_exists(self):
         from cc_common.data_model.provider_record_util import ProviderUserRecords
-        from cc_common.data_model.schema.common import LicenseEncumberedStatusEnum
+        from common_lambdas.data_model.schema.common import LicenseEncumberedStatusEnum
         from handlers.encumbrance import encumbrance_handler
 
         # Set up privilege with adverse action and encumbered license
@@ -869,7 +869,7 @@ class TestPatchPrivilegeEncumbranceLifting(TstFunction):
         """Test that lifting a privilege encumbrance sets privilege to LICENSE_ENCUMBERED when associated
         license is encumbered."""
         from cc_common.data_model.provider_record_util import ProviderUserRecords
-        from cc_common.data_model.schema.common import PrivilegeEncumberedStatusEnum
+        from common_lambdas.data_model.schema.common import PrivilegeEncumberedStatusEnum
         from handlers.encumbrance import encumbrance_handler
 
         # Set up privilege with adverse action and encumbered license
@@ -915,7 +915,7 @@ class TestPatchPrivilegeEncumbranceLifting(TstFunction):
             response_body,
         )
 
-    @patch('cc_common.event_bus_client.EventBusClient._publish_event')
+    @patch('common_lambdas.event_bus_client.EventBusClient._publish_event')
     def test_privilege_encumbrance_lifting_handler_publishes_event(self, mock_publish_event):
         """Test that privilege encumbrance lifting handler publishes the correct event."""
         from handlers.encumbrance import encumbrance_handler
@@ -937,7 +937,7 @@ class TestPatchPrivilegeEncumbranceLifting(TstFunction):
         self.assertEqual(privilege_record.licenseTypeAbbreviation, call_args['detail']['licenseTypeAbbreviation'])
         self.assertEqual(DEFAULT_DATE_OF_UPDATE_TIMESTAMP, call_args['detail']['eventTime'])
 
-    @patch('cc_common.event_bus_client.EventBusClient._publish_event')
+    @patch('common_lambdas.event_bus_client.EventBusClient._publish_event')
     def test_privilege_encumbrance_lifting_handler_handles_event_publishing_failure(self, mock_publish_event):
         """Test that privilege encumbrance lifting handler fails when event publishing fails."""
         from handlers.encumbrance import encumbrance_handler
@@ -1129,7 +1129,7 @@ class TestPatchLicenseEncumbranceLifting(TstFunction):
         self.assertIn('License record not found', str(context.exception))
 
     def test_should_update_encumbrance_status_on_license_record_if_last_encumbrance_lifted(self):
-        from cc_common.data_model.schema.common import LicenseEncumberedStatusEnum
+        from common_lambdas.data_model.schema.common import LicenseEncumberedStatusEnum
         from handlers.encumbrance import encumbrance_handler
 
         license_record, adverse_action = self._setup_license_with_adverse_action(
@@ -1180,7 +1180,7 @@ class TestPatchLicenseEncumbranceLifting(TstFunction):
 
     def test_should_update_provider_record_to_unencumbered_when_last_license_encumbrance_is_lifted(self):
         from cc_common.data_model.provider_record_util import ProviderUserRecords
-        from cc_common.data_model.schema.common import LicenseEncumberedStatusEnum
+        from common_lambdas.data_model.schema.common import LicenseEncumberedStatusEnum
         from handlers.encumbrance import encumbrance_handler
 
         license_record, adverse_action = self._setup_license_with_adverse_action(
@@ -1201,7 +1201,7 @@ class TestPatchLicenseEncumbranceLifting(TstFunction):
 
     def test_should_not_update_provider_record_when_other_license_encumbrances_exist(self):
         from cc_common.data_model.provider_record_util import ProviderUserRecords
-        from cc_common.data_model.schema.common import LicenseEncumberedStatusEnum
+        from common_lambdas.data_model.schema.common import LicenseEncumberedStatusEnum
         from handlers.encumbrance import encumbrance_handler
 
         # Set up first license with adverse action
@@ -1232,7 +1232,7 @@ class TestPatchLicenseEncumbranceLifting(TstFunction):
 
     def test_should_not_update_provider_record_when_encumbered_privilege_exists(self):
         from cc_common.data_model.provider_record_util import ProviderUserRecords
-        from cc_common.data_model.schema.common import LicenseEncumberedStatusEnum
+        from common_lambdas.data_model.schema.common import LicenseEncumberedStatusEnum
         from handlers.encumbrance import encumbrance_handler
 
         # Set up license with adverse action

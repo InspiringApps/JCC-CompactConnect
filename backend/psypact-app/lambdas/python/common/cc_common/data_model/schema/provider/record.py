@@ -2,19 +2,15 @@
 from datetime import date
 from urllib.parse import quote
 
-from marshmallow import post_dump, post_load, pre_dump, pre_load
-from marshmallow.fields import UUID, AwareDateTime, Date, Email, List, Nested, String
-from marshmallow.validate import Length, Regexp
-
 from cc_common.config import config
-from cc_common.data_model.schema.base_record import BaseRecordSchema, ForgivingSchema
-from cc_common.data_model.schema.common import (
+from common_lambdas.data_model.schema.base_record import BaseRecordSchema, ForgivingSchema
+from common_lambdas.data_model.schema.common import (
     ActiveInactiveStatus,
     ChangeHashMixin,
     CompactEligibilityStatus,
     LicenseEncumberedStatusEnum,
 )
-from cc_common.data_model.schema.fields import (
+from common_lambdas.data_model.schema.fields import (
     UNKNOWN_JURISDICTION,
     ActiveInactive,
     Compact,
@@ -27,7 +23,10 @@ from cc_common.data_model.schema.fields import (
     Set,
     UpdateType,
 )
-from cc_common.data_model.update_tier_enum import UpdateTierEnum
+from common_lambdas.data_model.update_tier_enum import UpdateTierEnum
+from marshmallow import post_dump, post_load, pre_dump, pre_load
+from marshmallow.fields import UUID, AwareDateTime, Date, Email, List, Nested, String
+from marshmallow.validate import Length, Regexp
 
 
 @BaseRecordSchema.register_schema('provider')

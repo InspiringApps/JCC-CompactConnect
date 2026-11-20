@@ -1,6 +1,6 @@
 from boto3.dynamodb.conditions import Key
 from cc_common.config import config, logger
-from cc_common.data_model.schema.common import CCPermissionsAction
+from common_lambdas.data_model.schema.common import CCPermissionsAction
 
 
 class UserData:

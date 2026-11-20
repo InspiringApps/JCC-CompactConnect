@@ -9,7 +9,7 @@ from tests import TstLambdas
 @mock_aws
 class TestCustomizeScopes(TstLambdas):
     def test_happy_path(self):
-        from cc_common.data_model.schema.common import StaffUserStatus
+        from common_lambdas.data_model.schema.common import StaffUserStatus
         from main import customize_scopes
 
         with open('tests/resources/pre-token-event.json') as f:
@@ -47,7 +47,7 @@ class TestCustomizeScopes(TstLambdas):
         Ensure that no access token can be generated with the 'aws.cognito.signin.user.admin' scope. Which
         Would allow them to change their email address directly through the Cognito API.
         """
-        from cc_common.data_model.schema.common import StaffUserStatus
+        from common_lambdas.data_model.schema.common import StaffUserStatus
         from main import customize_scopes
 
         with open('tests/resources/pre-token-event.json') as f:
@@ -78,7 +78,7 @@ class TestCustomizeScopes(TstLambdas):
         )
 
     def test_multiple_compact(self):
-        from cc_common.data_model.schema.common import StaffUserStatus
+        from common_lambdas.data_model.schema.common import StaffUserStatus
         from main import customize_scopes
 
         with open('tests/resources/pre-token-event.json') as f:

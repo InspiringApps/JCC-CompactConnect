@@ -104,6 +104,8 @@ class TstLambdas(TestCase):
 
         cls.config = cc_common.config._Config()  # noqa: SLF001 protected-access
         cc_common.config.config = cls.config
+        import common_lambdas.config as shared_config
+        shared_config.config = cc_common.config.config
         cls.mock_context = MagicMock(name='MockLambdaContext', spec=LambdaContext)
         # Configure mock_context.get_remaining_time_in_millis to return large value by default
         cls.mock_context.get_remaining_time_in_millis.return_value = 900_000  # 15 minutes in ms

@@ -17,12 +17,9 @@ from argon2.exceptions import VerifyMismatchError
 from aws_lambda_powertools import Logger
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from botocore.exceptions import ClientError
-from marshmallow import ValidationError
-
-from cc_common.config import config, logger, metrics
-from cc_common.data_model.schema.base_record import BaseRecordSchema
-from cc_common.data_model.schema.common import CCPermissionsAction
-from cc_common.exceptions import (
+from common_lambdas.data_model.schema.base_record import BaseRecordSchema
+from common_lambdas.data_model.schema.common import CCPermissionsAction
+from common_lambdas.exceptions import (
     CCAccessDeniedException,
     CCInternalException,
     CCInvalidRequestCustomResponseException,
@@ -33,6 +30,9 @@ from cc_common.exceptions import (
     CCUnauthorizedException,
     CCUnsupportedMediaTypeException,
 )
+from marshmallow import ValidationError
+
+from cc_common.config import config, logger, metrics
 
 
 class ResponseEncoder(JSONEncoder):
@@ -551,7 +551,7 @@ def sqs_handler_with_notification_tracking(fn: Callable):
                     continue
 
                 # Create notification tracker and pass as parameter
-                from cc_common.event_state_client import NotificationTracker
+                from common_lambdas.event_state_client import NotificationTracker
 
                 tracker = NotificationTracker(compact=compact, message_id=message_id)
 

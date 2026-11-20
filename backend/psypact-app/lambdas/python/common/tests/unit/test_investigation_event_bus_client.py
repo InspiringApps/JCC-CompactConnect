@@ -9,7 +9,7 @@ from tests import TstLambdas
 class TestInvestigationEventBusClient(TstLambdas):
     def setUp(self):
         from cc_common.config import config
-        from cc_common.event_bus_client import EventBusClient
+        from common_lambdas.event_bus_client import EventBusClient
 
         self.mock_events_client = MagicMock(name='events-client')
         config.events_client = self.mock_events_client
@@ -18,7 +18,7 @@ class TestInvestigationEventBusClient(TstLambdas):
 
     def test_publish_privilege_investigation_event(self):
         """Test publishing privilege investigation event"""
-        from cc_common.data_model.schema.common import InvestigationAgainstEnum
+        from common_lambdas.data_model.schema.common import InvestigationAgainstEnum
 
         provider_id = uuid4()
         investigation_id = uuid4()
@@ -75,7 +75,7 @@ class TestInvestigationEventBusClient(TstLambdas):
 
     def test_publish_license_investigation_event(self):
         """Test publishing license investigation event"""
-        from cc_common.data_model.schema.common import InvestigationAgainstEnum
+        from common_lambdas.data_model.schema.common import InvestigationAgainstEnum
 
         provider_id = uuid4()
         investigation_id = uuid4()
@@ -132,7 +132,7 @@ class TestInvestigationEventBusClient(TstLambdas):
 
     def test_publish_privilege_investigation_closed_event(self):
         """Test publishing privilege investigation closed event"""
-        from cc_common.data_model.schema.common import InvestigationAgainstEnum
+        from common_lambdas.data_model.schema.common import InvestigationAgainstEnum
 
         provider_id = uuid4()
         investigation_id = uuid4()
@@ -189,7 +189,7 @@ class TestInvestigationEventBusClient(TstLambdas):
 
     def test_publish_license_investigation_closed_event(self):
         """Test publishing license investigation closed event"""
-        from cc_common.data_model.schema.common import InvestigationAgainstEnum
+        from common_lambdas.data_model.schema.common import InvestigationAgainstEnum
 
         provider_id = uuid4()
         investigation_id = uuid4()
@@ -246,7 +246,7 @@ class TestInvestigationEventBusClient(TstLambdas):
 
     def test_publish_privilege_investigation_event_with_batch_writer(self):
         """Test publishing privilege investigation event with batch writer"""
-        from cc_common.data_model.schema.common import InvestigationAgainstEnum
+        from common_lambdas.data_model.schema.common import InvestigationAgainstEnum
 
         provider_id = uuid4()
         investigation_id = uuid4()
@@ -276,7 +276,7 @@ class TestInvestigationEventBusClient(TstLambdas):
 
     def test_publish_license_investigation_event_with_batch_writer(self):
         """Test publishing license investigation event with batch writer"""
-        from cc_common.data_model.schema.common import InvestigationAgainstEnum
+        from common_lambdas.data_model.schema.common import InvestigationAgainstEnum
 
         provider_id = uuid4()
         investigation_id = uuid4()
@@ -306,7 +306,7 @@ class TestInvestigationEventBusClient(TstLambdas):
 
     def test_publish_privilege_investigation_closed_event_with_batch_writer(self):
         """Test publishing privilege investigation closed event with batch writer"""
-        from cc_common.data_model.schema.common import InvestigationAgainstEnum
+        from common_lambdas.data_model.schema.common import InvestigationAgainstEnum
 
         provider_id = uuid4()
         investigation_id = uuid4()
@@ -336,7 +336,7 @@ class TestInvestigationEventBusClient(TstLambdas):
 
     def test_publish_license_investigation_closed_event_with_batch_writer(self):
         """Test publishing license investigation closed event with batch writer"""
-        from cc_common.data_model.schema.common import InvestigationAgainstEnum
+        from common_lambdas.data_model.schema.common import InvestigationAgainstEnum
 
         provider_id = uuid4()
         investigation_id = uuid4()

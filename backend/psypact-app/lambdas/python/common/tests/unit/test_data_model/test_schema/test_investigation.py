@@ -11,7 +11,7 @@ class TestInvestigationRecordSchema(TstLambdas):
 
     def test_serde(self):
         """Test round-trip deserialization/serialization"""
-        from cc_common.data_model.schema.investigation.record import InvestigationRecordSchema
+        from common_lambdas.data_model.schema.investigation.record import InvestigationRecordSchema
 
         expected_investigation = (
             self.test_data_generator.generate_default_investigation().serialize_to_database_record()
@@ -29,7 +29,7 @@ class TestInvestigationRecordSchema(TstLambdas):
         self.assertEqual(expected_investigation, investigation_data)
 
     def test_invalid(self):
-        from cc_common.data_model.schema.investigation.record import InvestigationRecordSchema
+        from common_lambdas.data_model.schema.investigation.record import InvestigationRecordSchema
 
         investigation_data = self.test_data_generator.generate_default_investigation().to_dict()
         investigation_data.pop('providerId')
@@ -38,8 +38,8 @@ class TestInvestigationRecordSchema(TstLambdas):
             InvestigationRecordSchema().load(investigation_data)
 
     def test_invalid_investigation_against(self):
-        from cc_common.data_model.schema.common import CompactEligibilityStatus
-        from cc_common.data_model.schema.investigation import InvestigationData
+        from common_lambdas.data_model.schema.common import CompactEligibilityStatus
+        from common_lambdas.data_model.schema.investigation import InvestigationData
 
         investigation_data = self.test_data_generator.generate_default_investigation()
 
@@ -50,7 +50,7 @@ class TestInvestigationRecordSchema(TstLambdas):
             InvestigationData.from_database_record(investigation_data.serialize_to_database_record())
 
     def test_invalid_license_type(self):
-        from cc_common.data_model.schema.investigation import InvestigationData
+        from common_lambdas.data_model.schema.investigation import InvestigationData
 
         investigation_data = self.test_data_generator.generate_default_investigation()
 
@@ -68,7 +68,7 @@ class TestInvestigationDataClass(TstLambdas):
         self.test_data_generator = TestDataGenerator
 
     def test_investigation_data_class_getters_return_expected_values(self):
-        from cc_common.data_model.schema.investigation import InvestigationData
+        from common_lambdas.data_model.schema.investigation import InvestigationData
 
         investigation_data = self.test_data_generator.generate_default_investigation()
 
@@ -129,7 +129,7 @@ class TestInvestigationDataClass(TstLambdas):
 class TestInvestigationPatchRequestSchema(TstLambdas):
     def test_validate_patch(self):
         """Test validation of a PATCH request (empty body is valid)"""
-        from cc_common.data_model.schema.investigation.api import InvestigationPatchRequestSchema
+        from common_lambdas.data_model.schema.investigation.api import InvestigationPatchRequestSchema
 
         # PATCH schema has no required fields
         result = InvestigationPatchRequestSchema().load({})
@@ -137,7 +137,7 @@ class TestInvestigationPatchRequestSchema(TstLambdas):
 
     def test_validate_patch_with_encumbrance(self):
         """Test validation of a PATCH request with encumbrance"""
-        from cc_common.data_model.schema.investigation.api import InvestigationPatchRequestSchema
+        from common_lambdas.data_model.schema.investigation.api import InvestigationPatchRequestSchema
 
         investigation_data = {
             'encumbrance': {
@@ -151,7 +151,7 @@ class TestInvestigationPatchRequestSchema(TstLambdas):
 
     def test_validate_patch_with_unknown_fields(self):
         """Test validation passes even with unknown fields (ForgivingSchema)"""
-        from cc_common.data_model.schema.investigation.api import InvestigationPatchRequestSchema
+        from common_lambdas.data_model.schema.investigation.api import InvestigationPatchRequestSchema
 
         # ForgivingSchema allows unknown fields
         investigation_data = {'unsupportedField': 'bad'}

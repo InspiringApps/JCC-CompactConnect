@@ -6,16 +6,16 @@ from boto3.dynamodb.types import TypeSerializer
 from botocore.exceptions import ClientError
 from cc_common.config import config, logger, metrics
 from cc_common.data_model.provider_record_util import ProviderRecordType
-from cc_common.data_model.schema.common import UpdateCategory
 from cc_common.data_model.schema.provider import ProviderData, ProviderUpdateData
 from cc_common.data_model.schema.provider.api import ProviderRegistrationRequestSchema
-from cc_common.exceptions import (
+from cc_common.provider_id import provider_id_for_email
+from cc_common.utils import api_handler, delayed_function
+from common_lambdas.data_model.schema.common import UpdateCategory
+from common_lambdas.exceptions import (
     CCInternalException,
     CCInvalidRequestException,
     CCRateLimitingException,
 )
-from cc_common.provider_id import provider_id_for_email
-from cc_common.utils import api_handler, delayed_function
 from marshmallow import ValidationError
 
 COMPACT = 'psypact'

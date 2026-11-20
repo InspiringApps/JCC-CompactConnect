@@ -1,8 +1,8 @@
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from cc_common.config import config, logger
 from cc_common.data_model.schema.provider.api import ProviderPublicResponseSchema, QueryProvidersRequestSchema
-from cc_common.exceptions import CCInvalidRequestException, CCNotFoundException
 from cc_common.utils import api_handler, delayed_function
+from common_lambdas.exceptions import CCInvalidRequestException, CCNotFoundException
 from marshmallow import ValidationError
 
 from . import get_provider_information

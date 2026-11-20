@@ -15,7 +15,7 @@ class TestPatchUser(TstFunction):
         self._load_user_data()
         self._when_testing_with_valid_jurisdiction(compact='aslp')
 
-        from cc_common.data_model.schema.common import StaffUserStatus
+        from common_lambdas.data_model.schema.common import StaffUserStatus
         from handlers.users import patch_user
 
         with open('tests/resources/api-event.json') as f:
@@ -50,7 +50,7 @@ class TestPatchUser(TstFunction):
         )
 
     def test_patch_user_document_path_overlap(self):
-        from cc_common.data_model.schema.common import StaffUserStatus
+        from common_lambdas.data_model.schema.common import StaffUserStatus
         from handlers.users import patch_user
 
         self._when_testing_with_valid_jurisdiction(compact='octp')
@@ -120,7 +120,7 @@ class TestPatchUser(TstFunction):
         )
 
     def test_patch_user_add_to_empty_actions(self):
-        from cc_common.data_model.schema.common import StaffUserStatus
+        from common_lambdas.data_model.schema.common import StaffUserStatus
         from handlers.users import patch_user, post_user
 
         self._when_testing_with_valid_jurisdiction(compact='aslp')
@@ -165,7 +165,7 @@ class TestPatchUser(TstFunction):
         self.assertEqual(api_user, user)
 
     def test_patch_user_remove_all_actions(self):
-        from cc_common.data_model.schema.common import StaffUserStatus
+        from common_lambdas.data_model.schema.common import StaffUserStatus
         from handlers.users import patch_user, post_user
 
         self._when_testing_with_valid_jurisdiction(compact='aslp')
@@ -294,7 +294,7 @@ class TestPatchUser(TstFunction):
         self._load_user_data()
         self._when_testing_with_valid_jurisdiction(compact='aslp')
 
-        from cc_common.data_model.schema.common import StaffUserStatus
+        from common_lambdas.data_model.schema.common import StaffUserStatus
         from handlers.users import patch_user
 
         with open('tests/resources/api-event.json') as f:
@@ -345,7 +345,7 @@ class TestPatchUser(TstFunction):
         self._load_user_data()
         self._when_testing_with_valid_jurisdiction(compact='aslp')
 
-        from cc_common.data_model.schema.common import StaffUserStatus
+        from common_lambdas.data_model.schema.common import StaffUserStatus
         from handlers.users import patch_user
 
         with open('tests/resources/api-event.json') as f:

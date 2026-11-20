@@ -44,9 +44,9 @@ os.environ['ENVIRONMENT_NAME'] = 'test'  # Required for cc_common
 from cc_common.config import config  # noqa: E402
 from cc_common.data_model.data_client import DataClient  # noqa: E402
 from cc_common.data_model.provider_record_util import ProviderUserRecords  # noqa: E402
-from cc_common.data_model.schema.common import ActiveInactiveStatus  # noqa: E402
 from cc_common.data_model.schema.privilege import PrivilegeData  # noqa: E402
 from cc_common.data_model.schema.provider import ProviderData  # noqa: E402
+from common_lambdas.data_model.schema.common import ActiveInactiveStatus  # noqa: E402
 
 
 def query_eligible_providers(

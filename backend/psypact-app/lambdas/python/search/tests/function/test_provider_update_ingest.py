@@ -408,7 +408,7 @@ class TestProviderUpdateIngest(TstFunction):
     @patch('handlers.provider_update_ingest.opensearch_client')
     def test_bulk_index_exception_returns_all_batch_item_failures(self, mock_opensearch_client):
         """Test that when bulk_index raises an exception, all providers are marked as failed."""
-        from cc_common.exceptions import CCInternalException
+        from common_lambdas.exceptions import CCInternalException
         from handlers.provider_update_ingest import provider_update_ingest_handler
 
         # Set up mock OpenSearch client to raise an exception
@@ -712,7 +712,7 @@ class TestProviderUpdateIngest(TstFunction):
     @patch('handlers.provider_update_ingest.opensearch_client')
     def test_bulk_delete_failure_returns_batch_item_failure(self, mock_opensearch_client):
         """Test that when bulk_delete fails, the provider is returned in batchItemFailures."""
-        from cc_common.exceptions import CCInternalException
+        from common_lambdas.exceptions import CCInternalException
         from handlers.provider_update_ingest import provider_update_ingest_handler
 
         # Set up mock OpenSearch client - bulk_delete raises exception

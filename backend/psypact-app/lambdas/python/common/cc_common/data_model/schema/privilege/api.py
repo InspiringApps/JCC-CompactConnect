@@ -1,25 +1,24 @@
 # ruff: noqa: N801, N815, ARG002  invalid-name unused-argument
 from datetime import date
 
-from marshmallow import Schema, pre_load
-from marshmallow.fields import List, Nested, Raw, String
-from marshmallow.validate import ContainsNoneOf, Length
-
 from cc_common.config import config
 from cc_common.data_model.schema.adverse_action.api import (
     AdverseActionGeneralResponseSchema,
     AdverseActionPublicResponseSchema,
 )
-from cc_common.data_model.schema.base_record import ForgivingSchema
-from cc_common.data_model.schema.common import ActiveInactiveStatus, UpdateCategory
-from cc_common.data_model.schema.fields import (
+from common_lambdas.data_model.schema.base_record import ForgivingSchema
+from common_lambdas.data_model.schema.common import ActiveInactiveStatus, UpdateCategory
+from common_lambdas.data_model.schema.fields import (
     ActiveInactive,
     Compact,
     InvestigationStatusField,
     Jurisdiction,
     UpdateType,
 )
-from cc_common.data_model.schema.investigation.api import InvestigationGeneralResponseSchema
+from common_lambdas.data_model.schema.investigation.api import InvestigationGeneralResponseSchema
+from marshmallow import Schema, pre_load
+from marshmallow.fields import List, Nested, Raw, String
+from marshmallow.validate import ContainsNoneOf, Length
 
 
 class PrivilegeExpirationStatusMixin:

@@ -29,10 +29,13 @@ class TstFunction(TstLambdas):
         self.addCleanup(self.delete_resources)
 
         import cc_common.config
-        from common_test.test_data_generator import TestDataGenerator
+        import common_lambdas.config as shared_config
 
         cc_common.config.config = cc_common.config._Config()  # noqa: SLF001 protected-access
+        shared_config.config = cc_common.config.config
         self.config = cc_common.config.config
+        from common_test.test_data_generator import TestDataGenerator
+
         self.test_data_generator = TestDataGenerator
 
     def build_resources(self):
@@ -301,8 +304,8 @@ class TstFunction(TstLambdas):
 
     def _create_compact_staff_user(self, compacts: list[str]):
         """Create a compact-staff style user for each jurisdiction in the provided compact."""
-        from cc_common.data_model.schema.common import StaffUserStatus
-        from cc_common.data_model.schema.user.record import UserRecordSchema
+        from common_lambdas.data_model.schema.common import StaffUserStatus
+        from common_lambdas.data_model.schema.user.record import UserRecordSchema
 
         schema = UserRecordSchema()
 
@@ -333,8 +336,8 @@ class TstFunction(TstLambdas):
         :param compacts: List of compact abbreviations
         :param jurisdiction_list: Optional list of jurisdictions to use, defaults to ['oh', 'ne', 'ky']
         """
-        from cc_common.data_model.schema.common import StaffUserStatus
-        from cc_common.data_model.schema.user.record import UserRecordSchema
+        from common_lambdas.data_model.schema.common import StaffUserStatus
+        from common_lambdas.data_model.schema.user.record import UserRecordSchema
 
         schema = UserRecordSchema()
 

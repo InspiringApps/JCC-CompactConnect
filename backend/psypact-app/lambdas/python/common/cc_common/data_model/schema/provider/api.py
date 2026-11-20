@@ -1,13 +1,18 @@
 # ruff: noqa: N801, N815, ARG002  invalid-name unused-argument
 from datetime import timedelta
 
-from marshmallow import ValidationError, pre_load, validates_schema
-from marshmallow.fields import UUID, AwareDateTime, Date, Dict, Email, Integer, List, Nested, Raw, String
-from marshmallow.validate import Length, OneOf, Range, Regexp
-
-from cc_common.data_model.schema.base_record import ForgivingSchema, StrictSchema
-from cc_common.data_model.schema.common import CCRequestSchema, MilitaryStatus
-from cc_common.data_model.schema.fields import (
+from cc_common.data_model.schema.license.api import (
+    LicenseGeneralResponseSchema,
+    LicenseReadPrivateResponseSchema,
+)
+from cc_common.data_model.schema.privilege.api import (
+    PrivilegeGeneralResponseSchema,
+    PrivilegePublicResponseSchema,
+    PrivilegeReadPrivateResponseSchema,
+)
+from common_lambdas.data_model.schema.base_record import ForgivingSchema, StrictSchema
+from common_lambdas.data_model.schema.common import CCRequestSchema, MilitaryStatus
+from common_lambdas.data_model.schema.fields import (
     ActiveInactive,
     Compact,
     CompactEligibility,
@@ -18,19 +23,13 @@ from cc_common.data_model.schema.fields import (
     Set,
     SocialSecurityNumber,
 )
-from cc_common.data_model.schema.license.api import (
-    LicenseGeneralResponseSchema,
-    LicenseReadPrivateResponseSchema,
-)
-from cc_common.data_model.schema.military_affiliation.api import (
+from common_lambdas.data_model.schema.military_affiliation.api import (
     MilitaryAffiliationGeneralResponseSchema,
     MilitaryAffiliationReadPrivateResponseSchema,
 )
-from cc_common.data_model.schema.privilege.api import (
-    PrivilegeGeneralResponseSchema,
-    PrivilegePublicResponseSchema,
-    PrivilegeReadPrivateResponseSchema,
-)
+from marshmallow import ValidationError, pre_load, validates_schema
+from marshmallow.fields import UUID, AwareDateTime, Date, Dict, Email, Integer, List, Nested, Raw, String
+from marshmallow.validate import Length, OneOf, Range, Regexp
 
 # Keys that indicate cross-index query attempts in OpenSearch DSL
 # These are used by terms lookup, more_like_this, and other queries to reference external indices

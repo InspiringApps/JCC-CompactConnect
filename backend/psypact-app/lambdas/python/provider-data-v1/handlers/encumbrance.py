@@ -3,19 +3,19 @@ from uuid import UUID, uuid4
 
 from aws_lambda_powertools.utilities.typing import LambdaContext
 from cc_common.config import config, logger
-from cc_common.data_model.schema.adverse_action import AdverseActionData
 from cc_common.data_model.schema.adverse_action.api import (
     AdverseActionPatchRequestSchema,
     AdverseActionPostRequestSchema,
 )
-from cc_common.data_model.schema.common import (
+from cc_common.utils import api_handler, authorize_state_level_only_action, to_uuid
+from common_lambdas.data_model.schema.adverse_action import AdverseActionData
+from common_lambdas.data_model.schema.common import (
     AdverseActionAgainstEnum,
     CCPermissionsAction,
     EncumbranceType,
 )
-from cc_common.exceptions import CCInvalidRequestException
-from cc_common.license_util import LicenseUtility
-from cc_common.utils import api_handler, authorize_state_level_only_action, to_uuid
+from common_lambdas.exceptions import CCInvalidRequestException
+from common_lambdas.license_util import LicenseUtility
 from marshmallow import ValidationError
 
 PRIVILEGE_ENCUMBRANCE_ENDPOINT_RESOURCE = (

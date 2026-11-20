@@ -12,7 +12,7 @@ class TestPostUser(TstFunction):
         self._load_compact_active_member_jurisdictions()
 
     def test_post_user(self):
-        from cc_common.data_model.schema.common import StaffUserStatus
+        from common_lambdas.data_model.schema.common import StaffUserStatus
         from handlers.users import post_user
 
         self._when_testing_with_valid_jurisdiction()
@@ -47,7 +47,7 @@ class TestPostUser(TstFunction):
         self.assertEqual(api_user, user)
 
     def test_post_user_no_compact_perms_round_trip(self):
-        from cc_common.data_model.schema.common import StaffUserStatus
+        from common_lambdas.data_model.schema.common import StaffUserStatus
         from handlers.users import get_one_user, post_user
 
         self._when_testing_with_valid_jurisdiction()

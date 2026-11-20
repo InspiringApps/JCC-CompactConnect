@@ -3,8 +3,8 @@
 from collections import UserDict
 from decimal import Decimal
 
-from cc_common.data_model.schema.common import CCDataClass
 from cc_common.data_model.schema.jurisdiction.record import JurisdictionRecordSchema
+from common_lambdas.data_model.schema.common import CCDataClass
 
 
 class JurisdictionJurisprudenceRequirements(UserDict):

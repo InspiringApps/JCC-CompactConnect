@@ -2,21 +2,21 @@ from uuid import UUID
 
 from cc_common.config import config, logger
 from cc_common.data_model.provider_record_util import ProviderData, ProviderUserRecords
-from cc_common.data_model.schema.common import LicenseEncumberedStatusEnum, PrivilegeEncumberedStatusEnum
-from cc_common.data_model.schema.data_event.api import (
+from cc_common.utils import sqs_handler, sqs_handler_with_notification_tracking
+from common_lambdas.data_model.schema.common import LicenseEncumberedStatusEnum, PrivilegeEncumberedStatusEnum
+from common_lambdas.data_model.schema.data_event.api import (
     EncumbranceEventDetailSchema,
 )
-from cc_common.email_service_client import (
+from common_lambdas.email_service_client import (
     EncumbranceNotificationTemplateVariables,
     JurisdictionNotificationMethod,
     ProviderNotificationMethod,
 )
-from cc_common.event_batch_writer import EventBatchWriter
-from cc_common.event_bus_client import EventBusClient
-from cc_common.event_state_client import EventType, NotificationTracker, RecipientType
-from cc_common.exceptions import CCInternalException
-from cc_common.license_util import LicenseUtility
-from cc_common.utils import sqs_handler, sqs_handler_with_notification_tracking
+from common_lambdas.event_batch_writer import EventBatchWriter
+from common_lambdas.event_bus_client import EventBusClient
+from common_lambdas.event_state_client import EventType, NotificationTracker, RecipientType
+from common_lambdas.exceptions import CCInternalException
+from common_lambdas.license_util import LicenseUtility
 
 
 def _get_license_type_name(compact: str, license_type_abbreviation: str) -> str:

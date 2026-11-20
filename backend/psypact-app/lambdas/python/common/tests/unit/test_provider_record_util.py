@@ -6,7 +6,7 @@ from tests import TstLambdas
 
 class TestProviderRecordUtility(TstLambdas):
     def setUp(self):
-        from cc_common.data_model.schema.common import ActiveInactiveStatus, CompactEligibilityStatus
+        from common_lambdas.data_model.schema.common import ActiveInactiveStatus, CompactEligibilityStatus
 
         # Create a base license record that we'll modify for different test cases
         self.base_license = {
@@ -56,7 +56,7 @@ class TestProviderRecordUtility(TstLambdas):
     def test_find_best_license_compact_eligible_preferred(self):
         """Test that find_best_license prefers compact-eligible licenses over others."""
         from cc_common.data_model.provider_record_util import ProviderRecordUtility
-        from cc_common.data_model.schema.common import CompactEligibilityStatus
+        from common_lambdas.data_model.schema.common import CompactEligibilityStatus
 
         licenses = [
             {
@@ -78,7 +78,7 @@ class TestProviderRecordUtility(TstLambdas):
     def test_find_best_license_active_preferred_when_no_compact_eligible_licenses(self):
         """Test that find_best_license prefers active licenses when no compact-eligible licenses exist."""
         from cc_common.data_model.provider_record_util import ProviderRecordUtility
-        from cc_common.data_model.schema.common import ActiveInactiveStatus, CompactEligibilityStatus
+        from common_lambdas.data_model.schema.common import ActiveInactiveStatus, CompactEligibilityStatus
 
         licenses = [
             {
@@ -102,7 +102,7 @@ class TestProviderRecordUtility(TstLambdas):
     def test_find_best_license_most_recent_when_no_active_or_compact_eligible_licenses(self):
         """Test that find_best_license selects most recent license when no active or compact-eligible licenses exist."""
         from cc_common.data_model.provider_record_util import ProviderRecordUtility
-        from cc_common.data_model.schema.common import ActiveInactiveStatus, CompactEligibilityStatus
+        from common_lambdas.data_model.schema.common import ActiveInactiveStatus, CompactEligibilityStatus
 
         licenses = [
             {
@@ -125,7 +125,7 @@ class TestProviderRecordUtility(TstLambdas):
     def test_find_best_license_raises_exception_when_no_licenses(self):
         """Test that find_best_license raises an exception when no licenses are provided."""
         from cc_common.data_model.provider_record_util import ProviderRecordUtility
-        from cc_common.exceptions import CCInternalException
+        from common_lambdas.exceptions import CCInternalException
 
         with self.assertRaises(CCInternalException):
             ProviderRecordUtility.find_best_license([])
@@ -133,7 +133,7 @@ class TestProviderRecordUtility(TstLambdas):
     def test_find_best_license_complex_scenario(self):
         """Test a complex scenario with multiple licenses of different statuses."""
         from cc_common.data_model.provider_record_util import ProviderRecordUtility
-        from cc_common.data_model.schema.common import ActiveInactiveStatus, CompactEligibilityStatus
+        from common_lambdas.data_model.schema.common import ActiveInactiveStatus, CompactEligibilityStatus
 
         licenses = [
             {
@@ -1097,7 +1097,7 @@ class TestProviderRecordUtilityActiveSinceCalculation(TstLambdas):
         self.assertEqual(test_privilege.dateOfIssuance, active_since)
 
     def test_calculation_returns_renewal_date_if_privilege_expired_and_was_then_renewed(self):
-        from cc_common.data_model.schema.common import UpdateCategory
+        from common_lambdas.data_model.schema.common import UpdateCategory
 
         test_privilege = self.test_data_generator.generate_default_privilege(
             value_overrides={'dateOfExpiration': date.fromisoformat('2100-04-04')}
@@ -1121,7 +1121,7 @@ class TestProviderRecordUtilityActiveSinceCalculation(TstLambdas):
         self.assertEqual(test_renewal_update.updatedValues.get('dateOfRenewal'), active_since)
 
     def test_calculation_returns_renewal_date_if_privilege_deactivated_and_was_then_renewed(self):
-        from cc_common.data_model.schema.common import UpdateCategory
+        from common_lambdas.data_model.schema.common import UpdateCategory
 
         test_privilege = self.test_data_generator.generate_default_privilege(
             value_overrides={'dateOfExpiration': date.fromisoformat('2100-04-04')}
@@ -1149,7 +1149,7 @@ class TestProviderRecordUtilityActiveSinceCalculation(TstLambdas):
         self.assertEqual(test_renewal_update.updatedValues.get('dateOfRenewal'), active_since)
 
     def test_calculation_returns_renewal_date_if_privilege_was_encumbered_and_then_renewed(self):
-        from cc_common.data_model.schema.common import UpdateCategory
+        from common_lambdas.data_model.schema.common import UpdateCategory
 
         test_privilege = self.test_data_generator.generate_default_privilege(
             value_overrides={'dateOfExpiration': date.fromisoformat('2100-04-04')}
@@ -1180,7 +1180,7 @@ class TestProviderRecordUtilityActiveSinceCalculation(TstLambdas):
         self.assertEqual(test_renewal_update.updatedValues.get('dateOfRenewal'), active_since)
 
     def test_calculation_returns_privilege_renewal_date_if_license_was_deactivated_then_privilege_renewed(self):
-        from cc_common.data_model.schema.common import UpdateCategory
+        from common_lambdas.data_model.schema.common import UpdateCategory
 
         test_privilege = self.test_data_generator.generate_default_privilege(
             value_overrides={'dateOfExpiration': date.fromisoformat('2100-04-04')}
@@ -1204,7 +1204,7 @@ class TestProviderRecordUtilityActiveSinceCalculation(TstLambdas):
         self.assertEqual(test_renewal_update.updatedValues.get('dateOfRenewal'), active_since)
 
     def test_calculation_returns_privilege_renewal_date_if_home_jurisdiction_change_encumbered_privilege(self):
-        from cc_common.data_model.schema.common import PrivilegeEncumberedStatusEnum, UpdateCategory
+        from common_lambdas.data_model.schema.common import PrivilegeEncumberedStatusEnum, UpdateCategory
 
         test_privilege = self.test_data_generator.generate_default_privilege(
             value_overrides={'dateOfExpiration': date.fromisoformat('2100-04-04')}
@@ -1231,7 +1231,7 @@ class TestProviderRecordUtilityActiveSinceCalculation(TstLambdas):
         self.assertEqual(test_renewal_update.updatedValues.get('dateOfRenewal'), active_since)
 
     def test_calculation_returns_privilege_renewal_date_if_home_jurisdiction_change_deactivated_privilege(self):
-        from cc_common.data_model.schema.common import HomeJurisdictionChangeStatusEnum, UpdateCategory
+        from common_lambdas.data_model.schema.common import HomeJurisdictionChangeStatusEnum, UpdateCategory
 
         test_privilege = self.test_data_generator.generate_default_privilege(
             value_overrides={'dateOfExpiration': date.fromisoformat('2100-04-04')}
@@ -1257,7 +1257,7 @@ class TestProviderRecordUtilityActiveSinceCalculation(TstLambdas):
         self.assertEqual(test_renewal_update.updatedValues.get('dateOfRenewal'), active_since)
 
     def test_calculation_returns_privilege_issue_date_if_home_jurisdiction_change_did_not_deactivate_privilege(self):
-        from cc_common.data_model.schema.common import UpdateCategory
+        from common_lambdas.data_model.schema.common import UpdateCategory
 
         test_privilege = self.test_data_generator.generate_default_privilege(
             value_overrides={'dateOfExpiration': date.fromisoformat('2100-04-04')}
@@ -1301,7 +1301,7 @@ class TestProviderRecordUtilityActiveSinceCalculation(TstLambdas):
         self.assertEqual(test_privilege.dateOfIssuance, active_since)
 
     def test_calculation_returns_oldest_renewal_date_if_privilege_expired_and_then_was_renewed_multiple_times(self):
-        from cc_common.data_model.schema.common import UpdateCategory
+        from common_lambdas.data_model.schema.common import UpdateCategory
 
         test_privilege = self.test_data_generator.generate_default_privilege(
             value_overrides={'dateOfExpiration': date.fromisoformat('2100-04-04')}

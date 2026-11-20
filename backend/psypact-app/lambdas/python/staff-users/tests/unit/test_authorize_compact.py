@@ -7,8 +7,8 @@ from tests import TstLambdas
 
 class TestAuthorizeCompact(TstLambdas):
     def test_authorize_compact(self):
-        from cc_common.data_model.schema.common import CCPermissionsAction
         from cc_common.utils import authorize_compact
+        from common_lambdas.data_model.schema.common import CCPermissionsAction
 
         @authorize_compact(action=CCPermissionsAction.READ_GENERAL)
         def example_entrypoint(event: dict, context: LambdaContext):  # noqa: ARG001 unused-argument
@@ -25,9 +25,9 @@ class TestAuthorizeCompact(TstLambdas):
         self.assertEqual({'body': 'Hurray!'}, example_entrypoint(event, self.mock_context))
 
     def test_no_path_param(self):
-        from cc_common.data_model.schema.common import CCPermissionsAction
-        from cc_common.exceptions import CCInvalidRequestException
         from cc_common.utils import authorize_compact
+        from common_lambdas.data_model.schema.common import CCPermissionsAction
+        from common_lambdas.exceptions import CCInvalidRequestException
 
         @authorize_compact(action=CCPermissionsAction.READ_GENERAL)
         def example_entrypoint(event: dict, context: LambdaContext):  # noqa: ARG001 unused-argument
@@ -42,9 +42,9 @@ class TestAuthorizeCompact(TstLambdas):
             example_entrypoint(event, self.mock_context)
 
     def test_no_authorizer(self):
-        from cc_common.data_model.schema.common import CCPermissionsAction
-        from cc_common.exceptions import CCUnauthorizedException
         from cc_common.utils import authorize_compact
+        from common_lambdas.data_model.schema.common import CCPermissionsAction
+        from common_lambdas.exceptions import CCUnauthorizedException
 
         @authorize_compact(action=CCPermissionsAction.READ_GENERAL)
         def example_entrypoint(event: dict, context: LambdaContext):  # noqa: ARG001 unused-argument
@@ -59,9 +59,9 @@ class TestAuthorizeCompact(TstLambdas):
             example_entrypoint(event, self.mock_context)
 
     def test_missing_scope(self):
-        from cc_common.data_model.schema.common import CCPermissionsAction
-        from cc_common.exceptions import CCAccessDeniedException
         from cc_common.utils import authorize_compact
+        from common_lambdas.data_model.schema.common import CCPermissionsAction
+        from common_lambdas.exceptions import CCAccessDeniedException
 
         @authorize_compact(action=CCPermissionsAction.READ_GENERAL)
         def example_entrypoint(event: dict, context: LambdaContext):  # noqa: ARG001 unused-argument

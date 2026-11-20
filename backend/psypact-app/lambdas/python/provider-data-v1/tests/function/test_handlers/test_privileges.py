@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 from aws_lambda_powertools.metrics import MetricUnit
 from boto3.dynamodb.types import TypeDeserializer
-from cc_common.exceptions import CCInternalException
+from common_lambdas.exceptions import CCInternalException
 from moto import mock_aws
 
 from .. import TstFunction

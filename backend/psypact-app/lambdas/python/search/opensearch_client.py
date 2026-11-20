@@ -2,7 +2,7 @@ import time
 
 import boto3
 from cc_common.config import config, logger
-from cc_common.exceptions import CCInternalException, CCInvalidRequestException
+from common_lambdas.exceptions import CCInternalException, CCInvalidRequestException
 from opensearchpy import AWSV4SignerAuth, OpenSearch, RequestsHttpConnection
 from opensearchpy.exceptions import ConnectionTimeout, RequestError, TransportError
 

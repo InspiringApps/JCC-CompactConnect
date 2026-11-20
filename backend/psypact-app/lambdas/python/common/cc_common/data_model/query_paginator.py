@@ -4,10 +4,9 @@ from collections.abc import Callable
 from types import MethodType
 
 from botocore.exceptions import ClientError
-
 from cc_common.config import config, logger
-from cc_common.exceptions import CCInvalidRequestException
 from cc_common.utils import load_records_into_schemas
+from common_lambdas.exceptions import CCInvalidRequestException
 
 
 # It's conventional to name a decorator in snake_case, even if it is implemented as a class

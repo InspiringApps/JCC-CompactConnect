@@ -3,11 +3,11 @@
 from datetime import date, datetime
 from uuid import UUID
 
-from cc_common.data_model.schema.common import CCDataClass
 from cc_common.data_model.schema.privilege.record import (
     PrivilegeRecordSchema,
     PrivilegeUpdateRecordSchema,
 )
+from common_lambdas.data_model.schema.common import CCDataClass
 
 
 class PrivilegeData(CCDataClass):

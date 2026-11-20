@@ -22,10 +22,13 @@ class TstFunction(TstLambdas):
         # these must be imported within the tests, since they import modules which require
         # environment variables that are not set until the TstLambdas class is initialized
         import cc_common.config
-        from common_test.test_data_generator import TestDataGenerator
+        import common_lambdas.config as shared_config
 
         cc_common.config.config = cc_common.config._Config()  # noqa: SLF001 protected-access
+        shared_config.config = cc_common.config.config
         self.config = cc_common.config.config
+        from common_test.test_data_generator import TestDataGenerator
+
         self.test_data_generator = TestDataGenerator
 
         self.addCleanup(self.delete_resources)

@@ -24,10 +24,13 @@ class TstFunction(TstLambdas):
         self.build_resources()
 
         import cc_common.config
-        from common_test.test_data_generator import TestDataGenerator
+        import common_lambdas.config as shared_config
 
         cc_common.config.config = cc_common.config._Config()  # noqa: SLF001 protected-access
+        shared_config.config = cc_common.config.config
         self.config = cc_common.config.config
+        from common_test.test_data_generator import TestDataGenerator
+
         self.test_data_generator = TestDataGenerator
 
         self.addCleanup(self.delete_resources)
@@ -153,7 +156,7 @@ class TstFunction(TstLambdas):
 
     def _load_license_data(self, eligibility: str = 'eligible', expiration_date: str = None, license_type: str = None):
         """Use the canned test resources to load a basic provider to the DB"""
-        from cc_common.data_model.schema.common import ActiveInactiveStatus, CompactEligibilityStatus
+        from common_lambdas.data_model.schema.common import ActiveInactiveStatus, CompactEligibilityStatus
 
         license_test_resources = ['../common/tests/resources/dynamo/license.json']
 

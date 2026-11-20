@@ -11,7 +11,7 @@ class TestTransactionRecordSchema(TstLambdas):
 
     def test_serde(self):
         """Test round-trip deserialization/serialization"""
-        from cc_common.data_model.schema.transaction.record import TransactionRecordSchema
+        from common_lambdas.data_model.schema.transaction.record import TransactionRecordSchema
 
         expected_transaction = self.test_data_generator.generate_default_transaction().serialize_to_database_record()
 
@@ -27,7 +27,7 @@ class TestTransactionRecordSchema(TstLambdas):
         self.assertEqual(expected_transaction, transaction_data)
 
     def test_invalid(self):
-        from cc_common.data_model.schema.transaction.record import TransactionRecordSchema
+        from common_lambdas.data_model.schema.transaction.record import TransactionRecordSchema
 
         transaction_data = self.test_data_generator.generate_default_transaction().to_dict()
         transaction_data.pop('transactionId')
@@ -36,7 +36,7 @@ class TestTransactionRecordSchema(TstLambdas):
             TransactionRecordSchema().load(transaction_data)
 
     def test_invalid_transaction_processor(self):
-        from cc_common.data_model.schema.transaction import TransactionData
+        from common_lambdas.data_model.schema.transaction import TransactionData
 
         transaction_data = self.test_data_generator.generate_default_transaction()
         transaction_record = transaction_data.serialize_to_database_record()
@@ -53,7 +53,7 @@ class TestTransactionDataClass(TstLambdas):
         self.test_data_generator = TestDataGenerator
 
     def test_transaction_data_class_getters_return_expected_values(self):
-        from cc_common.data_model.schema.transaction import TransactionData
+        from common_lambdas.data_model.schema.transaction import TransactionData
 
         transaction_data = self.test_data_generator.generate_default_transaction().serialize_to_database_record()
 

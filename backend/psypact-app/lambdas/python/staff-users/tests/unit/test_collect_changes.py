@@ -49,8 +49,8 @@ class TestCollectChanges(TstLambdas):
         )
 
     def test_disallowed_jurisdiction_changes(self):
-        from cc_common.exceptions import CCAccessDeniedException
         from cc_common.utils import collect_and_authorize_changes
+        from common_lambdas.exceptions import CCAccessDeniedException
 
         with self.assertRaises(CCAccessDeniedException):
             collect_and_authorize_changes(
@@ -60,8 +60,8 @@ class TestCollectChanges(TstLambdas):
             )
 
     def test_jurisdiction_admin_disallowed_compact_changes(self):
-        from cc_common.exceptions import CCAccessDeniedException
         from cc_common.utils import collect_and_authorize_changes
+        from common_lambdas.exceptions import CCAccessDeniedException
 
         with self.assertRaises(CCAccessDeniedException):
             collect_and_authorize_changes(
@@ -71,8 +71,8 @@ class TestCollectChanges(TstLambdas):
             )
 
     def test_jurisdiction_admin_disallowed_compact_read_ssn_changes(self):
-        from cc_common.exceptions import CCAccessDeniedException
         from cc_common.utils import collect_and_authorize_changes
+        from common_lambdas.exceptions import CCAccessDeniedException
 
         with self.assertRaises(CCAccessDeniedException):
             collect_and_authorize_changes(

@@ -27,8 +27,8 @@ class TestApiHandler(TstLambdas):
         self.assertEqual('https://example.org', resp['headers']['Access-Control-Allow-Origin'])
 
     def test_unauthorized(self):
-        from cc_common.exceptions import CCUnauthorizedException
         from cc_common.utils import api_handler
+        from common_lambdas.exceptions import CCUnauthorizedException
 
         @api_handler
         def lambda_handler(event: dict, context: LambdaContext):
@@ -42,8 +42,8 @@ class TestApiHandler(TstLambdas):
         self.assertEqual('https://example.org', resp['headers']['Access-Control-Allow-Origin'])
 
     def test_invalid_request(self):
-        from cc_common.exceptions import CCInvalidRequestException
         from cc_common.utils import api_handler
+        from common_lambdas.exceptions import CCInvalidRequestException
 
         @api_handler
         def lambda_handler(event: dict, context: LambdaContext):

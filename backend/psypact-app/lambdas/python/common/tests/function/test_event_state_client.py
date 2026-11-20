@@ -2,7 +2,7 @@ from datetime import datetime
 from unittest.mock import ANY, patch
 from uuid import UUID
 
-from cc_common.event_state_client import (
+from common_lambdas.event_state_client import (
     EventStateClient,
     EventType,
     NotificationStatus,

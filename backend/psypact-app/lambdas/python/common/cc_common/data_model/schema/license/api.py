@@ -5,15 +5,11 @@ Schema for API objects.
 
 from datetime import date
 
-from marshmallow import ValidationError, pre_load, validates_schema
-from marshmallow.fields import Date, Email, List, Nested, Raw, String
-from marshmallow.validate import Length
-
 from cc_common.config import config
 from cc_common.data_model.schema.adverse_action.api import AdverseActionGeneralResponseSchema
-from cc_common.data_model.schema.base_record import ForgivingSchema, StrictSchema
-from cc_common.data_model.schema.common import ActiveInactiveStatus, CCRequestSchema, CompactEligibilityStatus
-from cc_common.data_model.schema.fields import (
+from common_lambdas.data_model.schema.base_record import ForgivingSchema, StrictSchema
+from common_lambdas.data_model.schema.common import ActiveInactiveStatus, CCRequestSchema, CompactEligibilityStatus
+from common_lambdas.data_model.schema.fields import (
     ActiveInactive,
     Compact,
     CompactEligibility,
@@ -22,7 +18,10 @@ from cc_common.data_model.schema.fields import (
     Jurisdiction,
     SocialSecurityNumber,
 )
-from cc_common.data_model.schema.investigation.api import InvestigationGeneralResponseSchema
+from common_lambdas.data_model.schema.investigation.api import InvestigationGeneralResponseSchema
+from marshmallow import ValidationError, pre_load, validates_schema
+from marshmallow.fields import Date, Email, List, Nested, Raw, String
+from marshmallow.validate import Length
 
 
 class LicenseExpirationStatusMixin:

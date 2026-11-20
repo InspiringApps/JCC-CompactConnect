@@ -2,8 +2,10 @@
 from datetime import date, datetime
 from uuid import UUID
 
-from cc_common.data_model.schema.common import CCDataClass
-from cc_common.data_model.schema.license.record import LicenseRecordSchema, LicenseUpdateRecordSchema
+from common_lambdas.data_model.schema.common import CCDataClass
+
+# This class loads the PsyPACT license record in this package, not the shared record schema.
+from .record import LicenseRecordSchema, LicenseUpdateRecordSchema
 
 
 class LicenseData(CCDataClass):

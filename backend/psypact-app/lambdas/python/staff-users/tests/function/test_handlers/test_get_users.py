@@ -25,7 +25,7 @@ class TestGetUsers(TstFunction):
         self.assertEqual([], json.loads(resp['body'])['users'])
 
     def test_get_users_compact_admin(self):
-        from cc_common.data_model.schema.common import StaffUserStatus
+        from common_lambdas.data_model.schema.common import StaffUserStatus
 
         # One user who is a compact admin in both aslp and octp
         self._create_compact_staff_user(compacts=['aslp', 'octp'])

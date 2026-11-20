@@ -26,8 +26,8 @@ class TestApiHandler(TstLambdas):
         self.assertEqual('{"message": "OK"}', resp['body'])
 
     def test_unauthorized(self):
-        from cc_common.exceptions import CCUnauthorizedException
         from cc_common.utils import api_handler
+        from common_lambdas.exceptions import CCUnauthorizedException
 
         @api_handler
         def lambda_handler(event: dict, context: LambdaContext):
@@ -40,8 +40,8 @@ class TestApiHandler(TstLambdas):
         self.assertEqual(401, resp['statusCode'])
 
     def test_access_denied(self):
-        from cc_common.exceptions import CCAccessDeniedException
         from cc_common.utils import api_handler
+        from common_lambdas.exceptions import CCAccessDeniedException
 
         @api_handler
         def lambda_handler(event: dict, context: LambdaContext):
@@ -54,8 +54,8 @@ class TestApiHandler(TstLambdas):
         self.assertEqual(403, resp['statusCode'])
 
     def test_not_found(self):
-        from cc_common.exceptions import CCNotFoundException
         from cc_common.utils import api_handler
+        from common_lambdas.exceptions import CCNotFoundException
 
         @api_handler
         def lambda_handler(event: dict, context: LambdaContext):
@@ -69,8 +69,8 @@ class TestApiHandler(TstLambdas):
         self.assertEqual({'message': "I don't see it."}, json.loads(resp['body']))
 
     def test_invalid_request(self):
-        from cc_common.exceptions import CCInvalidRequestException
         from cc_common.utils import api_handler
+        from common_lambdas.exceptions import CCInvalidRequestException
 
         @api_handler
         def lambda_handler(event: dict, context: LambdaContext):

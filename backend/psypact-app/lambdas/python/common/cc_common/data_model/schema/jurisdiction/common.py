@@ -1,1 +1,0 @@
-JURISDICTION_TYPE = 'jurisdiction'

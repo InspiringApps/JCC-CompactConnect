@@ -1,12 +1,11 @@
 # ruff: noqa: N801, N802, N815, ARG002 invalid-name unused-kwargs
+from cc_common.config import config
+from common_lambdas.data_model.schema.base_record import ForgivingSchema
+from common_lambdas.data_model.schema.fields import PositiveDecimal
+from common_lambdas.data_model.schema.jurisdiction.common import JURISDICTION_TYPE
 from marshmallow import Schema
 from marshmallow.fields import Boolean, Email, List, Nested, String
 from marshmallow.validate import Length, OneOf
-
-from cc_common.config import config
-from cc_common.data_model.schema.base_record import ForgivingSchema
-from cc_common.data_model.schema.fields import PositiveDecimal
-from cc_common.data_model.schema.jurisdiction.common import JURISDICTION_TYPE
 
 
 class JurisdictionJurisprudenceRequirementsResponseSchema(ForgivingSchema):

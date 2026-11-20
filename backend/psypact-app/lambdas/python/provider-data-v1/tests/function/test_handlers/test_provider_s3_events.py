@@ -92,7 +92,7 @@ class TestProviderUserBucketS3Events(TstFunction):
         return provider_users_api_handler(event, self.mock_context)
 
     def _when_testing_military_affiliation_s3_object_create_event(self):
-        from cc_common.data_model.schema.common import MilitaryStatus
+        from common_lambdas.data_model.schema.common import MilitaryStatus
 
         self.test_data_generator.put_default_provider_record_in_provider_table(
             value_overrides={
@@ -159,7 +159,7 @@ class TestProviderUserBucketS3Events(TstFunction):
     def test_provider_user_bucket_event_handler_sets_latest_military_affiliation_to_active_and_older_to_inactive(self):
         """Test that when two military affiliation records are uploaded, the latest is set to
         active and older to inactive."""
-        from cc_common.data_model.schema.military_affiliation.common import MilitaryAffiliationStatus
+        from common_lambdas.data_model.schema.military_affiliation.common import MilitaryAffiliationStatus
         from handlers.provider_s3_events import process_provider_s3_events
 
         # Set up provider record
@@ -266,8 +266,8 @@ class TestProviderUserBucketS3Events(TstFunction):
 
     def test_provider_user_bucket_event_handler_creates_provider_update_record(self):
         """Test that processing military affiliation S3 event creates a provider update record with expected values."""
-        from cc_common.data_model.schema.common import UpdateCategory
         from cc_common.data_model.schema.provider import ProviderUpdateData
+        from common_lambdas.data_model.schema.common import UpdateCategory
         from handlers.provider_s3_events import process_provider_s3_events
 
         event = self._when_testing_military_affiliation_s3_object_create_event()

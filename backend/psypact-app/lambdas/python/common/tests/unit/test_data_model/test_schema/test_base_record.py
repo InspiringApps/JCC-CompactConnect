@@ -6,7 +6,7 @@ from tests import TstLambdas
 class TestRegistration(TstLambdas):
     def test_license_privilege_lookup(self):
         from cc_common.data_model.schema import LicenseRecordSchema, PrivilegeRecordSchema, ProviderRecordSchema
-        from cc_common.data_model.schema.base_record import BaseRecordSchema
+        from common_lambdas.data_model.schema.base_record import BaseRecordSchema
 
         with open('tests/resources/dynamo/privilege.json') as f:
             privilege_data = json.load(f)
@@ -27,8 +27,8 @@ class TestRegistration(TstLambdas):
         self.assertIsInstance(provider_schema, ProviderRecordSchema)
 
     def test_invalid_type(self):
-        from cc_common.data_model.schema.base_record import BaseRecordSchema
-        from cc_common.exceptions import CCInternalException
+        from common_lambdas.data_model.schema.base_record import BaseRecordSchema
+        from common_lambdas.exceptions import CCInternalException
 
         with self.assertRaises(CCInternalException):
             BaseRecordSchema.get_schema_by_type('some-unsupported-type')

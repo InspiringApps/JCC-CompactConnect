@@ -3,7 +3,7 @@ from datetime import datetime
 from unittest.mock import patch
 from uuid import UUID
 
-from cc_common.data_model.update_tier_enum import UpdateTierEnum
+from common_lambdas.data_model.update_tier_enum import UpdateTierEnum
 from common_test.test_constants import (
     DEFAULT_AA_SUBMITTING_USER_ID,
     DEFAULT_DATE_OF_UPDATE_TIMESTAMP,
@@ -35,7 +35,7 @@ TEST_ENCUMBRANCE_EFFECTIVE_DATE = '2023-01-15'
 
 
 def _generate_test_investigation_close_with_encumbrance_body():
-    from cc_common.data_model.schema.common import ClinicalPrivilegeActionCategory, EncumbranceType
+    from common_lambdas.data_model.schema.common import ClinicalPrivilegeActionCategory, EncumbranceType
 
     return {
         'encumbrance': {
@@ -82,9 +82,9 @@ class TestPostPrivilegeInvestigation(TstFunction):
         # return both the test event and the test privilege record
         return test_event, test_privilege_record
 
-    @patch('cc_common.event_bus_client.EventBusClient._publish_event')
+    @patch('common_lambdas.event_bus_client.EventBusClient._publish_event')
     def test_privilege_investigation_handler(self, mock_publish_event):
-        from cc_common.data_model.schema.common import InvestigationStatusEnum
+        from common_lambdas.data_model.schema.common import InvestigationStatusEnum
         from handlers.investigation import investigation_handler
         from handlers.providers import get_provider
 
@@ -209,7 +209,7 @@ class TestPostPrivilegeInvestigation(TstFunction):
             response_body,
         )
 
-    @patch('cc_common.event_bus_client.EventBusClient._publish_event')
+    @patch('common_lambdas.event_bus_client.EventBusClient._publish_event')
     def test_privilege_investigation_handler_handles_event_publishing_failure(self, mock_publish_event):
         """Test that privilege investigation handler fails when event publishing fails."""
         from handlers.investigation import investigation_handler
@@ -261,9 +261,9 @@ class TestPostLicenseInvestigation(TstFunction):
         # return both the event and test license record
         return test_event, test_license_record
 
-    @patch('cc_common.event_bus_client.EventBusClient._publish_event')
+    @patch('common_lambdas.event_bus_client.EventBusClient._publish_event')
     def test_license_investigation_handler(self, mock_publish_event):
-        from cc_common.data_model.schema.common import InvestigationStatusEnum
+        from common_lambdas.data_model.schema.common import InvestigationStatusEnum
         from handlers.investigation import investigation_handler
         from handlers.providers import get_provider
 
@@ -390,7 +390,7 @@ class TestPostLicenseInvestigation(TstFunction):
             response_body,
         )
 
-    @patch('cc_common.event_bus_client.EventBusClient._publish_event')
+    @patch('common_lambdas.event_bus_client.EventBusClient._publish_event')
     def test_license_investigation_handler_handles_event_publishing_failure(self, mock_publish_event):
         """Test that license investigation handler fails when event publishing fails."""
         from handlers.investigation import investigation_handler
@@ -474,7 +474,7 @@ class TestPatchPrivilegeInvestigationClose(TstFunction):
 
         return test_event, test_privilege_record, investigation_id
 
-    @patch('cc_common.event_bus_client.EventBusClient._publish_event')
+    @patch('common_lambdas.event_bus_client.EventBusClient._publish_event')
     def test_privilege_investigation_close_handler(self, mock_publish_event):
         from handlers.investigation import investigation_handler
         from handlers.providers import get_provider
@@ -678,7 +678,7 @@ class TestPatchLicenseInvestigationClose(TstFunction):
 
         return test_event, test_license_record, investigation_id
 
-    @patch('cc_common.event_bus_client.EventBusClient._publish_event')
+    @patch('common_lambdas.event_bus_client.EventBusClient._publish_event')
     def test_license_investigation_close_handler(self, mock_publish_event):
         from handlers.investigation import investigation_handler
         from handlers.providers import get_provider
@@ -824,10 +824,10 @@ class TestMultipleSimultaneousPrivilegeInvestigations(TstFunction):
         self.test_data_generator.store_record_in_provider_table(privilege.serialize_to_database_record())
         return privilege
 
-    @patch('cc_common.event_bus_client.EventBusClient._publish_event')
+    @patch('common_lambdas.event_bus_client.EventBusClient._publish_event')
     def test_closing_one_of_multiple_investigations_maintains_investigation_status(self, mock_publish_event):
         """Test that closing one investigation while another is open maintains investigation status."""
-        from cc_common.data_model.schema.common import InvestigationStatusEnum, UpdateCategory
+        from common_lambdas.data_model.schema.common import InvestigationStatusEnum, UpdateCategory
         from handlers.investigation import investigation_handler
         from handlers.providers import get_provider
 
@@ -1061,10 +1061,10 @@ class TestMultipleSimultaneousLicenseInvestigations(TstFunction):
         self.test_data_generator.store_record_in_provider_table(license_data.serialize_to_database_record())
         return license_data
 
-    @patch('cc_common.event_bus_client.EventBusClient._publish_event')
+    @patch('common_lambdas.event_bus_client.EventBusClient._publish_event')
     def test_closing_one_of_multiple_investigations_maintains_investigation_status(self, mock_publish_event):
         """Test that closing one investigation while another is open maintains investigation status."""
-        from cc_common.data_model.schema.common import InvestigationStatusEnum, UpdateCategory
+        from common_lambdas.data_model.schema.common import InvestigationStatusEnum, UpdateCategory
         from handlers.investigation import investigation_handler
         from handlers.providers import get_provider
 

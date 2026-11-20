@@ -1,6 +1,6 @@
 from cc_common.config import config, logger
-from cc_common.data_model.update_tier_enum import UpdateTierEnum
 from cc_common.utils import logger_inject_kwargs
+from common_lambdas.data_model.update_tier_enum import UpdateTierEnum
 
 
 @logger_inject_kwargs(logger, 'compact', 'provider_id')

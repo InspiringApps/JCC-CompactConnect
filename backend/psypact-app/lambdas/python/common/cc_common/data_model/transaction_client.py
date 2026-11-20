@@ -1,10 +1,9 @@
 from datetime import UTC, datetime, timedelta
 
 from boto3.dynamodb.conditions import Key
-
 from cc_common.config import _Config, logger
-from cc_common.data_model.schema.transaction import TransactionData
-from cc_common.data_model.schema.transaction.record import UnsettledTransactionRecordSchema
+from common_lambdas.data_model.schema.transaction import TransactionData
+from common_lambdas.data_model.schema.transaction.record import UnsettledTransactionRecordSchema
 
 AUTHORIZE_DOT_NET_CLIENT_TYPE = 'authorize.net'
 

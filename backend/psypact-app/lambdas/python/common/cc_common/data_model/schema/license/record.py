@@ -1,15 +1,12 @@
 # ruff: noqa: N801, N815, ARG002  invalid-name unused-argument
-from marshmallow import ValidationError, post_dump, pre_dump, post_load, validates_schema
-from marshmallow.fields import AwareDateTime, Date, Email, List, Nested, String, UUID
-from marshmallow.validate import Length
-
 from cc_common.config import config
-from cc_common.data_model.schema.common import (
+from common_lambdas.data_model.schema.base_record import BaseRecordSchema, ForgivingSchema
+from common_lambdas.data_model.schema.common import (
     LICENSE_UPLOAD_UPDATE_CATEGORIES,
     ChangeHashMixin,
     UpdateCategory,
 )
-from cc_common.data_model.schema.fields import (
+from common_lambdas.data_model.schema.fields import (
     ActiveInactive,
     Compact,
     CompactEligibility,
@@ -19,11 +16,12 @@ from cc_common.data_model.schema.fields import (
     LicenseEncumberedStatusField,
     UpdateType,
 )
-from cc_common.data_model.schema.investigation.record import InvestigationDetailsSchema
-from cc_common.data_model.update_tier_enum import UpdateTierEnum
+from common_lambdas.data_model.schema.investigation.record import InvestigationDetailsSchema
+from common_lambdas.data_model.update_tier_enum import UpdateTierEnum
 from common_lambdas.schema.license import PsypactLicenseSchema
-
-from cc_common.data_model.schema.base_record import BaseRecordSchema, ForgivingSchema
+from marshmallow import ValidationError, post_dump, post_load, pre_dump, validates_schema
+from marshmallow.fields import UUID, AwareDateTime, Date, Email, List, Nested, String
+from marshmallow.validate import Length
 
 SYSTEM_OWNED_LICENSE_FIELDS = frozenset(
     {
