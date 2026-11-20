@@ -1,4 +1,4 @@
-from cc_common.config import config, logger
+from cc_common.config import logger
 from cc_common.utils import logger_inject_kwargs
 from common_lambdas.data_model.update_tier_enum import UpdateTierEnum
 
@@ -15,7 +15,11 @@ def get_provider_information(compact: str, provider_id: str) -> dict:
     :return: Provider profile information.
     """
     # Collect all main provider records and privilege update records, which are included in tier one.
-    provider_user_records = config.data_client.get_provider_user_records(
+    # install() replaces this singleton with PsypactConfig before the handler runs.
+    # The local cc_common config still builds ProviderUserRecords, which has no authorizations.
+    from common_lambdas.config import config as runtime_config
+
+    provider_user_records = runtime_config.data_client.get_provider_user_records(
         compact=compact, provider_id=provider_id, include_update_tier=UpdateTierEnum.TIER_ONE
     )
     response = provider_user_records.generate_api_response_object()
