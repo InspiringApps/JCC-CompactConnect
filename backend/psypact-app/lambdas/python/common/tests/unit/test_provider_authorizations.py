@@ -46,6 +46,16 @@ class TestApprovedAuthorizations(TstLambdas):
 
         self.assertEqual([], PsypactProviderUserRecords([]).approved_authorizations())
 
+    def test_provider_record_keeps_current_home_jurisdiction(self):
+        from cc_common.psypact_records import PsypactProviderUserRecords
+
+        with open('tests/resources/dynamo/provider.json') as provider_file:
+            provider = json.load(provider_file)
+
+        records = PsypactProviderUserRecords([provider])
+
+        self.assertEqual('oh', records.get_provider_record().currentHomeJurisdiction)
+
 
 class TestAuthorizationResponseSchemas(TstLambdas):
     def setUp(self):

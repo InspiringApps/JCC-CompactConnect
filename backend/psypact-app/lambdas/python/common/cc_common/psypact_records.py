@@ -20,6 +20,7 @@ from common_lambdas.data_model.schema.license import LicenseData
 from common_lambdas.data_model.schema.military_affiliation import MilitaryAffiliationData
 from common_lambdas.data_model.schema.privilege.jcc_data import PrivilegeData, PrivilegeUpdateData
 
+from cc_common.data_model.schema.provider import ProviderData as PsypactProviderData
 from cc_common.schema.authorization import AUTHORIZATION_RECORD_TYPE, AuthorizationData
 
 
@@ -70,6 +71,12 @@ class PsypactProviderUserRecords(ProviderUserRecords):
         # Pull authorizations out before the copied utility sees them. It logs any type it does not know.
         authorization_records = [record for record in records if record.get('type') == ProviderRecordType.AUTHORIZATION]
         super().__init__([record for record in records if record.get('type') != ProviderRecordType.AUTHORIZATION])
+        # The shared utility loads the Cosmetology provider, which has no home jurisdiction.
+        self._provider_records = [
+            PsypactProviderData.from_database_record(record)
+            for record in records
+            if record.get('type') == ProviderRecordType.PROVIDER
+        ]
         self._authorization_records = [
             AuthorizationData.from_database_record(record) for record in authorization_records
         ]
