@@ -36,6 +36,8 @@ export interface State {
     isLoadingApplications: boolean;
     isLoadingApplicationConfig: boolean;
     isCreatingApplication: boolean;
+    isUpdatingApplication: boolean;
+    isUploadingApplicationDocuments: boolean;
     applicationConfig: ApplicationConfig | null;
     refreshTokenTimeoutId: number | null;
     isAutoLogoutWarning: boolean;
@@ -57,6 +59,8 @@ export const state: State = {
     isLoadingApplications: false,
     isLoadingApplicationConfig: false,
     isCreatingApplication: false,
+    isUpdatingApplication: false,
+    isUploadingApplicationDocuments: false,
     applicationConfig: null,
     refreshTokenTimeoutId: null,
     isAutoLogoutWarning: false,

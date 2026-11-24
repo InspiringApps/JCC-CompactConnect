@@ -19,6 +19,7 @@ import GraduationCapIcon from '@components/Icons/GraduationCapIcon/GraduationCap
 import ClipboardCheckIcon from '@components/Icons/ClipboardCheckIcon/ClipboardCheckIcon.vue';
 import LocationPinIcon from '@components/Icons/LocationPinIcon/LocationPinIcon.vue';
 import PencilIcon from '@components/Icons/PencilIcon/PencilIcon.vue';
+import { applicationSectionRoutes } from '@pages/Applications/_mixins/applicationSection.mixin';
 import {
     Application,
     ApplicationSection,
@@ -204,7 +205,10 @@ class ApplicationChecklist extends Vue {
     }
 
     openSection(section: ChecklistSection): void {
-        console.log('open application section', this.applicationId, section.key);
+        this.$router.push({
+            name: applicationSectionRoutes[section.key],
+            params: { compact: this.$route.params.compact, applicationId: this.applicationId },
+        });
     }
 
     continueApplication(): void {

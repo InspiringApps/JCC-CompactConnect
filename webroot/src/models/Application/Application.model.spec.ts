@@ -103,13 +103,13 @@ describe('Application model', () => {
             program: null,
             department: null,
             conferredDate: null,
-            isCompleted: false,
+            isCompleted: null,
             accreditingBody: null,
             accreditingYear: null,
-            isAccreditedByAuthority: false,
-            isProgramEquivalent: false,
+            isAccreditedByAuthority: null,
+            isProgramEquivalent: null,
             accreditingContact: null,
-            hasResidence: false,
+            hasResidence: null,
             transcripts: [],
         });
         expect(application.conductHistory).to.matchPattern({
@@ -187,7 +187,9 @@ describe('Application model', () => {
         };
         const attestation = {
             attestationId: 'test-attestationId',
+            text: 'test-text',
             version: '1',
+            value: true,
         };
         const file = {
             filename: 'test-filename',
@@ -385,7 +387,9 @@ describe('Application model', () => {
         };
         const attestation = {
             attestationId: 'test-attestationId',
+            text: 'test-text',
             version: '1',
+            value: true,
         };
         const file = {
             filename: 'test-filename.pdf',
@@ -592,6 +596,38 @@ describe('Application model', () => {
         expect(application.homeState).to.matchPattern(defaultApplication.homeState);
         expect(application.acknowledgements).to.matchPattern(defaultApplication.acknowledgements);
     });
+    it('should create Application attestations through serializer with null defaults when server values are missing', () => {
+        const application = ApplicationSerializer.fromServer({
+            attestations: [
+                {
+                    attestationId: 'test-attestationId-1',
+                    version: '1',
+                },
+                {
+                    attestationId: 'test-attestationId-2',
+                    text: 'test-text-2',
+                    version: 2,
+                    value: false,
+                },
+            ],
+        });
+
+        // Test field values
+        expect(application.attestations).to.matchPattern([
+            {
+                attestationId: 'test-attestationId-1',
+                text: null,
+                version: '1',
+                value: null,
+            },
+            {
+                attestationId: 'test-attestationId-2',
+                text: 'test-text-2',
+                version: 2,
+                value: false,
+            },
+        ]);
+    });
     it('should create an Application model with partial sections merged over section defaults', () => {
         const application = new Application({
             education: {
@@ -766,11 +802,89 @@ describe('Application model', () => {
         ]);
     });
     it('should serialize an Application for transmission to server', () => {
+        const getAttestation = (key: string, value: boolean | null) => ({
+            attestationId: `test-attestationId-${key}`,
+            text: `test-text-${key}`,
+            version: '1',
+            value,
+        });
+        const getTransmitAttestation = (key: string, value: boolean | null) => ({
+            attestationId: `test-attestationId-${key}`,
+            version: '1',
+            value,
+        });
+        const application = new Application({
+            id: 'test-id',
+            attestations: [getAttestation('application', true)],
+            education: {
+                applicantStatus: ApplicantSectionStatus.COMPLETE,
+                accreditingContact: {
+                    name: 'test-name',
+                    attestations: [getAttestation('education', true)],
+                },
+            },
+            conductHistory: {
+                applicantStatus: ApplicantSectionStatus.COMPLETE,
+                attestations: [getAttestation('conduct', false)],
+            },
+            homeState: {
+                applicantStatus: ApplicantSectionStatus.COMPLETE,
+                applicationTypes: [{
+                    applicationType: ApplicationType.APIT,
+                    state: 'co',
+                    attestations: [getAttestation('homeState', null)],
+                }],
+            },
+            acknowledgements: {
+                applicantStatus: ApplicantSectionStatus.COMPLETE,
+                attestations: [getAttestation('acknowledgements', true)],
+            },
+        });
+        const transmit = ApplicationSerializer.toServer(application);
+
+        expect(transmit).to.matchPattern({
+            id: application.id,
+            attestations: [getTransmitAttestation('application', true)],
+            education: {
+                accreditingContact: {
+                    attestations: [getTransmitAttestation('education', true)],
+                },
+            },
+            conductHistory: {
+                attestations: [getTransmitAttestation('conduct', false)],
+            },
+            homeState: {
+                applicationTypes: [{
+                    applicationType: ApplicationType.APIT,
+                    attestations: [getTransmitAttestation('homeState', null)],
+                }],
+            },
+            acknowledgements: {
+                attestations: [getTransmitAttestation('acknowledgements', true)],
+            },
+        });
+    });
+    it('should serialize an Application with default attestations for transmission to server', () => {
         const application = new Application({
             id: 'test-id',
         });
         const transmit = ApplicationSerializer.toServer(application);
 
-        expect(transmit.id).to.equal(application.id);
+        expect(transmit).to.matchPattern({
+            id: application.id,
+            attestations: [],
+            education: {
+                accreditingContact: null,
+            },
+            conductHistory: {
+                attestations: [],
+            },
+            homeState: {
+                applicationTypes: [],
+            },
+            acknowledgements: {
+                attestations: [],
+            },
+        });
     });
 });

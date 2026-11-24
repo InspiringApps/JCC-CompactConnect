@@ -9,7 +9,7 @@ import chaiMatchPattern from 'chai-match-pattern';
 import { use, expect } from 'chai';
 import sinon from 'sinon';
 import { mountFull, mountShallow } from '@tests/helpers/setup';
-import ApplicationChecklist from '@pages/ApplicationChecklist/ApplicationChecklist.vue';
+import ApplicationChecklist from '@pages/Applications/ApplicationChecklist/ApplicationChecklist.vue';
 import { CompactSerializer, CompactType } from '@models/Compact/Compact.model';
 import {
     Application,
@@ -187,20 +187,28 @@ describe('ApplicationChecklist page', async () => {
         expect(component.getStatusClass(ApplicantSectionStatus.NEEDS_ATTENTION)).to.equal('attention');
         expect(component.getStatusClass(ApplicantSectionStatus.CONFIRM_DETAILS)).to.equal('attention');
     });
-    it('should log section and continue actions', async () => {
+    it('should route to the selected section page', async () => {
+        const wrapper = await mountChecklist('2', mountShallow);
+        const component = wrapper.vm;
+        const pushStub = sinon.stub(component.$router, 'push');
+
+        component.openSection(component.sections[2]);
+        pushStub.restore();
+
+        expect(component.sections[2].key).to.equal(ApplicationSection.EDUCATION);
+        expect(pushStub.firstCall.args[0]).to.matchPattern({
+            name: 'ApplicationEducation',
+            params: { compact: CompactType.PSYPACT, applicationId: '2' },
+        });
+    });
+    it('should log the continue action', async () => {
         const wrapper = await mountChecklist('2', mountShallow);
         const component = wrapper.vm;
         const logStub = sinon.stub(console, 'log');
 
-        component.openSection(component.sections[2]);
         component.continueApplication();
         logStub.restore();
 
-        expect(logStub.firstCall.args).to.matchPattern([
-            'open application section',
-            '2',
-            ApplicationSection.EDUCATION,
-        ]);
-        expect(logStub.secondCall.args).to.matchPattern(['continue application', '2']);
+        expect(logStub.firstCall.args).to.matchPattern(['continue application', '2']);
     });
 });

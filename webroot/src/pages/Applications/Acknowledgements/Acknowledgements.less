@@ -1,0 +1,43 @@
+//
+//  Acknowledgements.less
+//  CompactConnect
+//
+//  Created by InspiringApps on 11/24/2026.
+//
+
+@import '../_styles/applicationSection.less';
+
+.acknowledgements-container {
+    .application-section-styles();
+
+    .statements-header {
+        display: none;
+
+        @media @tabletWidth {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(12rem, max-content);
+            gap: 2.4rem;
+            max-width: 82rem;
+            padding-bottom: 0.8rem;
+            border-bottom: 1px solid @veryLightGrey;
+            color: @fontColorLight;
+            font-weight: @fontWeightMedium;
+            font-size: @fontSizeSmall;
+        }
+    }
+
+    .sign-and-submit-text {
+        max-height: 30rem;
+        margin-bottom: 2rem;
+        padding: 1.6rem;
+        border-radius: @borderRadiusSmall;
+        overflow-y: auto;
+        font-size: @fontSizeSmaller;
+        white-space: pre-line;
+        background-color: @veryLightGrey;
+
+        @media @tabletWidth {
+            max-width: 82rem;
+        }
+    }
+}

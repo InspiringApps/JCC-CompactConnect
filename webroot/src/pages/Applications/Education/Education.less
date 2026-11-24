@@ -1,0 +1,31 @@
+//
+//  Education.less
+//  CompactConnect
+//
+//  Created by InspiringApps on 11/24/2026.
+//
+
+@import '../_styles/applicationSection.less';
+
+.education-container {
+    .year-input {
+        :deep(input) {
+            max-width: 12rem;
+        }
+    }
+
+    .application-section-styles();
+
+    .info-text {
+        margin: 0;
+    }
+
+    .verification-panel {
+        .form-grid {
+            :deep(select),
+            :deep(input:not([type=checkbox]):not([type=radio])) {
+                background-color: @white;
+            }
+        }
+    }
+}

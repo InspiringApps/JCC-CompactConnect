@@ -1,0 +1,75 @@
+//
+//  PersonalInformation.less
+//  CompactConnect
+//
+//  Created by InspiringApps on 11/24/2026.
+//
+
+@import '../_styles/applicationSection.less';
+
+.personal-information-container {
+    .application-section-styles();
+
+    .ssn-input {
+        @media @tabletWidth {
+            max-width: 16rem;
+        }
+    }
+
+    .languages-container {
+        margin-bottom: 2.4rem;
+
+        .language-select {
+            margin-bottom: 0.8rem;
+        }
+    }
+
+    .language-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .language-pill {
+        display: flex;
+        align-items: center;
+        padding: 0.3rem 0.4rem 0.3rem 1rem;
+        border-radius: @borderRadiusPillShape;
+        color: @white;
+        font-size: @fontSizeSmall;
+        background-color: @darkBlue;
+    }
+
+    .remove-language {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.8rem;
+        height: 1.8rem;
+        margin-left: 0.4rem;
+        padding: 0.4rem;
+        border: none;
+        border-radius: @borderRadiusPillShape;
+        color: @white;
+        background-color: transparent;
+        cursor: pointer;
+
+        &:hover,
+        &:focus-visible {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        :deep(svg) {
+            width: 100%;
+            height: 100%;
+        }
+
+        :deep(path) {
+            fill: currentColor;
+            stroke: currentColor;
+        }
+    }
+}

@@ -79,7 +79,9 @@ export interface ApplicationReview {
 
 export interface ApplicationAttestation {
     attestationId?: string | null;
+    text?: string | null;
     version?: string | number | null;
+    value?: boolean | null;
 }
 
 export enum ApplicationLicenseStatus {
@@ -190,13 +192,13 @@ export interface InterfaceApplicationCreate {
         program?: string | null;
         department?: string | null;
         conferredDate?: string | null;
-        isCompleted?: boolean;
+        isCompleted?: boolean | null;
         accreditingBody?: string | null;
         accreditingYear?: string | null;
-        isAccreditedByAuthority?: boolean;
-        isProgramEquivalent?: boolean;
+        isAccreditedByAuthority?: boolean | null;
+        isProgramEquivalent?: boolean | null;
         accreditingContact?: ApplicationAccreditingContact | null;
-        hasResidence?: boolean;
+        hasResidence?: boolean | null;
         transcripts?: Array<ApplicationFile>;
     };
     conductHistory?: {
@@ -298,13 +300,13 @@ export class Application implements InterfaceApplicationCreate {
         program: null,
         department: null,
         conferredDate: null,
-        isCompleted: false,
+        isCompleted: null,
         accreditingBody: null,
         accreditingYear: null,
-        isAccreditedByAuthority: false,
-        isProgramEquivalent: false,
+        isAccreditedByAuthority: null,
+        isProgramEquivalent: null,
         accreditingContact: null,
-        hasResidence: false,
+        hasResidence: null,
         transcripts: [],
     };
     public conductHistory? = { // eslint-disable-line lines-between-class-members
@@ -517,7 +519,9 @@ export class ApplicationAttestationsSerializer {
             serverAttestations.forEach((json) => {
                 const attestation: ApplicationAttestation = {
                     attestationId: json.attestationId,
+                    text: json.text ?? null,
                     version: json.version,
+                    value: json.value ?? null,
                 };
 
                 attestations.push(attestation);
@@ -525,6 +529,14 @@ export class ApplicationAttestationsSerializer {
         }
 
         return attestations;
+    }
+
+    static toServer(attestations?: Array<ApplicationAttestation>): Array<any> {
+        return (attestations || []).map((attestation) => ({
+            attestationId: attestation.attestationId,
+            version: attestation.version,
+            value: attestation.value ?? null,
+        }));
     }
 }
 
@@ -594,6 +606,13 @@ export class ApplicationFilesSerializer {
         }
 
         return files;
+    }
+
+    static toServer(files?: Array<ApplicationFile>): Array<any> {
+        return (files || []).map((file) => ({
+            filename: file.filename,
+            sizeBytes: file.sizeBytes,
+        }));
     }
 }
 
@@ -724,14 +743,14 @@ export class ApplicationSerializer {
                 program: json.education?.program,
                 department: json.education?.department,
                 conferredDate: json.education?.conferredDate,
-                isCompleted: json.education?.isCompleted || false,
+                isCompleted: json.education?.isCompleted ?? null,
                 accreditingBody: json.education?.accreditingBody,
                 accreditingYear: json.education?.accreditingYear,
-                isAccreditedByAuthority: json.education?.isAccreditedByAuthority || false,
-                isProgramEquivalent: json.education?.isProgramEquivalent || false,
+                isAccreditedByAuthority: json.education?.isAccreditedByAuthority ?? null,
+                isProgramEquivalent: json.education?.isProgramEquivalent ?? null,
                 accreditingContact: ApplicationAccreditingContactSerializer
                     .fromServer(json.education?.accreditingContact),
-                hasResidence: json.education?.hasResidence || false,
+                hasResidence: json.education?.hasResidence ?? null,
                 transcripts: ApplicationFilesSerializer.fromServer(json.education?.transcripts),
             },
             conductHistory: {
@@ -762,8 +781,34 @@ export class ApplicationSerializer {
     }
 
     static toServer(applicationModel: Application): any {
+        const {
+            attestations,
+            education,
+            conductHistory,
+            homeState,
+            acknowledgements,
+        }: InterfaceApplicationCreate = applicationModel;
+
         return {
             id: applicationModel.id,
+            attestations: ApplicationAttestationsSerializer.toServer(attestations),
+            education: {
+                accreditingContact: (education?.accreditingContact) ? {
+                    attestations: ApplicationAttestationsSerializer.toServer(education.accreditingContact.attestations),
+                } : null,
+            },
+            conductHistory: {
+                attestations: ApplicationAttestationsSerializer.toServer(conductHistory?.attestations),
+            },
+            homeState: {
+                applicationTypes: (homeState?.applicationTypes || []).map((homeStateType) => ({
+                    applicationType: homeStateType.applicationType,
+                    attestations: ApplicationAttestationsSerializer.toServer(homeStateType.attestations),
+                })),
+            },
+            acknowledgements: {
+                attestations: ApplicationAttestationsSerializer.toServer(acknowledgements?.attestations),
+            },
         };
     }
 }

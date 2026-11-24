@@ -226,6 +226,74 @@ export default {
     createApplicationFailureLicensee: ({ commit }, error: Error) => {
         commit(MutationTypes.CREATE_APPLICATION_FAILURE, error);
     },
+    // UPDATE LICENSEE APPLICATION
+    updateApplicationRequestLicensee: async ({ commit, dispatch, state }, { data }) => {
+        const requestUserId = state.model?.id;
+
+        commit(MutationTypes.UPDATE_APPLICATION_REQUEST);
+        return dataApi.updateAuthenticatedLicenseeApplication(data).then((application) => {
+            const isRequestUserCurrent = state.model?.id === requestUserId;
+
+            if (isRequestUserCurrent) {
+                dispatch('updateApplicationSuccessLicensee', application);
+            }
+
+            return (isRequestUserCurrent) ? application : null;
+        }).catch((error) => {
+            if (state.model?.id === requestUserId) {
+                dispatch('updateApplicationFailureLicensee', error);
+
+                throw error;
+            }
+
+            return null;
+        });
+    },
+    updateApplicationSuccessLicensee: ({ commit }, application) => {
+        commit(MutationTypes.UPDATE_APPLICATION_SUCCESS, application);
+    },
+    updateApplicationFailureLicensee: ({ commit }, error: Error) => {
+        commit(MutationTypes.UPDATE_APPLICATION_FAILURE, error);
+    },
+    // UPLOAD LICENSEE APPLICATION DOCUMENTS
+    uploadApplicationDocumentsRequest: async ({ commit, dispatch }, { applicationId, files = [] }) => {
+        commit(MutationTypes.UPLOAD_APPLICATION_DOCUMENTS_REQUEST);
+
+        const fileNames = files.map((file: File) => file.name);
+
+        return dataApi.postUploadApplicationDocumentIntent({ applicationId, fileNames }).then(async (intent) => {
+            const documentUploadFields = intent?.documentUploadFields || [];
+
+            await Promise.all(files.map((file: File, index: number) => {
+                const { url: postUrl, fields: uploadFields } = documentUploadFields[index] || {};
+
+                if (!postUrl || !uploadFields) {
+                    throw new Error('Missing fields for Document upload');
+                }
+
+                return dataApi.postUploadApplicationDocument(postUrl, { ...uploadFields }, file)
+                    .then((uploadServerResponse) => {
+                        if (uploadServerResponse?.status !== 204) {
+                            throw new Error('Document Upload Failed');
+                        }
+                    });
+            }));
+
+            dispatch('uploadApplicationDocumentsSuccess');
+
+            return files.map((file: File) => ({ filename: file.name, sizeBytes: file.size }));
+        }).catch((error) => {
+            dispatch('uploadApplicationDocumentsFailure', error);
+
+            throw error;
+        });
+    },
+    uploadApplicationDocumentsSuccess: ({ commit }) => {
+        commit(MutationTypes.UPLOAD_APPLICATION_DOCUMENTS_SUCCESS);
+    },
+    uploadApplicationDocumentsFailure: ({ commit }, error: Error) => {
+        commit(MutationTypes.UPLOAD_APPLICATION_DOCUMENTS_FAILURE, error);
+    },
     // GET APPLICATION CONFIG
     getApplicationConfigRequest: async ({ commit, dispatch }, { compact }) => {
         commit(MutationTypes.GET_APPLICATION_CONFIG_REQUEST);

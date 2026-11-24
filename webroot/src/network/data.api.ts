@@ -741,6 +741,35 @@ export class DataApi {
     }
 
     /**
+     * PATCH Update Authenticated Licensee User application.
+     * @param  {object}               data The application request data (application ID + updated section data).
+     * @return {Promise<Application>}      An Application model instance.
+     */
+    public updateAuthenticatedLicenseeApplication(data: object) {
+        return applicationsDataApi.updateAuthenticatedLicenseeApplication(data);
+    }
+
+    /**
+     * POST Authenticated Licensee User application document upload intent.
+     * @param  {object}          data The upload intent request data (application ID + file names).
+     * @return {Promise<object>}      Intent response object containing presigned S3 urls & params per file.
+     */
+    public postUploadApplicationDocumentIntent(data: object) {
+        return applicationsDataApi.postUploadApplicationDocumentIntent(data);
+    }
+
+    /**
+     * POST Upload Authenticated Licensee User application document to S3.
+     * @param  {string}          postUrl            The presigned S3 url.
+     * @param  {object}          documentUploadData The presigned S3 fields.
+     * @param  {File}            file               The file to upload.
+     * @return {Promise<object>}                    Document upload response object.
+     */
+    public postUploadApplicationDocument(postUrl: string, documentUploadData: any, file: File) {
+        return userDataApi.postUploadMilitaryAffiliationDocument(postUrl, documentUploadData, file);
+    }
+
+    /**
      * GET Application configuration for a compact.
      * @param  {string}                     compact A compact type.
      * @return {Promise<ApplicationConfig>}         An ApplicationConfig model instance.

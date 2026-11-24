@@ -1,0 +1,45 @@
+//
+//  HomeState.less
+//  CompactConnect
+//
+//  Created by InspiringApps on 11/24/2026.
+//
+
+@import '../_styles/applicationSection.less';
+
+.home-state-container {
+    .application-section-styles();
+
+    .home-state-section {
+        padding-bottom: 2rem;
+    }
+
+    .military-container {
+        margin-bottom: 1.6rem;
+
+        .military-checkbox {
+            margin-bottom: 0.4rem;
+        }
+
+        .military-subtext {
+            margin: 0 0 0 3rem;
+            color: @fontColorLight;
+            font-size: @fontSizeSmall;
+        }
+    }
+
+    .home-state-attestation {
+        margin-top: 1.2rem;
+        padding-top: 1.6rem;
+        border-top: 1px solid @veryLightGrey;
+
+        .attestation-checkbox {
+            margin-bottom: 0.8rem;
+        }
+
+        .policy-link {
+            margin-left: 3rem;
+            font-size: @fontSizeSmaller;
+        }
+    }
+}

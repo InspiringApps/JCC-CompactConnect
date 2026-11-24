@@ -34,14 +34,13 @@
                 :name="formInput.name"
                 :placeholder="formInput.placeholder"
                 v-model="localValue"
-                :value="phoneDisplay"
                 :autocomplete="formInput.autocomplete"
                 :aria-label="formInput.label"
                 :aria-describedby="`${formInput.id}-error`"
                 :aria-errormessage="`${formInput.id}-error`"
                 :aria-invalid="!!formInput.errorMessage"
                 @blur="blur(formInput)"
-                @input="input(formInput)"
+                @input="input"
                 :class="{ 'has-error': !!formInput.errorMessage }"
             />
         </div>

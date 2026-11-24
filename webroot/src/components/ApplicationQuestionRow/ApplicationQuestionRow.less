@@ -1,0 +1,57 @@
+//
+//  ApplicationQuestionRow.less
+//  CompactConnect
+//
+//  Created by InspiringApps on 11/24/2026.
+//
+
+.question-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.8rem 2.4rem;
+    align-items: center;
+    padding: 1.2rem 0;
+    border-bottom: 1px solid @veryLightGrey;
+
+    &:last-child {
+        border-bottom: none;
+    }
+
+    @media @tabletWidth {
+        grid-template-columns: minmax(0, 1fr) minmax(12rem, max-content);
+    }
+
+    &.is-stacked {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .question-text {
+        font-size: @fontSizeSmaller;
+        white-space: pre-line;
+    }
+
+    .required-indicator {
+        padding-left: 2px;
+    }
+
+    .question-input {
+        margin: 0;
+
+        :deep(.form-field-error) {
+            margin-top: 0.4rem;
+        }
+
+        :deep(.radio-button-group-container) {
+            flex-wrap: nowrap;
+            margin: 0;
+        }
+
+        :deep(.radio-button-container) {
+            margin-bottom: 0;
+
+            &:last-child {
+                margin-right: 0;
+            }
+        }
+    }
+}

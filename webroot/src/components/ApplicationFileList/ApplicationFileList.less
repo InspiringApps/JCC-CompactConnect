@@ -1,0 +1,62 @@
+//
+//  ApplicationFileList.less
+//  CompactConnect
+//
+//  Created by InspiringApps on 11/24/2026.
+//
+
+.application-file-list {
+    .file-list-title {
+        margin-bottom: 0.6rem;
+        font-weight: @fontWeightBold;
+        font-size: @fontSizeSmaller;
+    }
+
+    .file-list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .file-item {
+        display: flex;
+        align-items: center;
+        padding: 0.4rem 0;
+        font-size: @fontSizeSmaller;
+    }
+
+    .file-name {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .text-link {
+        font-weight: @fontWeightBold;
+    }
+
+    .remove-file {
+        display: flex;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        width: 2.4rem;
+        height: 2.4rem;
+        margin-left: 0.8rem;
+        padding: 0.5rem;
+        border: none;
+        border-radius: @borderRadiusPillShape;
+        color: @fontColorLight;
+        background-color: transparent;
+        cursor: pointer;
+
+        &:hover,
+        &:focus-visible {
+            background-color: @veryLightGrey;
+        }
+
+        :deep(svg) {
+            width: 100%;
+            height: 100%;
+        }
+    }
+}

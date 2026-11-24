@@ -78,10 +78,29 @@ export enum MutationTypes {
     CREATE_APPLICATION_REQUEST = '[User] Create Application Request',
     CREATE_APPLICATION_FAILURE = '[User] Create Application Failure',
     CREATE_APPLICATION_SUCCESS = '[User] Create Application Success',
+    UPDATE_APPLICATION_REQUEST = '[User] Update Application Request',
+    UPDATE_APPLICATION_FAILURE = '[User] Update Application Failure',
+    UPDATE_APPLICATION_SUCCESS = '[User] Update Application Success',
+    UPLOAD_APPLICATION_DOCUMENTS_REQUEST = '[User] Upload Application Documents Request',
+    UPLOAD_APPLICATION_DOCUMENTS_FAILURE = '[User] Upload Application Documents Failure',
+    UPLOAD_APPLICATION_DOCUMENTS_SUCCESS = '[User] Upload Application Documents Success',
     GET_APPLICATION_CONFIG_REQUEST = '[User] Get Application Config Request',
     GET_APPLICATION_CONFIG_FAILURE = '[User] Get Application Config Failure',
     GET_APPLICATION_CONFIG_SUCCESS = '[User] Get Application Config Success',
 }
+
+const upsertLicenseeApplication = (state: any, application: Application): void => {
+    const licensee = state.model?.licensee;
+
+    if (licensee && application) {
+        const applications = licensee.applications || [];
+        const existingIndex = applications.findIndex((existing) => existing.id === application.id);
+
+        licensee.applications = (existingIndex > -1)
+            ? applications.map((existing, index) => ((index === existingIndex) ? application : existing)) // Update
+            : [...applications, application]; // Add
+    }
+};
 
 export default {
     [MutationTypes.LOGIN_REQUEST]: (state: any) => {
@@ -195,6 +214,8 @@ export default {
         state.isLoadingApplications = false;
         state.isLoadingApplicationConfig = false;
         state.isCreatingApplication = false;
+        state.isUpdatingApplication = false;
+        state.isUploadingApplicationDocuments = false;
         state.applicationConfig = null;
         state.refreshTokenTimeoutId = null;
         state.autoLogoutTimeoutId = null;
@@ -364,18 +385,7 @@ export default {
         state.error = error;
     },
     [MutationTypes.GET_APPLICATION_SUCCESS]: (state: any, application: Application) => {
-        const licensee = state.model?.licensee;
-
-        if (licensee && application) {
-            // Update or add the application to the licensee applications
-            const applications = licensee.applications || [];
-            const existingIndex = applications.findIndex((existing) => existing.id === application.id);
-
-            licensee.applications = (existingIndex > -1)
-                ? applications.map((existing, index) => ((index === existingIndex) ? application : existing)) // Update
-                : [...applications, application]; // Add
-        }
-
+        upsertLicenseeApplication(state, application);
         state.isLoadingApplications = false;
         state.error = null;
     },
@@ -395,6 +405,31 @@ export default {
         }
 
         state.isCreatingApplication = false;
+        state.error = null;
+    },
+    [MutationTypes.UPDATE_APPLICATION_REQUEST]: (state: any) => {
+        state.isUpdatingApplication = true;
+        state.error = null;
+    },
+    [MutationTypes.UPDATE_APPLICATION_FAILURE]: (state: any, error: Error) => {
+        state.isUpdatingApplication = false;
+        state.error = error;
+    },
+    [MutationTypes.UPDATE_APPLICATION_SUCCESS]: (state: any, application: Application) => {
+        upsertLicenseeApplication(state, application);
+        state.isUpdatingApplication = false;
+        state.error = null;
+    },
+    [MutationTypes.UPLOAD_APPLICATION_DOCUMENTS_REQUEST]: (state: any) => {
+        state.isUploadingApplicationDocuments = true;
+        state.error = null;
+    },
+    [MutationTypes.UPLOAD_APPLICATION_DOCUMENTS_FAILURE]: (state: any, error: Error) => {
+        state.isUploadingApplicationDocuments = false;
+        state.error = error;
+    },
+    [MutationTypes.UPLOAD_APPLICATION_DOCUMENTS_SUCCESS]: (state: any) => {
+        state.isUploadingApplicationDocuments = false;
         state.error = null;
     },
     [MutationTypes.GET_APPLICATION_CONFIG_REQUEST]: (state: any) => {

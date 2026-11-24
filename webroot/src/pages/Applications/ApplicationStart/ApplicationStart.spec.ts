@@ -9,7 +9,7 @@ import chaiMatchPattern from 'chai-match-pattern';
 import { use, expect } from 'chai';
 import sinon from 'sinon';
 import { mountFull, mountShallow } from '@tests/helpers/setup';
-import ApplicationStart from '@pages/ApplicationStart/ApplicationStart.vue';
+import ApplicationStart from '@pages/Applications/ApplicationStart/ApplicationStart.vue';
 import { CompactSerializer, CompactType } from '@models/Compact/Compact.model';
 import { Application, ApplicationType } from '@models/Application/Application.model';
 import store from '@store/index';

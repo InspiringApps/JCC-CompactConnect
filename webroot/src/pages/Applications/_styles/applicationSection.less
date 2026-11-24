@@ -1,0 +1,176 @@
+//
+//  applicationSection.less
+//  CompactConnect
+//
+//  Created by InspiringApps on 11/24/2026.
+//
+
+// Shared application section page styles, applied inside each page's scoped container
+.application-section-styles() {
+    .section-card {
+        width: 100%;
+        margin-bottom: 1.2rem;
+        padding: 2.4rem 2rem 0.8rem;
+        border-radius: @borderRadiusLarge;
+        background-color: @white;
+
+        @media @tabletWidth {
+            padding: 2.4rem 3rem 1.2rem;
+        }
+    }
+
+    .card-group + .card-group {
+        margin-top: 1.2rem;
+        padding-top: 2rem;
+        border-top: 1px solid @veryLightGrey;
+    }
+
+    .card-title {
+        margin-bottom: 1.2rem;
+        font-weight: @fontWeightMedium;
+        font-size: @h3FontSize;
+    }
+
+    .card-subtitle {
+        margin-bottom: 0.4rem;
+        font-weight: @fontWeightBold;
+    }
+
+    .card-intro {
+        margin-bottom: 1.6rem;
+        color: @fontColorLight;
+        font-size: @fontSizeSmaller;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        column-gap: 1.6rem;
+
+        @media @tabletWidth {
+            grid-template-columns: repeat(2, minmax(0, 24rem));
+        }
+
+        &.three-column {
+            @media @tabletWidth {
+                grid-template-columns: minmax(0, 18rem) minmax(0, 12rem) minmax(0, 9rem);
+            }
+        }
+
+        &.wide {
+            @media @tabletWidth {
+                grid-template-columns: minmax(0, 49.6rem);
+            }
+        }
+
+        .grid-start {
+            grid-column-start: 1;
+        }
+
+        :deep(input:not([type=checkbox]):not([type=radio])),
+        :deep(select),
+        :deep(textarea) {
+            width: 100%;
+        }
+
+        :deep(.country-select) {
+            flex-shrink: 0;
+        }
+
+        :deep(.country-select select) {
+            width: auto;
+            min-width: 8.5rem;
+        }
+    }
+
+    .input-hint {
+        margin: -2rem 0 2.4rem;
+        color: @fontColorLight;
+        font-size: @fontSizeSmall;
+    }
+
+    .info-box {
+        display: flex;
+        margin-bottom: 2rem;
+        padding: 1rem 1.2rem;
+        border-radius: @borderRadiusSmall;
+        color: @fontColorLight;
+        font-size: @fontSizeSmaller;
+        background-color: @veryLightGrey;
+
+        .info-icon {
+            flex-shrink: 0;
+            width: 1.4rem;
+            height: 1.4rem;
+            margin: 0.2rem 0.8rem 0 0;
+        }
+
+        .text-link {
+            font-weight: @fontWeightBold;
+        }
+    }
+
+    .question-list {
+        margin: 0 0 2rem;
+        padding: 0;
+        list-style: none;
+
+        @media @tabletWidth {
+            max-width: 82rem;
+        }
+    }
+
+    .attestation-checkbox {
+        margin-bottom: 2rem;
+
+        :deep(.checkbox-container) {
+            margin: 0;
+        }
+
+        :deep(.input-label) {
+            font-weight: @fontWeight;
+            font-size: @fontSizeSmaller;
+        }
+    }
+
+    .sub-panel {
+        margin-bottom: 2rem;
+        padding: 1.6rem;
+        border-radius: @borderRadiusLarge;
+        background-color: @veryLightGrey;
+
+        .card-subtitle {
+            margin-bottom: 1.2rem;
+        }
+    }
+
+    .text-link {
+        font-weight: @fontWeightBold;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+
+    .file-input {
+        margin-bottom: 1.6rem;
+    }
+
+    .existing-files {
+        margin-bottom: 1.6rem;
+    }
+
+    .required-indicator {
+        padding-left: 2px;
+    }
+
+    .form-error {
+        margin-bottom: 1.2rem;
+        color: @midRed;
+        font-size: @fontSizeSmall;
+    }
+
+    .visually-hidden {
+        .visually-hidden();
+    }
+}

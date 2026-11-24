@@ -1,0 +1,161 @@
+//
+//  LicenseHistory.less
+//  CompactConnect
+//
+//  Created by InspiringApps on 11/24/2026.
+//
+
+@import '../_styles/applicationSection.less';
+
+.license-history-container {
+    .application-section-styles();
+
+    .licenses-card {
+        padding-bottom: 2rem;
+    }
+
+    .licenses-table {
+        width: 100%;
+        margin-bottom: 1.6rem;
+        border-collapse: collapse;
+        font-size: @fontSizeSmaller;
+
+        th {
+            padding: 0.8rem 1rem 0.8rem 0;
+            border-bottom: 1px solid @veryLightGrey;
+            color: @fontColorLight;
+            font-weight: @fontWeightMedium;
+            font-size: @fontSizeSmall;
+            text-align: left;
+        }
+
+        td {
+            padding: 1.2rem 1rem 1.2rem 0;
+            border-bottom: 1px solid @veryLightGrey;
+        }
+
+        .license-actions {
+            width: 4rem;
+            padding-right: 0;
+            text-align: right;
+        }
+    }
+
+    .license-menu-container {
+        position: relative;
+        display: inline-block;
+    }
+
+    .license-menu-toggle {
+        display: flex;
+        gap: 0.3rem;
+        align-items: center;
+        justify-content: center;
+        width: 3.2rem;
+        height: 3.2rem;
+        padding: 0;
+        border: none;
+        border-radius: @borderRadiusSmall;
+        background-color: transparent;
+        cursor: pointer;
+
+        &:hover,
+        &:focus-visible {
+            background-color: @veryLightGrey;
+        }
+
+        .menu-dot {
+            width: 0.4rem;
+            height: 0.4rem;
+            border-radius: 50%;
+            background-color: @fontColor;
+        }
+    }
+
+    .license-menu {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        z-index: 2;
+        min-width: 12rem;
+        margin: 0;
+        padding: 0.4rem 0;
+        border-radius: @borderRadiusSmall;
+        list-style: none;
+        background-color: @white;
+        box-shadow: 0 0.2rem 0.8rem rgba(0, 0, 0, 0.15);
+    }
+
+    .license-menu-item {
+        width: 100%;
+        padding: 0.8rem 1.2rem;
+        border: none;
+        color: @fontColor;
+        font-size: @fontSizeSmaller;
+        text-align: left;
+        background-color: transparent;
+        cursor: pointer;
+
+        &:hover,
+        &:focus-visible {
+            background-color: @veryLightGrey;
+        }
+
+        &.remove-license {
+            color: @midRed;
+        }
+    }
+
+    .no-licenses {
+        margin-bottom: 1.6rem;
+        color: @fontColorLight;
+        font-size: @fontSizeSmaller;
+    }
+
+    .license-form {
+        width: 100%;
+
+        :deep(select),
+        :deep(input[type=text]) {
+            width: 100%;
+        }
+
+        @media @tabletWidth {
+            width: 48rem;
+        }
+    }
+
+    .license-mock-populate {
+        margin-bottom: 1.2rem;
+    }
+
+    .license-form-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+
+        @media @tabletWidth {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            column-gap: 1.6rem;
+        }
+    }
+
+    .license-form-actions {
+        display: flex;
+        flex-direction: column-reverse;
+        gap: 1.2rem;
+
+        @media @tabletWidth {
+            flex-direction: row;
+            justify-content: space-between;
+        }
+
+        .license-action-button {
+            flex: 1 1 0;
+            margin: 0;
+
+            :deep(input) {
+                width: 100%;
+            }
+        }
+    }
+}

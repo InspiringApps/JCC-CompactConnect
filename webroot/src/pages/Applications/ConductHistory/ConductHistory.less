@@ -1,0 +1,60 @@
+//
+//  ConductHistory.less
+//  CompactConnect
+//
+//  Created by InspiringApps on 11/24/2026.
+//
+
+@import '../_styles/applicationSection.less';
+
+.conduct-history-container {
+    .application-section-styles();
+
+    .explanation-input {
+        :deep(textarea) {
+            width: 100%;
+            min-height: 10rem;
+        }
+
+        @media @tabletWidth {
+            max-width: 64rem;
+        }
+    }
+
+    .conviction-panel {
+        margin: 0.4rem 0 1.2rem;
+        list-style: none;
+
+        .form-grid {
+            :deep(input:not([type=checkbox]):not([type=radio])) {
+                background-color: @white;
+            }
+        }
+    }
+
+    .conviction-entry + .conviction-entry {
+        margin-top: 0.8rem;
+        padding-top: 1.6rem;
+        border-top: 1px solid @lightGrey;
+    }
+
+    .conviction-header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+    }
+
+    .remove-conviction,
+    .add-conviction {
+        font-weight: @fontWeightBold;
+        font-size: @fontSizeSmaller;
+    }
+
+    .remove-conviction {
+        color: @midRed;
+    }
+
+    .confirmation-checkbox {
+        margin-top: 1.2rem;
+    }
+}

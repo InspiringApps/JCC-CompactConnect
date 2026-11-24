@@ -1,0 +1,168 @@
+//
+//  ApplicationSectionLayout.less
+//  CompactConnect
+//
+//  Created by InspiringApps on 11/24/2026.
+//
+
+.application-section-container {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    width: 100%;
+
+    .section-content {
+        width: 100%;
+        max-width: 120rem;
+        margin: 0 auto;
+        padding: 0 1.6rem;
+
+        @media @tabletWidth {
+            padding: 0 3rem;
+        }
+    }
+
+    .section-header {
+        padding-top: 2.4rem;
+
+        @media @tabletWidth {
+            padding-top: 4rem;
+        }
+    }
+
+    .back-link {
+        display: inline-block;
+        margin-bottom: 1.2rem;
+        color: @primaryColor;
+        font-weight: @fontWeightBold;
+        font-size: @fontSizeSmall;
+        letter-spacing: 0.1rem;
+        text-transform: uppercase;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+
+    .section-title {
+        margin-bottom: 0.8rem;
+        font-weight: @fontWeightMedium;
+        font-size: @h2FontSize;
+    }
+
+    .section-intro {
+        max-width: 80rem;
+        margin-bottom: 2rem;
+        color: @fontColorLight;
+    }
+
+    .section-load-error {
+        padding: 2rem;
+        border-radius: @borderRadiusLarge;
+        background-color: @white;
+
+        .load-error-message {
+            margin-bottom: 1.2rem;
+            color: @midRed;
+        }
+
+        .text-link {
+            font-weight: @fontWeightBold;
+        }
+    }
+
+    .attention-banner {
+        margin-bottom: 1.6rem;
+        padding: 1.2rem 1.6rem;
+        border: 1px solid @lightOrange;
+        border-radius: @borderRadiusLarge;
+        background-color: lighten(@lightOrange, 18%);
+
+        .attention-title {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.4rem;
+            color: darken(@darkOrange, 15%);
+            font-weight: @fontWeightBold;
+            font-size: @fontSizeSmall;
+            letter-spacing: 0.08rem;
+            text-transform: uppercase;
+        }
+
+        .attention-icon {
+            flex-shrink: 0;
+            width: 1.6rem;
+            height: 1.6rem;
+            margin-right: 0.8rem;
+            stroke: currentColor;
+        }
+
+        .attention-note {
+            margin: 0;
+            font-size: @fontSizeSmaller;
+            font-style: italic;
+
+            & + .attention-note {
+                margin-top: 0.4rem;
+            }
+        }
+    }
+
+    .not-editable-message {
+        margin-bottom: 1.6rem;
+        color: @fontColorLight;
+    }
+
+    .section-form {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+    }
+
+    .mock-actions {
+        display: flex;
+        gap: 1.6rem;
+        align-items: center;
+        margin-bottom: 1.2rem;
+
+        .clear-form {
+            color: @fontColor;
+            font-style: italic;
+        }
+    }
+
+    .section-body {
+        padding-bottom: 3.2rem;
+
+        @media @tabletWidth {
+            padding-bottom: 4rem;
+        }
+    }
+
+    .section-footer {
+        width: 100%;
+        margin-top: auto;
+        padding: 1.6rem 0;
+        border-top: 1px solid @veryLightGrey;
+        background-color: @white;
+
+        .section-footer-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.2rem;
+            align-items: flex-end;
+        }
+
+        .save-button {
+            margin: 0;
+
+            :deep(.input-submit) {
+                min-width: 8rem;
+            }
+        }
+
+        .continue-button {
+            margin: 0;
+        }
+    }
+}

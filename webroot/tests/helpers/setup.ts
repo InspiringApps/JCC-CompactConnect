@@ -304,6 +304,10 @@ const mountFull = async (component, mountConfig: any = {}) => {
         config.computed = mountConfig.computed;
     }
 
+    if (mountConfig?.slots) {
+        config.slots = mountConfig.slots;
+    }
+
     // await router.isReady();
 
     return trackWrapper(mount(component, config));

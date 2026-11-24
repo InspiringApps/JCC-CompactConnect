@@ -8,6 +8,7 @@
 import {
     Component,
     mixins,
+    Watch,
     toNative
 } from 'vue-facing-decorator';
 import { reactive } from 'vue';
@@ -35,7 +36,7 @@ class InputPhone extends mixins(MixinInput) {
     //
     created() {
         this.initFormInputs();
-        this.localValue = this.formInput.value;
+        this.syncFromValue(this.formInput.value);
     }
 
     //
@@ -56,30 +57,6 @@ class InputPhone extends mixins(MixinInput) {
 
     get selectedCountry(): CountryCode {
         return this.formData.country?.value || 'US';
-    }
-
-    get phoneDisplay(): string {
-        const { selectedCountry } = this;
-        const currentPhone = this.localValue;
-        const format = new AsYouType(selectedCountry);
-        const formatted = format.input(currentPhone);
-
-        return formatted;
-    }
-
-    set phoneDisplay(value) {
-        const { selectedCountry } = this;
-        let raw = '';
-
-        try {
-            const parsed = parsePhoneNumber(this.localValue, selectedCountry);
-
-            raw = parsed.number;
-        } catch (e) {
-            // Continue
-        }
-
-        this.phoneDisplay = raw;
     }
 
     get phoneRaw(): string {
@@ -113,6 +90,16 @@ class InputPhone extends mixins(MixinInput) {
     }
 
     //
+    // Watchers
+    //
+    @Watch('formInput.value')
+    onFormInputValueChange(value: string): void {
+        if ((value || '') !== this.phoneRaw) {
+            this.syncFromValue(value);
+        }
+    }
+
+    //
     // Methods
     //
     initFormInputs(): void {
@@ -128,11 +115,36 @@ class InputPhone extends mixins(MixinInput) {
         });
     }
 
-    validate(): void {
-        const { isPhoneValid, formInput } = this;
+    syncFromValue(value = ''): void {
+        let displayValue = value || '';
 
-        if (!isPhoneValid && formInput.isTouched) {
-            formInput.errorMessage = `Must be a valid phone number, including area code, for the selected country`;
+        try {
+            const parsed = parsePhoneNumber(displayValue, this.selectedCountry);
+            const isAllowedCountry = this.countryCodes.some((country) => country.value === parsed.country);
+
+            if (isAllowedCountry) {
+                this.formData.country.value = parsed.country;
+            }
+
+            displayValue = parsed.formatNational();
+        } catch (e) {
+            // Continue
+        }
+
+        this.localValue = displayValue;
+    }
+
+    emitValue(): void {
+        this.formInput.value = this.phoneRaw;
+        this.validate();
+    }
+
+    validate(): void {
+        const { isPhoneValid, formInput, isRequired } = this;
+        const isEmptyOptional = !this.localValue && !isRequired;
+
+        if (!isPhoneValid && formInput.isTouched && !isEmptyOptional) {
+            formInput.errorMessage = this.$t('inputErrors.phone');
             formInput.isValid = false;
         } else {
             formInput.errorMessage = ``;
@@ -140,18 +152,24 @@ class InputPhone extends mixins(MixinInput) {
         }
     }
 
-    input(formInput: FormInput): void {
-        formInput.value = this.phoneRaw;
-        this.validate();
+    input(): void {
+        this.emitValue();
     }
 
     blur(formInput: FormInput): void {
         formInput.isTouched = true;
+
+        if (this.phoneRaw) {
+            this.syncFromValue(this.phoneRaw);
+        } else {
+            this.localValue = new AsYouType(this.selectedCountry).input(this.localValue);
+        }
+
         this.validate();
     }
 
     inputCountry(): void {
-        this.validate();
+        this.emitValue();
     }
 
     blurCountry(): void {

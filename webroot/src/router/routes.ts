@@ -191,13 +191,49 @@ const routes: Array<RouteConfig> = [
     {
         path: '/:compact/Application/Start',
         name: 'ApplicationStart',
-        component: () => import(/* webpackChunkName: "licenseeApplication" */ '@pages/ApplicationStart/ApplicationStart.vue'),
+        component: () => import(/* webpackChunkName: "licenseeApplication" */ '@pages/Applications/ApplicationStart/ApplicationStart.vue'),
         meta: { requiresAuth: true, licenseeAccess: true, },
     },
     {
         path: '/:compact/Application/:applicationId',
         name: 'ApplicationChecklist',
-        component: () => import(/* webpackChunkName: "licenseeApplication" */ '@pages/ApplicationChecklist/ApplicationChecklist.vue'),
+        component: () => import(/* webpackChunkName: "licenseeApplication" */ '@pages/Applications/ApplicationChecklist/ApplicationChecklist.vue'),
+        meta: { requiresAuth: true, licenseeAccess: true, },
+    },
+    {
+        path: '/:compact/Application/:applicationId/PersonalInformation',
+        name: 'ApplicationPersonalInformation',
+        component: () => import(/* webpackChunkName: "licenseeApplication" */ '@pages/Applications/PersonalInformation/PersonalInformation.vue'),
+        meta: { requiresAuth: true, licenseeAccess: true, },
+    },
+    {
+        path: '/:compact/Application/:applicationId/LicenseHistory',
+        name: 'ApplicationLicenseHistory',
+        component: () => import(/* webpackChunkName: "licenseeApplication" */ '@pages/Applications/LicenseHistory/LicenseHistory.vue'),
+        meta: { requiresAuth: true, licenseeAccess: true, },
+    },
+    {
+        path: '/:compact/Application/:applicationId/Education',
+        name: 'ApplicationEducation',
+        component: () => import(/* webpackChunkName: "licenseeApplication" */ '@pages/Applications/Education/Education.vue'),
+        meta: { requiresAuth: true, licenseeAccess: true, },
+    },
+    {
+        path: '/:compact/Application/:applicationId/ConductHistory',
+        name: 'ApplicationConductHistory',
+        component: () => import(/* webpackChunkName: "licenseeApplication" */ '@pages/Applications/ConductHistory/ConductHistory.vue'),
+        meta: { requiresAuth: true, licenseeAccess: true, },
+    },
+    {
+        path: '/:compact/Application/:applicationId/HomeState',
+        name: 'ApplicationHomeState',
+        component: () => import(/* webpackChunkName: "licenseeApplication" */ '@pages/Applications/HomeState/HomeState.vue'),
+        meta: { requiresAuth: true, licenseeAccess: true, },
+    },
+    {
+        path: '/:compact/Application/:applicationId/Acknowledgements',
+        name: 'ApplicationAcknowledgements',
+        component: () => import(/* webpackChunkName: "licenseeApplication" */ '@pages/Applications/Acknowledgements/Acknowledgements.vue'),
         meta: { requiresAuth: true, licenseeAccess: true, },
     },
     {

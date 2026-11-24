@@ -2136,6 +2136,9 @@ export const getAttestation = (attestationId) => {
     case 'refused-renewal-of-any-professional-license':
         attestationObj.text = `Have you ever been refused renewal of any professional license/registration/certificate for any reason in any jurisdiction?`;
         break;
+    case 'convicted-of-a-criminal-offense':
+        attestationObj.text = `Have you ever been convicted of or entered a plea of guilty or nolo contendere to a criminal offense, felony, or misdemeanor (other than a minor traffic violation)?`;
+        break;
     case 'registered-sex-offender':
         attestationObj.text = `Are you registered as a sex offender?`;
         break;
@@ -2789,152 +2792,90 @@ export const mockPrivilegeHistoryResponses = [
 // =========================================================================================
 // =                                   APPLICATIONS                                        =
 // =========================================================================================
+const getApplicationAttestationResponse = (attestationId: string, value: boolean | null, version = '1') => ({
+    attestationId,
+    text: getAttestation(attestationId).text,
+    version,
+    value,
+});
+
 export const attestationResponsesEducation = [
-    {
-        attestationId: 'education-institutional-verification',
-        version: '1',
-    },
+    getApplicationAttestationResponse('education-institutional-verification', true),
 ];
 
 export const attestationResponsesConduct = [
-    {
-        attestationId: 'rejected-or-denied-licensure-application',
-        version: '1',
-    },
-    {
-        attestationId: 'disciplined-by-licensing-board',
-        version: '1',
-    },
-    {
-        attestationId: 'jurisdiction-limited-practice',
-        version: '1',
-    },
-    {
-        attestationId: 'publicly-reported-non-disciplinary-action',
-        version: '1',
-    },
-    {
-        attestationId: 'disciplined-while-holding-professional-license',
-        version: '1',
-    },
-    {
-        attestationId: 'voluntarily-surrendered-or-restricted-professional-license',
-        version: '1',
-    },
-    {
-        attestationId: 'disciplinary-action-as-professional',
-        version: '1',
-    },
-    {
-        attestationId: 'refused-renewal-of-any-professional-license',
-        version: '1',
-    },
-    {
-        attestationId: 'registered-sex-offender',
-        version: '1',
-    },
-    {
-        attestationId: 'subject-of-current-proceeding-or-investigation',
-        version: '1',
-    },
-    {
-        attestationId: 'aided-or-abetted-another-individual-practicing-psychology',
-        version: '1',
-    },
-    {
-        attestationId: 'practiced-psychology-without-license-or-exemption',
-        version: '1',
-    },
-    {
-        attestationId: 'physically-or-mentally-incapable',
-        version: '1',
-    },
-    {
-        attestationId: 'drugs-or-alcohol-affecting-competency',
-        version: '1',
-    },
-    {
-        attestationId: 'malpractice-action-or-settlement',
-        version: '1',
-    },
-    {
-        attestationId: 'action-by-ethics-committee',
-        version: '1',
-    },
-    {
-        attestationId: 'denied-revoked-suspended-restricted-staff-membership',
-        version: '1',
-    },
-    {
-        attestationId: 'status-as-provider-revoked-suspended-restricted-by-payor',
-        version: '1',
-    },
-    {
-        attestationId: 'professional-liability-insurance-canceled',
-        version: '1',
-    },
-    {
-        attestationId: 'governmental-agency-substantiated-allegations',
-        version: '1',
-    },
-    {
-        attestationId: 'information-true-and-complete',
-        version: '1',
-    },
+    getApplicationAttestationResponse('rejected-or-denied-licensure-application', false),
+    getApplicationAttestationResponse('disciplined-by-licensing-board', false),
+    getApplicationAttestationResponse('jurisdiction-limited-practice', false),
+    getApplicationAttestationResponse('publicly-reported-non-disciplinary-action', false),
+    getApplicationAttestationResponse('disciplined-while-holding-professional-license', false),
+    getApplicationAttestationResponse('voluntarily-surrendered-or-restricted-professional-license', false),
+    getApplicationAttestationResponse('disciplinary-action-as-professional', false),
+    getApplicationAttestationResponse('refused-renewal-of-any-professional-license', false),
+    getApplicationAttestationResponse('convicted-of-a-criminal-offense', false),
+    getApplicationAttestationResponse('registered-sex-offender', false),
+    getApplicationAttestationResponse('subject-of-current-proceeding-or-investigation', false),
+    getApplicationAttestationResponse('aided-or-abetted-another-individual-practicing-psychology', false),
+    getApplicationAttestationResponse('practiced-psychology-without-license-or-exemption', false),
+    getApplicationAttestationResponse('physically-or-mentally-incapable', false),
+    getApplicationAttestationResponse('drugs-or-alcohol-affecting-competency', false),
+    getApplicationAttestationResponse('malpractice-action-or-settlement', false),
+    getApplicationAttestationResponse('action-by-ethics-committee', false),
+    getApplicationAttestationResponse('denied-revoked-suspended-restricted-staff-membership', false),
+    getApplicationAttestationResponse('status-as-provider-revoked-suspended-restricted-by-payor', false),
+    getApplicationAttestationResponse('professional-liability-insurance-canceled', false),
+    getApplicationAttestationResponse('governmental-agency-substantiated-allegations', false),
+    getApplicationAttestationResponse('information-true-and-complete', true),
 ];
 
 export const attestationResponsesHomeState = [
-    {
-        attestationId: 'comply-with-state-requirements',
-        version: '1',
-    },
+    getApplicationAttestationResponse('comply-with-state-requirements', true),
 ];
 
 export const attestationResponsesAcknowledgements = [
-    {
-        attestationId: 'home-state-is-psypact-state-with-active-license',
-        version: '1',
-    },
-    {
-        attestationId: 'telepsychology-only-while-present-in-home-state',
-        version: '1',
-    },
-    {
-        attestationId: 'update-home-state-within-30-days',
-        version: '1',
-    },
-    {
-        attestationId: 'not-make-false-or-misleading-representations',
-        version: '1',
-    },
-    {
-        attestationId: 'protect-health-and-safety-of-citizens',
-        version: '1',
-    },
-    {
-        attestationId: 'failure-to-abide-by-acknowledgements-will-result-in-revocation',
-        version: '1',
-    },
-    {
-        attestationId: 'agree-to-report-complaint-or-discipline',
-        version: '1',
-    },
-    {
-        attestationId: 'sign-and-submit',
-        version: '1',
-    },
-    {
-        attestationId: 'information-presented-is-factual',
-        version: '1',
-    },
+    getApplicationAttestationResponse('home-state-is-psypact-state-with-active-license', true),
+    getApplicationAttestationResponse('telepsychology-only-while-present-in-home-state', true),
+    getApplicationAttestationResponse('update-home-state-within-30-days', true),
+    getApplicationAttestationResponse('not-make-false-or-misleading-representations', true),
+    getApplicationAttestationResponse('protect-health-and-safety-of-citizens', true),
+    getApplicationAttestationResponse('failure-to-abide-by-acknowledgements-will-result-in-revocation', true),
+    getApplicationAttestationResponse('agree-to-report-complaint-or-discipline', true),
+    getApplicationAttestationResponse('sign-and-submit', true),
+    getApplicationAttestationResponse('information-presented-is-factual', true),
 ];
 
 export const attestationResponsesSubmit = [
-    {
-        attestationId: 'submission-does-not-guarantee-approval',
-        version: '1',
-    },
+    getApplicationAttestationResponse('submission-does-not-guarantee-approval', true),
 ];
+
+export const attestationResponsesConductWithConviction = attestationResponsesConduct.map((response) => ({
+    ...response,
+    value: (response.attestationId === 'convicted-of-a-criminal-offense') ? true : response.value,
+}));
+
+export const getUnansweredAttestationResponses = (responses: Array<any>) => responses.map((response) => ({
+    ...response,
+    value: null,
+}));
+
+export const getBlankAccreditingContact = () => ({
+    name: null,
+    email: null,
+    city: null,
+    state: null,
+    zip: null,
+    phone: null,
+    attestations: getUnansweredAttestationResponses(attestationResponsesEducation),
+});
+
+export const getBlankHomeStateApplicationType = (applicationType: string) => ({
+    applicationType,
+    state: null,
+    startDate: null,
+    isActiveMilitary: false,
+    militaryDocuments: [],
+    attestations: getUnansweredAttestationResponses(attestationResponsesHomeState),
+});
 
 export const applicantApplications = [
     // ========================================================
@@ -2949,7 +2890,7 @@ export const applicantApplications = [
         isRenewal: false,
         status: 'started',
         reviews: [],
-        attestations: [],
+        attestations: getUnansweredAttestationResponses(attestationResponsesSubmit),
         paymentCompensated: [],
         personalInformation: {
             applicantStatus: 'incomplete',
@@ -3001,20 +2942,20 @@ export const applicantApplications = [
             program: null,
             department: null,
             conferredDate: null,
-            isCompleted: false,
+            isCompleted: null,
             accreditingBody: null,
             accreditingYear: null,
-            isAccreditedByAuthority: false,
-            isProgramEquivalent: false,
-            accreditingContact: null,
-            hasResidence: false,
+            isAccreditedByAuthority: null,
+            isProgramEquivalent: null,
+            accreditingContact: getBlankAccreditingContact(),
+            hasResidence: null,
             transcripts: [],
         },
         conductHistory: {
             applicantStatus: 'incomplete',
             reviewStatus: 'awaiting-applicant',
             reviews: [],
-            attestations: [],
+            attestations: getUnansweredAttestationResponses(attestationResponsesConduct),
             convictions: [],
             notes: null,
             documents: [],
@@ -3023,13 +2964,13 @@ export const applicantApplications = [
             applicantStatus: 'incomplete',
             reviewStatus: 'awaiting-applicant',
             reviews: [],
-            applicationTypes: [],
+            applicationTypes: [getBlankHomeStateApplicationType('apit')],
         },
         acknowledgements: {
             applicantStatus: 'incomplete',
             reviewStatus: 'awaiting-applicant',
             reviews: [],
-            attestations: [],
+            attestations: getUnansweredAttestationResponses(attestationResponsesAcknowledgements),
             signatureName: null,
         },
     },
@@ -3055,7 +2996,7 @@ export const applicantApplications = [
             middleName: null,
             lastName: 'Applicant',
             suffix: null,
-            phone: '+12223334444',
+            phone: '+13035550100',
             altPhone: null,
             dob: moment().subtract(50, 'years').format(serverDateFormat),
             ssnLastFour: '1111',
@@ -3115,7 +3056,7 @@ export const applicantApplications = [
             accreditingYear: moment().subtract(7, 'months').format('YYYY'),
             isAccreditedByAuthority: true,
             isProgramEquivalent: true,
-            accreditingContact: null,
+            accreditingContact: getBlankAccreditingContact(),
             hasResidence: true,
             transcripts: [],
         },
@@ -3187,7 +3128,7 @@ export const applicantApplications = [
             middleName: null,
             lastName: 'Applicant',
             suffix: null,
-            phone: '+12223334444',
+            phone: '+13035550100',
             altPhone: null,
             dob: moment().subtract(50, 'years').format(serverDateFormat),
             ssnLastFour: '1111',
@@ -3253,7 +3194,7 @@ export const applicantApplications = [
                 city: 'Springfield',
                 state: 'co',
                 zip: '11111',
-                phone: '+12223334444',
+                phone: '+13035550100',
                 attestations: attestationResponsesEducation.map((response) => ({ ...response })),
             },
             hasResidence: true,
@@ -3263,7 +3204,7 @@ export const applicantApplications = [
             applicantStatus: 'complete',
             reviewStatus: 'pending',
             reviews: [],
-            attestations: attestationResponsesConduct.map((response) => ({ ...response })),
+            attestations: attestationResponsesConductWithConviction.map((response) => ({ ...response })),
             convictions: [
                 {
                     charge: 'Looting',
@@ -3346,7 +3287,7 @@ export const applicantApplications = [
             middleName: null,
             lastName: 'Applicant',
             suffix: null,
-            phone: '+12223334444',
+            phone: '+13035550100',
             altPhone: null,
             dob: moment().subtract(50, 'years').format(serverDateFormat),
             ssnLastFour: '1111',
@@ -3418,7 +3359,7 @@ export const applicantApplications = [
             accreditingYear: moment().subtract(7, 'months').format('YYYY'),
             isAccreditedByAuthority: true,
             isProgramEquivalent: true,
-            accreditingContact: null,
+            accreditingContact: getBlankAccreditingContact(),
             hasResidence: true,
             transcripts: [],
         },
@@ -3508,7 +3449,7 @@ export const applicantApplications = [
             middleName: null,
             lastName: 'Applicant',
             suffix: null,
-            phone: '+12223334444',
+            phone: '+13035550100',
             altPhone: null,
             dob: moment().subtract(50, 'years').format(serverDateFormat),
             ssnLastFour: '1111',
@@ -3574,7 +3515,7 @@ export const applicantApplications = [
             accreditingYear: moment().subtract(7, 'months').format('YYYY'),
             isAccreditedByAuthority: true,
             isProgramEquivalent: true,
-            accreditingContact: null,
+            accreditingContact: getBlankAccreditingContact(),
             hasResidence: true,
             transcripts: [
                 {
@@ -3673,7 +3614,7 @@ export const applicantApplications = [
             middleName: null,
             lastName: 'Applicant',
             suffix: null,
-            phone: '+12223334444',
+            phone: '+13035550100',
             altPhone: null,
             dob: moment().subtract(50, 'years').format(serverDateFormat),
             ssnLastFour: '1111',
@@ -3739,7 +3680,7 @@ export const applicantApplications = [
             accreditingYear: moment().subtract(7, 'months').format('YYYY'),
             isAccreditedByAuthority: true,
             isProgramEquivalent: true,
-            accreditingContact: null,
+            accreditingContact: getBlankAccreditingContact(),
             hasResidence: true,
             transcripts: [],
         },

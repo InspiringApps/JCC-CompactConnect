@@ -285,6 +285,8 @@ describe('Use Store Mutations', () => {
         expect(state.model).to.equal(null);
         expect(state.isLoadingAccount).to.equal(false);
         expect(state.isLoadingApplications).to.equal(false);
+        expect(state.isUpdatingApplication).to.equal(false);
+        expect(state.isUploadingApplicationDocuments).to.equal(false);
         expect(state.isLoggedInAsStaff).to.equal(false);
         expect(state.isLoggedInAsLicensee).to.equal(false);
         expect(state.purchase).to.be.an.instanceof(PurchaseFlowState);
@@ -790,6 +792,75 @@ describe('Use Store Mutations', () => {
         expect(state.isCreatingApplication).to.equal(false);
         expect(state.error).to.equal(null);
         expect(state.model).to.equal(null);
+    });
+    it('should successfully update application request', () => {
+        const state: any = {};
+
+        mutations[MutationTypes.UPDATE_APPLICATION_REQUEST](state);
+
+        expect(state.isUpdatingApplication).to.equal(true);
+        expect(state.error).to.equal(null);
+    });
+    it('should successfully update application failure', () => {
+        const state: any = {};
+        const error = new Error();
+
+        mutations[MutationTypes.UPDATE_APPLICATION_FAILURE](state, error);
+
+        expect(state.isUpdatingApplication).to.equal(false);
+        expect(state.error).to.equal(error);
+    });
+    it('should successfully update application success (replaces existing application)', () => {
+        const otherApplication = new Application({ id: 'test-application-id-1' });
+        const existingApplication = new Application({ id: 'test-application-id-2' });
+        const state: any = {
+            model: new LicenseeUser({
+                licensee: new Licensee({ applications: [otherApplication, existingApplication] }),
+            }),
+        };
+        const application = new Application({ id: 'test-application-id-2' });
+
+        mutations[MutationTypes.UPDATE_APPLICATION_SUCCESS](state, application);
+
+        expect(state.isUpdatingApplication).to.equal(false);
+        expect(state.error).to.equal(null);
+        expect(state.model.licensee.applications).to.have.length(2);
+        expect(state.model.licensee.applications[0]).to.equal(otherApplication);
+        expect(state.model.licensee.applications[1]).to.equal(application);
+    });
+    it('should successfully update application success (no user model)', () => {
+        const state: any = { model: null };
+        const application = new Application({ id: 'test-application-id' });
+
+        mutations[MutationTypes.UPDATE_APPLICATION_SUCCESS](state, application);
+
+        expect(state.isUpdatingApplication).to.equal(false);
+        expect(state.model).to.equal(null);
+    });
+    it('should successfully upload application documents request', () => {
+        const state: any = {};
+
+        mutations[MutationTypes.UPLOAD_APPLICATION_DOCUMENTS_REQUEST](state);
+
+        expect(state.isUploadingApplicationDocuments).to.equal(true);
+        expect(state.error).to.equal(null);
+    });
+    it('should successfully upload application documents failure', () => {
+        const state: any = {};
+        const error = new Error();
+
+        mutations[MutationTypes.UPLOAD_APPLICATION_DOCUMENTS_FAILURE](state, error);
+
+        expect(state.isUploadingApplicationDocuments).to.equal(false);
+        expect(state.error).to.equal(error);
+    });
+    it('should successfully upload application documents success', () => {
+        const state: any = {};
+
+        mutations[MutationTypes.UPLOAD_APPLICATION_DOCUMENTS_SUCCESS](state);
+
+        expect(state.isUploadingApplicationDocuments).to.equal(false);
+        expect(state.error).to.equal(null);
     });
     it('should successfully get application config request', () => {
         const state: any = {};
@@ -1829,6 +1900,154 @@ describe('User Store Actions', async () => {
 
         expect(commit.calledOnce).to.equal(true);
         expect(commit.firstCall.args).to.matchPattern([MutationTypes.CREATE_APPLICATION_FAILURE, error]);
+    });
+    it('should successfully start update application request', async () => {
+        const commit = sinon.spy();
+        const dispatch = sinon.spy();
+        const state = { model: new LicenseeUser({ id: 'test-user-id' }) };
+        const data = { id: '2', personalInformation: { firstName: 'Updated' }};
+
+        const application = await actions.updateApplicationRequestLicensee({ commit, dispatch, state }, { data });
+        const fetched = await mockDataApi.getAuthenticatedLicenseeApplication('2');
+
+        mockDataApi.resetCreatedApplications();
+
+        expect(commit.calledOnce).to.equal(true);
+        expect(commit.firstCall.args).to.matchPattern([MutationTypes.UPDATE_APPLICATION_REQUEST]);
+        expect(dispatch.calledOnce).to.equal(true);
+        expect(dispatch.firstCall.args).to.matchPattern(['updateApplicationSuccessLicensee', application]);
+        expect(application).to.be.an.instanceof(Application);
+        expect(application.personalInformation.firstName).to.equal('Updated');
+        expect(application.personalInformation.lastName).to.equal('Applicant');
+        expect(fetched.personalInformation.firstName).to.equal('Updated');
+    });
+    it('should successfully start update application request (intentional error)', async () => {
+        const commit = sinon.spy();
+        const dispatch = sinon.spy();
+        const state = { model: new LicenseeUser({ id: 'test-user-id' }) };
+        let thrownError;
+
+        await actions.updateApplicationRequestLicensee(
+            { commit, dispatch, state },
+            { data: { id: 'not-a-real-application' }}
+        ).catch((err) => {
+            thrownError = err;
+        });
+
+        expect(commit.firstCall.args).to.matchPattern([MutationTypes.UPDATE_APPLICATION_REQUEST]);
+        expect(dispatch.calledOnce).to.equal(true);
+        expect(dispatch.firstCall.args[0]).to.equal('updateApplicationFailureLicensee');
+        expect(thrownError).to.be.an('error').with.property('message', 'failed application update');
+    });
+    it('should successfully start update application request (user changed before response should return null & not dispatch mutation)', async () => {
+        const commit = sinon.spy();
+        const dispatch = sinon.spy();
+        const state = { model: new LicenseeUser({ id: 'test-user-id-1' }) };
+        const request = actions.updateApplicationRequestLicensee(
+            { commit, dispatch, state },
+            { data: { id: '2', personalInformation: { firstName: 'Updated' }}}
+        );
+
+        state.model = new LicenseeUser({ id: 'test-user-id-2' });
+
+        const application = await request;
+
+        mockDataApi.resetCreatedApplications();
+
+        expect(dispatch.notCalled).to.equal(true);
+        expect(application).to.equal(null);
+    });
+    it('should successfully start update application success', () => {
+        const commit = sinon.spy();
+        const application = new Application();
+
+        actions.updateApplicationSuccessLicensee({ commit }, application);
+
+        expect(commit.calledOnce).to.equal(true);
+        expect(commit.firstCall.args).to.matchPattern([MutationTypes.UPDATE_APPLICATION_SUCCESS, application]);
+    });
+    it('should successfully start update application failure', () => {
+        const commit = sinon.spy();
+        const error = new Error();
+
+        actions.updateApplicationFailureLicensee({ commit }, error);
+
+        expect(commit.calledOnce).to.equal(true);
+        expect(commit.firstCall.args).to.matchPattern([MutationTypes.UPDATE_APPLICATION_FAILURE, error]);
+    });
+    it('should successfully start upload application documents request', async () => {
+        const commit = sinon.spy();
+        const dispatch = sinon.spy();
+        const files = [
+            new File(['one'], 'one.pdf', { type: 'application/pdf' }),
+            new File(['two!'], 'two.png', { type: 'image/png' }),
+        ];
+
+        const uploaded = await actions.uploadApplicationDocumentsRequest(
+            { commit, dispatch },
+            { applicationId: '2', files }
+        );
+
+        expect(commit.calledOnce).to.equal(true);
+        expect(commit.firstCall.args).to.matchPattern([MutationTypes.UPLOAD_APPLICATION_DOCUMENTS_REQUEST]);
+        expect(dispatch.calledOnce).to.equal(true);
+        expect(dispatch.firstCall.args[0]).to.equal('uploadApplicationDocumentsSuccess');
+        expect(uploaded).to.matchPattern([
+            { filename: 'one.pdf', sizeBytes: 3 },
+            { filename: 'two.png', sizeBytes: 4 },
+        ]);
+    });
+    it('should successfully start upload application documents request (failed upload)', async () => {
+        const commit = sinon.spy();
+        const dispatch = sinon.spy();
+        const uploadStub = sinon.stub(mockDataApi, 'postUploadApplicationDocument').resolves({ status: 500 });
+        let thrownError;
+
+        await actions.uploadApplicationDocumentsRequest(
+            { commit, dispatch },
+            { applicationId: '2', files: [new File(['one'], 'one.pdf', { type: 'application/pdf' })] }
+        ).catch((err) => {
+            thrownError = err;
+        });
+        uploadStub.restore();
+
+        expect(dispatch.calledOnce).to.equal(true);
+        expect(dispatch.firstCall.args[0]).to.equal('uploadApplicationDocumentsFailure');
+        expect(thrownError).to.be.an('error').with.property('message', 'Document Upload Failed');
+    });
+    it('should successfully start upload application documents request (missing upload fields)', async () => {
+        const commit = sinon.spy();
+        const dispatch = sinon.spy();
+        const intentStub = sinon.stub(mockDataApi, 'postUploadApplicationDocumentIntent').resolves({});
+        let thrownError;
+
+        await actions.uploadApplicationDocumentsRequest(
+            { commit, dispatch },
+            { applicationId: '2', files: [new File(['one'], 'one.pdf', { type: 'application/pdf' })] }
+        ).catch((err) => {
+            thrownError = err;
+        });
+        intentStub.restore();
+
+        expect(dispatch.firstCall.args[0]).to.equal('uploadApplicationDocumentsFailure');
+        expect(thrownError).to.be.an('error').with.property('message', 'Missing fields for Document upload');
+    });
+    it('should successfully start upload application documents success', () => {
+        const commit = sinon.spy();
+
+        actions.uploadApplicationDocumentsSuccess({ commit });
+
+        expect(commit.calledOnce).to.equal(true);
+        expect(commit.firstCall.args).to.matchPattern([MutationTypes.UPLOAD_APPLICATION_DOCUMENTS_SUCCESS]);
+    });
+    it('should successfully start upload application documents failure', () => {
+        const commit = sinon.spy();
+        const error = new Error();
+
+        actions.uploadApplicationDocumentsFailure({ commit }, error);
+
+        expect(commit.calledOnce).to.equal(true);
+        expect(commit.firstCall.args).to.matchPattern([MutationTypes.UPLOAD_APPLICATION_DOCUMENTS_FAILURE, error]);
     });
     it('should successfully start application config request', async () => {
         const commit = sinon.spy();

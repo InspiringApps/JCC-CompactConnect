@@ -35,6 +35,7 @@ import {
     stateConfig,
     mockPrivilegeHistoryResponses,
     applicantApplications,
+    getBlankHomeStateApplicationType,
     applicationConfig,
     getMockProviderForCompact
 } from '@network/mocks/mock.data';
@@ -43,8 +44,29 @@ import moment from 'moment';
 
 let mockStore: any = null;
 
-// Applications created during the mock session (lost on page refresh)
+// Applications created or updated during the mock session (lost on page refresh)
 const createdApplications: Array<any> = [];
+const updatedApplications: Record<string, any> = {};
+
+const getMockApplications = (): Array<any> => [...applicantApplications, ...createdApplications]
+    .map((application) => updatedApplications[application.id] || application);
+
+// Server responses include attestation display text, which isn't part of update requests
+const fillMockAttestationText = (serverObject: any): void => {
+    if (Array.isArray(serverObject)) {
+        serverObject.forEach((item) => fillMockAttestationText(item));
+    } else if (serverObject && typeof serverObject === 'object') {
+        Object.keys(serverObject).forEach((key) => {
+            if (key === 'attestations' && Array.isArray(serverObject[key])) {
+                serverObject[key].forEach((attestation) => {
+                    attestation.text = getAttestation(attestation.attestationId).text;
+                });
+            } else {
+                fillMockAttestationText(serverObject[key]);
+            }
+        });
+    }
+};
 
 const initMockStore = (store) => {
     if (store && !mockStore) {
@@ -843,21 +865,72 @@ export class DataApi {
         return wait(500).then(() => ({
             prevLastKey: null,
             lastKey: null,
-            applications: JSON.parse(JSON.stringify([...applicantApplications, ...createdApplications]))
+            applications: JSON.parse(JSON.stringify(getMockApplications()))
                 .map((serverItem) => ApplicationSerializer.fromServer(serverItem)),
         }));
     }
 
     // Get Authenticated Licensee User application by ID
     public getAuthenticatedLicenseeApplication(applicationId: string) {
-        const serverApplication = [...applicantApplications, ...createdApplications]
-            .find((application) => application.id === applicationId);
+        const serverApplication = getMockApplications().find((application) => application.id === applicationId);
 
         if (!serverApplication) {
             return wait(500).then(() => { throw new Error('not found'); });
         }
 
         return wait(500).then(() => ApplicationSerializer.fromServer(JSON.parse(JSON.stringify(serverApplication))));
+    }
+
+    // Update Authenticated Licensee User application
+    public updateAuthenticatedLicenseeApplication(data: any = {}) {
+        const { id: applicationId, ...sectionUpdates } = JSON.parse(JSON.stringify(data));
+        const serverApplication = getMockApplications().find((application) => application.id === applicationId);
+
+        if (!serverApplication) {
+            return wait(500).then(() => { throw new Error('failed application update'); });
+        }
+
+        const updatedApplication = JSON.parse(JSON.stringify(serverApplication));
+
+        Object.keys(sectionUpdates).forEach((sectionKey) => {
+            updatedApplication[sectionKey] = {
+                ...updatedApplication[sectionKey],
+                ...sectionUpdates[sectionKey],
+                applicantStatus: 'complete', // The server determines section completeness
+            };
+        });
+        fillMockAttestationText(updatedApplication);
+
+        return wait(500).then(() => {
+            updatedApplications[applicationId] = updatedApplication;
+
+            return ApplicationSerializer.fromServer(JSON.parse(JSON.stringify(updatedApplication)));
+        });
+    }
+
+    // Post Upload Application Document Intent
+    public postUploadApplicationDocumentIntent(data: any = {}) {
+        const { fileNames = [] } = data;
+
+        return wait(500).then(() => ({
+            ...data,
+            documentUploadFields: fileNames.map((fileName) => ({
+                url: 'url.com',
+                fields: {
+                    key: fileName,
+                },
+            })),
+        }));
+    }
+
+    // Post Upload Application Document
+    public postUploadApplicationDocument(postUrl: string, documentUploadData: any, file: File) {
+        return wait(500).then(() => ({
+            status: 204,
+            postUrl,
+            documentUploadData,
+            file
+        }));
     }
 
     // Create Authenticated Licensee User application
@@ -874,6 +947,10 @@ export class DataApi {
             id: uuidv4(),
             created: moment().format(serverDatetimeFormat),
             types,
+            homeState: {
+                ...blankApplication.homeState,
+                applicationTypes: types.map((type) => getBlankHomeStateApplicationType(type)),
+            },
         };
 
         return wait(500).then(() => {
@@ -883,9 +960,12 @@ export class DataApi {
         });
     }
 
-    // Clear applications created during the mock session
+    // Clear applications created or updated during the mock session
     public resetCreatedApplications() {
         createdApplications.length = 0;
+        Object.keys(updatedApplications).forEach((applicationId) => {
+            delete updatedApplications[applicationId];
+        });
     }
 
     // Get Application configuration for a compact

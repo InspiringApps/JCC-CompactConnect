@@ -40,6 +40,9 @@ export class ApplicationsDataApi implements DataApiInterface {
                 put: {
                     'Content-Type': 'application/json',
                 },
+                patch: {
+                    'Content-Type': 'application/json',
+                },
             },
         });
     }
@@ -107,6 +110,29 @@ export class ApplicationsDataApi implements DataApiInterface {
         const response = ApplicationSerializer.fromServer(serverResponse);
 
         return response;
+    }
+
+    /**
+     * PATCH Update Authenticated Licensee User application.
+     * @param  {object}               data The application request data (application ID + updated section data).
+     * @return {Promise<Application>}      An Application model instance.
+     */
+    public async updateAuthenticatedLicenseeApplication(data: object) {
+        const serverResponse: any = await this.api.patch(`/v1/provider-users/me/applications`, data);
+        const response = ApplicationSerializer.fromServer(serverResponse);
+
+        return response;
+    }
+
+    /**
+     * POST Authenticated Licensee User application document upload intent.
+     * @param  {object}          data The upload intent request data (application ID + file names).
+     * @return {Promise<object>}      The upload intent response, including S3 documentUploadFields per file.
+     */
+    public async postUploadApplicationDocumentIntent(data: object) {
+        const serverResponse: any = await this.api.post(`/v1/provider-users/me/applications/documents`, data);
+
+        return serverResponse;
     }
 
     /**
